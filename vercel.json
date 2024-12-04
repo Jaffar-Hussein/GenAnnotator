@@ -4,12 +4,11 @@
       {
         "src": "GenAnnot/wsgi.py",
         "use": "@vercel/python",
-        "config": { "maxLambdaSize": "15mb", "runtime": "python3.9" }
+        "config": { "runtime": "python3.9" }
       },
       {
         "src": "build_files.sh",
-        "use": "@vercel/static-build",
-        "config": { "distDir": "staticfiles" }
+        "use": "@vercel/static-build"
       }
     ],
     "routes": [
