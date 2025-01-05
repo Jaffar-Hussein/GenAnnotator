@@ -83,6 +83,8 @@ DATABASES = {
 
 # Authentification
 
+AUTH_USER_MODEL = "signup.CustomUser"
+
 LOGIN_REDIRECT_URL = "home"
 LOGOUT_REDIRECT_URL = "home"
 
