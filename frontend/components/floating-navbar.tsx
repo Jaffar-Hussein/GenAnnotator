@@ -22,7 +22,7 @@ export const FloatingNav = ({
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [user, setUser] = useState<{ name: string; role: string } | null>(null);
-
+  // const user = { name: "John Doe", role: "Annotator" };
   const simulateLogin = () => {
     setUser({ name: "John Doe", role: "Annotator" });
   };
