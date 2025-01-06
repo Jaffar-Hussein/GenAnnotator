@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     "allauth.account",
     "allauth.socialaccount",
     "allauth.socialaccount.providers.github",
+    "allauth.socialaccount.providers.orcid",
 ]
 
 MIDDLEWARE = [
@@ -94,7 +95,8 @@ LOGIN_REDIRECT_URL = "home"
 LOGOUT_REDIRECT_URL = "home"
 
 AUTHENTIFICATION_BACKENDS = [
-    "allauth.account.auth_backends.AUthentificationBackend",
+    "django.contrib.auth.backends.ModelBackend",
+    "allauth.account.auth_backends.AuthentificationBackend",
 ]
 
 #Social login settings
@@ -106,6 +108,15 @@ SOCIALACCOUNT_PROVIDERS = {
             'secret': '8576f07010b48b4dc530d8089a0c6c764576b717',
            
         }
+    },
+    'orcid': {
+        'APP': {
+            'cliend_id': 'APP-0ENSSSDU0M53HHFC',
+            'secret': '4aecfb8e-dd3f-4d2b-aec7-df460363cfe3',
+        },
+        'BASE_DOMAIN':'orcid.org',
+        'SCOPE': ['/authenticate'],
+        'MEMBER_API': False,
     }
    
 }

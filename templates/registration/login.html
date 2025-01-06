@@ -7,8 +7,13 @@
 <h2>Log In</h2>
 <div class="text-dark text-muted">Connect with your social account</div>
 <a href="{% provider_login_url 'github' %}">
-    <button class="btn btn-google github">
+    <button class="btn btn-github">
         <img src="https://upload.wikimedia.org/wikipedia/commons/9/91/Octicons-mark-github.svg" alt="GitHub logo"/>Sign up with GitHub
+    </button>
+</a>
+<a href="{% provider_login_url 'orcid' %}">
+    <button class="btn btn-orcid">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/0/06/ORCID_iD.svg" alt="Orcid logo"/>Sign up with Orcid
     </button>
 </a>
 <div class="text-dark text-muted">Connect with your local account</div>
