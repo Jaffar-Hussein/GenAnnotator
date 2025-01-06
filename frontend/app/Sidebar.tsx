@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation'
 import { motion } from "framer-motion"
 import { Home, Database, Edit, BarChart2, FolderOpen, FileText, Settings, Users, ChevronRight } from 'lucide-react'
 import { cn } from "@/lib/utils"
-import { ThemeSwitcher } from "@/components/theme-switcher"
+import  {ThemeSwitcher}  from "@/components/ui/theme-switcher"
 import { Separator } from "@/components/ui/separator";
 
 const navigation = [

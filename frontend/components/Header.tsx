@@ -1,3 +1,4 @@
+"use client"
 import Link from 'next/link'
 import { UserCircle, Bell, Menu } from 'lucide-react'
 import { SidebarTrigger } from "@/components/ui/sidebar"
@@ -32,7 +33,7 @@ export default function Header() {
                 <span className="sr-only">Toggle Sidebar</span>
               </Button>
             </SidebarTrigger>
-            {state === "closed" && (
+            {state === "collapsed" && (
               <span className="ml-2 text-lg font-semibold">Genome Annotator</span>
             )}
           </div>
