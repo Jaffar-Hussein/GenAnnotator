@@ -10,7 +10,12 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
+import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Load env variables
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,10 +25,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-ckc_9ya7&k=s-k!aexf_-n8wv!um76)w^4*9k5a@%$t7x4b@io"
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DJANGO_DEBUG')
 
 ALLOWED_HOSTS = [".vercel.app", ".now.sh","localhost","127.0.0.1"]
 
@@ -104,15 +109,15 @@ AUTHENTIFICATION_BACKENDS = [
 SOCIALACCOUNT_PROVIDERS = {
     'github': {
         'APP': {
-            'client_id': 'Ov23liiGgYu4VdD1CbJA',
-            'secret': '8576f07010b48b4dc530d8089a0c6c764576b717',
+            'client_id': os.getenv('GITHUB_CLIENT_ID'),
+            'secret': os.getenv('GITHUB_CLIENT_SECRET'),
            
         }
     },
     'orcid': {
         'APP': {
-            'cliend_id': 'APP-0ENSSSDU0M53HHFC',
-            'secret': '4aecfb8e-dd3f-4d2b-aec7-df460363cfe3',
+            'cliend_id': os.getenv('ORCID_CLIENT_ID'),
+            'secret': os.getenv('ORCID_CLIENT_SECRET'),
         },
         'BASE_DOMAIN':'orcid.org',
         'SCOPE': ['/authenticate'],
