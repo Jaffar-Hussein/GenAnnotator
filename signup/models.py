@@ -6,8 +6,6 @@ from django.contrib.auth.models import AbstractUser
 class CustomUser(AbstractUser):
 
     # Additional fields
-    first_name = models.CharField(max_length=30, blank=True, null=True)
-    last_name = models.CharField(max_length=30, blank=True, null=True)
     email = models.CharField(max_length=30, blank=True, null=True)
     reader = "READER"
     annotator = "ANNOTATOR"
