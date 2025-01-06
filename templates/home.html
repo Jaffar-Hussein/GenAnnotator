@@ -1,0 +1,18 @@
+<!-- templates/home.html -->
+{% extends "base.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+{% if user.is_authenticated %}
+<p>Welcome to GenAnnotator {{ user.username }}!</p>
+<form action="{% url 'logout' %}" method="post">
+    {% csrf_token %}
+    <button type="submit">Log Out</button>
+  </form>
+{% else %}
+<p>Welcome to GenAnnotator !</p>
+<a href="{% url 'login' %}">Log In</a>
+<a href="{% url 'signup' %}">Sign Up</a>
+{% endif %}
+{% endblock %}

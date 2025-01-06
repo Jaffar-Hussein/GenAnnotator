@@ -37,6 +37,12 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "signup",
+    "allauth",
+    "allauth.account",
+    "allauth.socialaccount",
+    "allauth.socialaccount.providers.github",
+    "allauth.socialaccount.providers.orcid",
 ]
 
 MIDDLEWARE = [
@@ -47,6 +53,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "allauth.account.middleware.AccountMiddleware",
 ]
 
 ROOT_URLCONF = "GenAnnot.urls"
@@ -54,7 +61,7 @@ ROOT_URLCONF = "GenAnnot.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -80,6 +87,42 @@ DATABASES = {
     }
 }
 
+# Authentification
+
+AUTH_USER_MODEL = "signup.CustomUser"
+
+LOGIN_REDIRECT_URL = "home"
+LOGOUT_REDIRECT_URL = "home"
+
+AUTHENTIFICATION_BACKENDS = [
+    "django.contrib.auth.backends.ModelBackend",
+    "allauth.account.auth_backends.AuthentificationBackend",
+]
+
+#Social login settings
+
+SOCIALACCOUNT_PROVIDERS = {
+    'github': {
+        'APP': {
+            'client_id': 'Ov23liiGgYu4VdD1CbJA',
+            'secret': '8576f07010b48b4dc530d8089a0c6c764576b717',
+           
+        }
+    },
+    'orcid': {
+        'APP': {
+            'cliend_id': 'APP-0ENSSSDU0M53HHFC',
+            'secret': '4aecfb8e-dd3f-4d2b-aec7-df460363cfe3',
+        },
+        'BASE_DOMAIN':'orcid.org',
+        'SCOPE': ['/authenticate'],
+        'MEMBER_API': False,
+    }
+   
+}
+
+SOCIALACCOUNT_LOGIN_ON_GET=True
+SOCIALACCOUNT_AUTO_SIGNUP = True
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
