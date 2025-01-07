@@ -1,0 +1,6 @@
+Welcome to GenAnnotator {{ user.username }}!
+
+Please confirm your email by clicking the link below:
+{{ activate_url }}
+
+Thank you for using <strong>GenAnnotator</strong>! Happy annotating!

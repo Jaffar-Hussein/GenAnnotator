@@ -197,6 +197,8 @@ EMAIL_PORT = 587
 EMAIL_HOST_USER = os.getenv("GMAIL_EMAIL")
 EMAIL_HOST_PASSWORD = os.getenv("GMAIL_APP_PASS")
 
+ACCOUNT_EMAIL_SUBJECT_PREFIX = '[GenAnnotator] '
+
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
