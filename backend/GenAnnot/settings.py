@@ -137,6 +137,8 @@ AUTHENTIFICATION_BACKENDS = [
     "allauth.account.auth_backends.AuthentificationBackend",
 ]
 
+ACCOUNT_EMAIL_VERIFICATION = 'optional'
+
 #Social login settings
 
 SOCIALACCOUNT_PROVIDERS = {
@@ -183,7 +185,17 @@ AUTH_PASSWORD_VALIDATORS = [
 # Password change settings
 
 OLD_PASSWORD_FIELD_ENABLED = True
+
 LOGOUT_ON_PASSWORD_CHANGE = False
+
+# Email settings
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_USE_TLS = True
+EMAIL_PORT = 587
+EMAIL_HOST_USER = os.getenv("GMAIL_EMAIL")
+EMAIL_HOST_PASSWORD = os.getenv("GMAIL_APP_PASS")
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
