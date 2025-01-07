@@ -79,6 +79,8 @@ REST_FRAMEWORK = {
     ),
 }
 
+FRONT_END_URL = "http://localhost:3000"
+
 REST_AUTH = {
     'USE_JWT': True,
 }
@@ -138,6 +140,7 @@ AUTHENTIFICATION_BACKENDS = [
 ]
 
 ACCOUNT_EMAIL_VERIFICATION = 'optional'
+ACCOUNT_EMAIL_REQUIRED = True
 
 #Social login settings
 
