@@ -13,7 +13,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 export default function Login() {
   const router = useRouter()
-  const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
 
@@ -21,13 +21,13 @@ export default function Login() {
     e.preventDefault()
     setError('')
 
-    if (!email || !password) {
+    if (!username || !password) {
       setError('Please fill in all fields.')
       return
     }
 
     try {
-      console.log('Logging in with:', { email, password })
+      console.log('Logging in with:', { username, password })
       await new Promise(resolve => setTimeout(resolve, 1000))
       router.push('/dashboard')
     } catch (err) {
@@ -81,13 +81,13 @@ export default function Login() {
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email address</Label>
+                    <Label htmlFor="username">Username</Label>
                     <Input
-                      id="email"
-                      type="email"
-                      placeholder="name@example.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      id="username"
+                      type="text"
+                      placeholder="Enter your username"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
                       required
                       className="w-full"
                     />
