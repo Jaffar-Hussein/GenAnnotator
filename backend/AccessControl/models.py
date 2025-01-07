@@ -2,8 +2,6 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import validate_email
 
-# Create your models here.
-
 class CustomUser(AbstractUser):
 
     # Additional fields

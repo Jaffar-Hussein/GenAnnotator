@@ -21,14 +21,13 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic.base import TemplateView
 from rest_framework import routers
-from signup.views import SignupAPIView
 
 routers = routers.DefaultRouter()
 
 urlpatterns = [
     path("", TemplateView.as_view(template_name="home.html"), name="home"),
     path("admin/", admin.site.urls),
-    path("signup/", include("signup.urls")),
+    path("signup/", include("AccessControl.urls")),
     path("accounts/", include("django.contrib.auth.urls")),
     path("accounts/",include("allauth.urls")),
     path("api/", include(routers.urls)),

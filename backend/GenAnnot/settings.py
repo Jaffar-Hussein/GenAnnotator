@@ -43,7 +43,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "signup",
+    "AccessControl",
     "allauth",
     "allauth.account",
     "allauth.socialaccount",
@@ -117,7 +117,7 @@ DATABASES = {
 
 # Authentification
 
-AUTH_USER_MODEL = "signup.CustomUser"
+AUTH_USER_MODEL = "AccessControl.CustomUser"
 
 LOGIN_REDIRECT_URL = "home"
 LOGOUT_REDIRECT_URL = "home"
