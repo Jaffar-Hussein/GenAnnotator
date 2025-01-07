@@ -13,6 +13,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from .serializers import SignUpSerializer, LoginSerializer
 from .models import CustomUser
+from allauth.account.utils import send_email_confirmation
 
 
 class SignUpView(CreateView):
@@ -33,6 +34,7 @@ class SignupAPIView(APIView):
             )
             user.set_password(serializer.validated_data['password'])
             user.save()
+            send_email_confirmation(request, user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     

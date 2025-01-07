@@ -13,6 +13,6 @@ urlpatterns = [
     #path("api/auth/password/reset/confirm/", PasswordResetConfirmView.as_view(), name="rest_password_reset_confirm"),
     #path("api/auth/token/verify/", TokenVerifyView.as_view(), name="token_verify"),
     #path("api/auth/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
-    #path("/dj-rest-auth/registration/verify-email/", VerifyEmailView.as_view(), name="rest_verify_email"),
+    path("dj-rest-auth/registration/verify-email/", VerifyEmailView.as_view(), name="rest_verify_email"),
     #path("/dj-rest-auth/registration/resend-email/", ResendEmailVerificationView.as_view(), name="rest_resend_email"),
 ]
