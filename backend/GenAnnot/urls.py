@@ -27,7 +27,7 @@ routers = routers.DefaultRouter()
 urlpatterns = [
     path("", TemplateView.as_view(template_name="home.html"), name="home"),
     path("admin/", admin.site.urls),
-    path("signup/", include("AccessControl.urls")),
+    path("access/", include("AccessControl.urls")),
     path("accounts/", include("django.contrib.auth.urls")),
     path("accounts/",include("allauth.urls")),
     path("api/", include(routers.urls)),
