@@ -1,11 +1,13 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import validate_email
+from phonenumber_field.modelfields import PhoneNumberField
 
 class CustomUser(AbstractUser):
 
     # Additional fields
-    email = models.EmailField(max_length=254, unique=True, validators=[validate_email])
+    email = models.EmailField(max_length=254, unique=True, blank=False, null=False, validators=[validate_email])
+    phone_number = PhoneNumberField(blank=True)
     reader = "READER"
     annotator = "ANNOTATOR"
     validator = "VALIDATOR"
