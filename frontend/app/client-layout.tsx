@@ -9,7 +9,7 @@ import { usePathname } from 'next/navigation'
 
 export default function ClientLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname()
-  const isAuthPage = pathname === '/login' || pathname === '/signup'
+  const isAuthPage = pathname === '/login' || pathname === '/signup '|| pathname === '/change-password'
 
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
