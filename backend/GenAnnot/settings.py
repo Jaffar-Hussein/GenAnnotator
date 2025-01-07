@@ -33,6 +33,7 @@ DEBUG = os.getenv('DJANGO_DEBUG')
 
 ALLOWED_HOSTS = [".vercel.app", ".now.sh","localhost","127.0.0.1"]
 
+SITE_ID = 1
 
 # Application definition
 
@@ -43,6 +44,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    'django.contrib.sites',
     "AccessControl",
     "allauth",
     "allauth.account",
@@ -50,7 +52,10 @@ INSTALLED_APPS = [
     "allauth.socialaccount.providers.github",
     "allauth.socialaccount.providers.orcid",
     "rest_framework",
+    "rest_framework.authtoken",
     "rest_framework_simplejwt",
+    'dj_rest_auth',
+    'dj_rest_auth.registration',
     "corsheaders",
     "phonenumber_field",
 ]
@@ -72,6 +77,10 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+}
+
+REST_AUTH = {
+    'USE_JWT': True,
 }
 
 # CORS Settings
@@ -171,6 +180,10 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# Password change settings
+
+OLD_PASSWORD_FIELD_ENABLED = True
+LOGOUT_ON_PASSWORD_CHANGE = False
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
