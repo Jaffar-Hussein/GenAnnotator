@@ -27,6 +27,7 @@ class SignupAPIView(APIView):
             user = CustomUser(
                 username=serializer.validated_data['username'],
                 email=serializer.validated_data['email'],
+                phone_number=serializer.validated_data['phone_number'],
                 first_name=serializer.validated_data['first_name'],
                 last_name=serializer.validated_data['last_name'],
             )
