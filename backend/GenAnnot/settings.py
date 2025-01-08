@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     'django.contrib.sites',
     "AccessControl",
+    "GeneAtlas",
     "allauth",
     "allauth.account",
     "allauth.socialaccount",
