@@ -48,6 +48,13 @@ class LoginAPIView(APIView):
             if user is not None:
                 refresh = RefreshToken.for_user(user)
                 return Response({
+                    'username': user.username,
+                    'email': user.email,
+                    'first_name': user.first_name,
+                    'last_name': user.last_name,
+                    'phone_number': user.phone_number,
+                    'role': user.role,
+                    'username': username,
                     'refresh': str(refresh),
                     'access': str(refresh.access_token),
                 }, status=status.HTTP_200_OK)
