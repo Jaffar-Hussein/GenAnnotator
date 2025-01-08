@@ -18,3 +18,6 @@ class CustomUser(AbstractUser):
     ]
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='READER')
     last_login_time = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.username}, {self.email}, {self.role}"
