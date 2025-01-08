@@ -13,6 +13,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
+import { useAuthStore } from '@/store/useAuthStore';
 
 export const FloatingNav = ({
   className,
@@ -21,11 +22,11 @@ export const FloatingNav = ({
 }) => {
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
-  const [user, setUser] = useState<{ name: string; role: string } | null>(null);
-  // const user = { name: "John Doe", role: "Annotator" };
-  const simulateLogin = () => {
-    setUser({ name: "John Doe", role: "Annotator" });
-  };
+  const isAuthenticated = useAuthStore(state => state.isAuthenticated);
+  const user = useAuthStore(state => state.user);
+  const logout = useAuthStore(state => state.logout);
+
+
 
   useEffect(() => {
     const controlNavbar = () => {
@@ -89,12 +90,12 @@ export const FloatingNav = ({
             >
               Contact
             </Button>
-            {user ? (
+            {isAuthenticated && user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" className="flex items-center gap-2 text-xs sm:text-sm">
                     <User className="w-3 h-3 sm:w-4 sm:h-4" />
-                    <span className="hidden sm:inline">{user.name}</span>
+                    <span className="hidden sm:inline">{user.first_name}</span>
                     <span className="text-xs text-gray-500 hidden sm:inline">({user.role})</span>
                     <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4" />
                   </Button>
@@ -106,7 +107,7 @@ export const FloatingNav = ({
                   <DropdownMenuItem>
                     <Link href="/settings">Settings</Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setUser(null)}>
+                  <DropdownMenuItem onClick={() => logout()}>
                     <LogOut className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
                     Logout
                   </DropdownMenuItem>
@@ -118,7 +119,6 @@ export const FloatingNav = ({
                   <Button
                     variant="ghost"
                     className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors p-1 sm:p-2"
-                    onClick={simulateLogin}
                   >
                     Login
                   </Button>

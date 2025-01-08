@@ -56,7 +56,7 @@ export default function ChangePassword() {
             <p className="text-lg text-white drop-shadow-md">
               &ldquo;Security is not just about protecting data, but also about ensuring the integrity of scientific research.&rdquo;
             </p>
-            <footer className="text-sm text-gray-100 drop-shadow-md">Genome Annotator Security Team</footer>
+            <footer className="text-sm text-gray-100 drop-shadow-md">Genome Annotator Security Head - Leo Jourdain</footer>
           </blockquote>
         </div>
       </div>
@@ -140,7 +140,7 @@ export default function ChangePassword() {
               </CardContent>
               <CardFooter>
                 <div className="text-sm text-muted-foreground text-center w-full">
-                  Remember your current password?{' '}
+                Want to keep your current password?{' '}
                   <Link href="/dashboard" className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300">
                     Back to Dashboard
                   </Link>

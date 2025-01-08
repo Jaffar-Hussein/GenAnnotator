@@ -1,39 +1,69 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { redirect, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
+import { useAuthStore } from "@/store/useAuthStore";
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { AlertCircle, Github, ArrowLeft } from 'lucide-react'
+import { AlertCircle, Github, ArrowLeft, Loader2 } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 export default function Login() {
-  const router = useRouter()
+  const router = useRouter() 
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false)
+  const setAuth = useAuthStore(state => state.setAuth)
+  // const [state, formAction, isPending] = useActionState(login, undefined)
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
+  // if (state?.success) {
+  //   redirect('/dashboard')
+  // }
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    console.log('submit')
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
 
-    if (!username || !password) {
-      setError('Please fill in all fields.')
-      return
-    }
+    const formData = new FormData(e.currentTarget);
+    const username = formData.get('username') as string;
+    const password = formData.get('password') as string;
 
     try {
-      console.log('Logging in with:', { username, password })
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      router.push('/dashboard')
+      const response = await fetch('http://localhost:8000/access/api/login/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, password }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Invalid credentials');
+      }
+
+      const authData = await response.json();
+      
+      // Set auth data in Zustand store
+      setAuth(authData);
+      
+      // Redirect to dashboard
+      router.push('/dashboard');
     } catch (err) {
-      setError('Invalid credentials')
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setLoading(false);
     }
-  }
+  };
+
+  const user = useAuthStore(state => state.user);
+  console.log('user', user)
 
   return (
     <div className="container relative min-h-screen flex-col items-center justify-center grid lg:max-w-none lg:grid-cols-2 lg:px-0">
@@ -79,17 +109,19 @@ export default function Login() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form  onSubmit={handleSubmit} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="username">Username</Label>
                     <Input
                       id="username"
+                      name="username"
                       type="text"
                       placeholder="Enter your username"
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
                       required
                       className="w-full"
+                      disabled={loading}
                     />
                   </div>
                   <div className="space-y-2">
@@ -104,11 +136,13 @@ export default function Login() {
                     </div>
                     <Input
                       id="password"
+                      name="password"
                       type="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
                       className="w-full"
+                      disabled={loading}
                     />
                   </div>
                   {error && (
@@ -118,8 +152,15 @@ export default function Login() {
                       <AlertDescription>{error}</AlertDescription>
                     </Alert>
                   )}
-                  <Button type="submit" className="w-full">
-                    Sign in
+                  <Button type="submit" className="w-full" disabled={loading}>
+                    {loading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Signing in...
+                      </>
+                    ) : (
+                      'Sign in'
+                    )}
                   </Button>
                 </form>
 

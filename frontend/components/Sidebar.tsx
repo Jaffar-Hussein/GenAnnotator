@@ -8,6 +8,7 @@ import { Home, Database, Edit, BarChart2, FolderOpen, FileText, Settings, Users,
 import { cn } from "@/lib/utils"
 import  {ThemeSwitcher}  from "@/components/ui/theme-switcher"
 import { Separator } from "@/components/ui/separator";
+import { useAuthStore } from "@/store/useAuthStore";
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: Home },
@@ -22,7 +23,8 @@ const navigation = [
 export function AppSidebar() {
   const pathname = usePathname()
   const [isHovered, setIsHovered] = useState(false)
-
+  const user = useAuthStore(state => state.user);
+  
   return (
     <motion.div
       onMouseEnter={() => setIsHovered(true)}
@@ -96,7 +98,7 @@ export function AppSidebar() {
         >
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center text-sm font-medium text-indigo-600 dark:text-indigo-300">
-              JD
+              {user?.first_name.charAt(0)}{user?.last_name.charAt(0)}
             </div>
             <motion.div
               className="flex flex-col"
@@ -106,8 +108,8 @@ export function AppSidebar() {
                 overflow: 'hidden',
               }}
             >
-              <p className="text-sm font-medium truncate">John Doe</p>
-              <p className="text-xs text-muted-foreground">Admin</p>
+              <p className="text-sm font-medium truncate">{user?.first_name ? user.first_name.charAt(0).toUpperCase() + user.first_name.slice(1) : ''}</p>
+              <p className="text-xs text-muted-foreground">{user?.role}</p>
             </motion.div>
           </div>
           <motion.div
