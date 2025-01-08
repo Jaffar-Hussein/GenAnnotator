@@ -1,13 +1,20 @@
-import { Link } from "lucide-react";
+import Link from 'next/link'
+import { FeatureSection } from "@/components/feature-section"
+import { GridBackground } from "@/components/grid-background"
+import { Footer } from "@/components/Footer"
+// import { TeamTestimonials } from "@/components/team-testimonials"
 
-// app/page.tsx (example)
-export default function Page() {
+export default function Home() {
   return (
-    <main className="p-4 flex justify-center items-center h-screen">
-      <h1>Hello from the Homepage</h1>
-      <a href="/dashboard">
-      <Link className="h-6 w-6" />
-      </a>
-    </main>
-  );
+    <div className="relative">
+      <GridBackground />
+      <div className="container mx-auto py-8 pt-32">
+        <FeatureSection />
+        {/* <TeamTestimonials /> */}
+      </div>
+      
+      <Footer />
+    </div>
+  )
 }
+
