@@ -52,7 +52,7 @@ class LoginAPIView(APIView):
                     'email': user.email,
                     'first_name': user.first_name,
                     'last_name': user.last_name,
-                    'phone_number': user.phone_number,
+                    'phone_number': user.phone_number.as_e164,
                     'role': user.role,
                     'username': username,
                     'refresh': str(refresh),
