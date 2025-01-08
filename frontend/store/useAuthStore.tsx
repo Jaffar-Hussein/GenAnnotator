@@ -17,7 +17,7 @@ interface AuthState {
   isAuthenticated: boolean;
   accessToken: string | null;
   refreshToken: string | null;
-  
+
   // Actions
   setAuth: (authData: {
     username: string;
@@ -44,7 +44,7 @@ export const useAuthStore = create<AuthState>()(
       setAuth: (authData) => {
         try {
           const decoded = jwtDecode<{ user_id: number }>(authData.access);
-          
+
           const user: User = {
             username: authData.username,
             email: authData.email,
@@ -54,6 +54,9 @@ export const useAuthStore = create<AuthState>()(
             role: authData.role,
             user_id: decoded.user_id,
           };
+
+          // Set cookie for middleware
+          document.cookie = `accessToken=${authData.access}; path=/; secure; samesite=strict`;
 
           set({
             accessToken: authData.access,
@@ -67,6 +70,7 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: () => {
+        document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
         set({
           user: null,
           isAuthenticated: false,
@@ -77,16 +81,33 @@ export const useAuthStore = create<AuthState>()(
 
       getUser: () => {
         const state = get();
-        if (!state.accessToken || !state.user) return null;
-        
+        if (!state.accessToken || !state.user) {
+          set({ isAuthenticated: false });
+          return null;
+        }
+
         try {
           const decoded = jwtDecode<{ exp: number }>(state.accessToken);
           if (decoded.exp * 1000 < Date.now()) {
-            set({ user: null, isAuthenticated: false });
+            set({ 
+              user: null, 
+              isAuthenticated: false,
+              accessToken: null,
+              refreshToken: null,
+            });
             return null;
           }
+          
+          // Ensure isAuthenticated is true if we have a valid token and user
+          set({ isAuthenticated: true });
           return state.user;
         } catch {
+          set({ 
+            user: null, 
+            isAuthenticated: false,
+            accessToken: null,
+            refreshToken: null,
+          });
           return null;
         }
       },
@@ -97,6 +118,7 @@ export const useAuthStore = create<AuthState>()(
         accessToken: state.accessToken,
         refreshToken: state.refreshToken,
         user: state.user,
+        isAuthenticated: state.isAuthenticated,
       }),
     }
   )
