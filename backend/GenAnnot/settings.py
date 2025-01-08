@@ -21,6 +21,10 @@ load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+SITE_NAME = 'GenAnnotator'
+
+SITE_DOMAIN = 'localhost:3000'
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
@@ -83,6 +87,7 @@ FRONT_END_URL = "http://localhost:3000"
 
 REST_AUTH = {
     'USE_JWT': True,
+    'PASSWORD_RESET_CONFIRM_URL': 'reset-password/confirm/{uid}/{token}',
 }
 
 # CORS Settings
@@ -132,6 +137,7 @@ DATABASES = {
 AUTH_USER_MODEL = "AccessControl.CustomUser"
 
 LOGIN_REDIRECT_URL = "home"
+
 LOGOUT_REDIRECT_URL = "home"
 
 AUTHENTIFICATION_BACKENDS = [
@@ -165,6 +171,7 @@ SOCIALACCOUNT_PROVIDERS = {
 }
 
 SOCIALACCOUNT_LOGIN_ON_GET=True
+
 SOCIALACCOUNT_AUTO_SIGNUP = True
 
 # Password validation
@@ -201,6 +208,10 @@ EMAIL_HOST_USER = os.getenv("GMAIL_EMAIL")
 EMAIL_HOST_PASSWORD = os.getenv("GMAIL_APP_PASS")
 
 ACCOUNT_EMAIL_SUBJECT_PREFIX = '[GenAnnotator] '
+
+ACCOUNT_CONFIRM_EMAIL_ON_GET = True
+
+ACCOUNT_ADAPTER = 'AccessControl.adapters.CustomAccountAdapter'
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
