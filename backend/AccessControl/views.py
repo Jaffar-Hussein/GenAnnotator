@@ -54,7 +54,6 @@ class LoginAPIView(APIView):
                     'last_name': user.last_name,
                     'phone_number': user.phone_number.as_e164,
                     'role': user.role,
-                    'username': username,
                     'refresh': str(refresh),
                     'access': str(refresh.access_token),
                 }, status=status.HTTP_200_OK)
