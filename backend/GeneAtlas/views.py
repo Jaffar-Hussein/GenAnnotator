@@ -20,9 +20,12 @@ class GenomeAPIView(APIView):
                     "length": request.GET.get('length', None), 
                     "gc_content": request.GET.get('gc_content', None), 
                     "annotation": request.GET.get('annotation', None)}
-            query_results = inf.filter(**{k: v for k, v in params.items() if v is not None})
-            serializer = GenomeSerializer(query_results, many=True)
-            return Response(serializer.data)
+            if(all(v is None for v in params.values())):
+                return Response({"error": "No query parameters provided."}, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                query_results = inf.filter(**{k: v for k, v in params.items() if v is not None})
+                serializer = GenomeSerializer(query_results, many=True)
+                return Response(serializer.data)
 
     def post(self, request):
         serializer = GenomeSerializer(data=request.data)
