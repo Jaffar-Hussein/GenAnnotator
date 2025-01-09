@@ -46,7 +46,7 @@ const features = [
 
 export function FeatureSection() {
   return (
-    <section className="relative overflow-hidden py-16">
+    <section className="relative overflow-hidden pb-16">
       <div className="container relative z-10 mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header Section */}
         <div className="text-center max-w-3xl mx-auto mb-20">
