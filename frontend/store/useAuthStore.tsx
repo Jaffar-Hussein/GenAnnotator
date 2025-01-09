@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { jwtDecode } from 'jwt-decode';
 
 interface User {
@@ -55,8 +55,18 @@ export const useAuthStore = create<AuthState>()(
             user_id: decoded.user_id,
           };
 
-          // Set cookie for middleware
-          document.cookie = `accessToken=${authData.access}; path=/; secure; samesite=strict`;
+          // Set both cookies with explicit attributes
+          document.cookie = `accessToken=${authData.access}; path=/; secure; samesite=lax; max-age=3600`;
+          // Store auth data in a separate cookie with longer expiration
+          const authStorage = JSON.stringify({
+            state: {
+              user,
+              isAuthenticated: true,
+              accessToken: authData.access,
+              refreshToken: authData.refresh
+            }
+          });
+          document.cookie = `auth-storage=${encodeURIComponent(authStorage)}; path=/; secure; samesite=lax; max-age=86400`;
 
           set({
             accessToken: authData.access,
@@ -70,7 +80,10 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: () => {
+        // Clear all auth-related cookies
         document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+        document.cookie = 'auth-storage=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+        
         set({
           user: null,
           isAuthenticated: false,
@@ -81,39 +94,24 @@ export const useAuthStore = create<AuthState>()(
 
       getUser: () => {
         const state = get();
-        if (!state.accessToken || !state.user) {
-          set({ isAuthenticated: false });
-          return null;
-        }
+        if (!state.accessToken || !state.user) return null;
 
         try {
           const decoded = jwtDecode<{ exp: number }>(state.accessToken);
           if (decoded.exp * 1000 < Date.now()) {
-            set({ 
-              user: null, 
-              isAuthenticated: false,
-              accessToken: null,
-              refreshToken: null,
-            });
+            set({ user: null, isAuthenticated: false });
             return null;
           }
-          
-          // Ensure isAuthenticated is true if we have a valid token and user
-          set({ isAuthenticated: true });
           return state.user;
         } catch {
-          set({ 
-            user: null, 
-            isAuthenticated: false,
-            accessToken: null,
-            refreshToken: null,
-          });
           return null;
         }
       },
     }),
     {
       name: 'auth-storage',
+      storage: createJSONStorage(() => localStorage),
+      // Explicitly define what gets persisted
       partialize: (state) => ({
         accessToken: state.accessToken,
         refreshToken: state.refreshToken,

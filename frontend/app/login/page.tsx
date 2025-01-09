@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { redirect, useRouter } from 'next/navigation'
+import { useSearchParams , useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { useAuthStore } from "@/store/useAuthStore";
@@ -14,16 +14,13 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 export default function Login() {
   const router = useRouter() 
+  const searchParams = useSearchParams();
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false)
   const setAuth = useAuthStore(state => state.setAuth)
-  // const [state, formAction, isPending] = useActionState(login, undefined)
 
-  // if (state?.success) {
-  //   redirect('/dashboard')
-  // }
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     console.log('submit')
     e.preventDefault();
@@ -51,10 +48,17 @@ export default function Login() {
       const authData = await response.json();
       
       // Set auth data in Zustand store
+      // In your login handler
+    
       setAuth(authData);
       
       // Redirect to dashboard
-      router.push('/dashboard');
+      const from = searchParams.get('from');
+        const redirectTo = from && !['/login', '/signup', '/'].includes(from)
+          ? from
+          : '/dashboard';
+
+        router.push(redirectTo);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -62,8 +66,7 @@ export default function Login() {
     }
   };
 
-  const user = useAuthStore(state => state.user);
-  console.log('user', user)
+  
 
   return (
     <div className="container relative min-h-screen flex-col items-center justify-center grid lg:max-w-none lg:grid-cols-2 lg:px-0">
