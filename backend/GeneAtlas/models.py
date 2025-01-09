@@ -24,27 +24,51 @@ class Genome(models.Model):
     
     def get_sequence(self):
         return decompress(self.sequence).decode()
+    
+    def search_motif(self, motif):
+        if(motif[0] == "%" and motif[-1] == "%"):
+            return self.get_sequence().find(motif[1:-1]) != -1
+        elif(motif[0] == "%"):
+            return self.get_sequence().endswith(motif[1:])
+        elif(motif[-1] == "%"):
+            return self.get_sequence().startswith(motif[:-1])
+        else:
+            return False
 
     def __str__(self):
         return self.name
     
 class Gene(models.Model):
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100, primary_key=True)
     description = models.TextField()
     genome = models.ForeignKey(Genome, on_delete=models.CASCADE)
     start = models.IntegerField()
     end = models.IntegerField()
     sequence = models.TextField()
     length = length = models.IntegerField(editable=False)
+    gc_content = models.FloatField(editable=False, default=0.0)
+    annotated = models.BooleanField(default=False)
 
     def save(self, *args, **kwargs):
         self.length = len(self.sequence)
+        self.gc_content = gc_fraction(Seq(self.sequence))
         return super().save(*args, **kwargs)
+    
+    def search_motif(self, motif):
+        if(motif[0] == "%" and motif[-1] == "%"):
+            return self.get_sequence().find(motif[1:-1]) != -1
+        elif(motif[0] == "%"):
+            return self.get_sequence().endswith(motif[1:])
+        elif(motif[-1] == "%"):
+            return self.get_sequence().startswith(motif[:-1])
+        else:
+            return False
 
     def __str__(self):
         return self.name
     
 class Peptide(models.Model):
+    name = models.CharField(max_length=100, default="Peptide")
     gene = models.ForeignKey(Gene, on_delete=models.CASCADE)
     sequence = models.TextField()
     length = models.IntegerField(editable=False)
@@ -52,6 +76,16 @@ class Peptide(models.Model):
     def save(self, *args, **kwargs):
         self.length = len(self.sequence)
         return super().save(*args, **kwargs)
+    
+    def search_motif(self, motif):
+        if(motif[0] == "%" and motif[-1] == "%"):
+            return self.get_sequence().find(motif[1:-1]) != -1
+        elif(motif[0] == "%"):
+            return self.get_sequence().endswith(motif[1:])
+        elif(motif[-1] == "%"):
+            return self.get_sequence().startswith(motif[:-1])
+        else:
+            return False
 
     def __str__(self):
         return self.sequence
