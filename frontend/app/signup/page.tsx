@@ -16,18 +16,7 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-import {
-  AlertCircle,
-  ArrowLeft,
-  Check,
-  RefreshCw,
-  User,
-  Mail,
-  Lock,
-  ArrowRight,
-  Eye,
-  EyeOff,
-} from "lucide-react";
+import { AlertCircle, ArrowLeft, Check, RefreshCw, User, Mail, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
@@ -332,7 +321,7 @@ export default function Signup() {
                             <Input
                               id="first_name"
                               name="first_name"
-                              placeholder="John"
+                              placeholder="Enter your first name"
                               value={formData.first_name}
                               onChange={handleChange}
                               required
@@ -355,7 +344,7 @@ export default function Signup() {
                             <Input
                               id="last_name"
                               name="last_name"
-                              placeholder="Doe"
+                              placeholder="Enter your last name"
                               value={formData.last_name}
                               onChange={handleChange}
                               required
@@ -393,7 +382,7 @@ export default function Signup() {
                             <Input
                               id="username"
                               name="username"
-                              placeholder="johndoe"
+                              placeholder="Enter a username"
                               value={formData.username}
                               onChange={handleChange}
                               required
@@ -456,7 +445,7 @@ export default function Signup() {
                             id="email"
                             name="email"
                             type="email"
-                            placeholder="john@example.com"
+                            placeholder="Enter your email address"
                             value={formData.email}
                             onChange={handleChange}
                             required
@@ -507,6 +496,7 @@ export default function Signup() {
                               type={showPassword ? "text" : "password"}
                               value={formData.password}
                               onChange={handleChange}
+                              placeholder="Enter a password"
                               required
                               className={cn(
                                 "pr-10 transition-colors",
@@ -550,6 +540,7 @@ export default function Signup() {
                               type={showConfirmPassword ? "text" : "password"}
                               value={formData.confirmPassword}
                               onChange={handleChange}
+                              placeholder="Confirm your password"
                               required
                               className={cn(
                                 "pr-10 transition-colors",
@@ -648,3 +639,4 @@ export default function Signup() {
     </div>
   );
 }
+
