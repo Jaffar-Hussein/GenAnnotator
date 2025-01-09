@@ -6,12 +6,14 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Button } from "./ui/button";
 import { ModeToggle } from "./mode-toggle";
-import { User, LogOut, ChevronDown } from 'lucide-react';
+import { User, LogOut, ChevronDown,Settings,Bell } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuLabel,
+  DropdownMenuSeparator
 } from "./ui/dropdown-menu";
 import { useAuthStore } from '@/store/useAuthStore';
 
@@ -58,19 +60,19 @@ export const FloatingNav = ({
   };
 
   return (
-    <AnimatePresence mode="wait">
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{
-          opacity: isVisible ? 1 : 0,
-          y: isVisible ? 0 : -10
-        }}
-        transition={{ duration: 0.2 }}
-        className={cn(
-          "flex fixed top-4 inset-x-0 mx-auto w-[95%] max-w-7xl rounded-full border border-transparent bg-white/80 shadow-[0px_2px_3px_-1px_rgba(0,0,0,0.1),0px_1px_0px_0px_rgba(25,28,33,0.02),0px_0px_0px_1px_rgba(25,28,33,0.08)] backdrop-blur-[8px] dark:bg-gray-800/80 z-[100] px-4 py-2 sm:py-3 sm:px-6 lg:px-8",
-          className
-        )}
-      >
+	<AnimatePresence mode="wait">
+	<motion.div
+	  initial={{ opacity: 0, y: -20 }}
+	  animate={{
+		opacity: isVisible ? 1 : 0,
+		y: isVisible ? 0 : -20
+	  }}
+	  transition={{ duration: 0.3, ease: "easeOut" }}
+	  className={cn(
+		"flex fixed top-4 inset-x-0 mx-auto w-full max-w-7xl rounded-full border border-transparent bg-white/80 shadow-lg backdrop-blur-md dark:bg-gray-800/90 z-[100] px-4 py-2 sm:py-3 sm:px-6 lg:px-8",
+		className
+	  )}
+	>
         <div className="flex items-center justify-between w-full">
           <Link href="/" className="font-semibold text-base sm:text-lg">
             Genome Annotator
@@ -91,28 +93,48 @@ export const FloatingNav = ({
               Contact
             </Button>
             {isAuthenticated && user ? (
-              <DropdownMenu>
+				<>
+				<Link href="/dashboard">
+                  <Button
+                    variant="ghost"
+                    className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors p-1 sm:p-2"
+                  >
+                    Dashboard
+                  </Button>
+                </Link>
+                <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="flex items-center gap-2 text-xs sm:text-sm">
-                    <User className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <Button variant="ghost" className="flex items-center gap-2 text-sm">
+                    <User className="w-4 h-4" />
                     <span className="hidden sm:inline">{user.first_name}</span>
-                    <span className="text-xs text-gray-500 hidden sm:inline">({user.role})</span>
-                    <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4" />
+                    <span className="text-xs text-muted-foreground hidden sm:inline">({user.role})</span>
+                    <ChevronDown className="w-4 h-4 ml-1" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
+                <DropdownMenuContent align="end" className="w-56 mt-4">
+                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
                   <DropdownMenuItem>
-                    <Link href="/profile">Profile</Link>
+                    <User className="w-4 h-4 mr-2" />
+                    <span>Profile</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem>
-                    <Link href="/settings">Settings</Link>
+                    <Settings className="w-4 h-4 mr-2" />
+                    <span>Settings</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => logout()}>
-                    <LogOut className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
-                    Logout
+                  <DropdownMenuItem>
+                    <Bell className="w-4 h-4 mr-2" />
+                    <span>Notifications</span>
                   </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+				  
+                  <DropdownMenuItem className="text-red-600" onClick={() => logout()}>
+                    <LogOut className="w-4 h-4 mr-2" />
+                    <span>Log out</span>
+                  </DropdownMenuItem>
+				  
                 </DropdownMenuContent>
               </DropdownMenu>
+			  </>
             ) : (
               <>
                 <Link href="/login">
