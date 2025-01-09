@@ -16,18 +16,7 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-import {
-  AlertCircle,
-  ArrowLeft,
-  Check,
-  RefreshCw,
-  User,
-  Mail,
-  Lock,
-  ArrowRight,
-  Eye,
-  EyeOff,
-} from "lucide-react";
+import { AlertCircle, ArrowLeft, Check, RefreshCw, User, Mail, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
@@ -45,11 +34,11 @@ const getUsernameSuggestions = async (
   const code = Math.floor(Math.random() * 90 + 10);
 
   const suggestions = new Set([
-    `${first}${lastInitial}${code}`,      
-    `${firstInitial}${last}${code}`,      
-    `${first}${last}${code}`,             
-    `${lastInitial}${first}${code}`,      
-    `${firstInitial}${lastInitial}${code}` 
+    `${first}${lastInitial}${code}`,
+    `${firstInitial}${last}${code}`,
+    `${first}${last}${code}`,
+    `${lastInitial}${first}${code}`,
+    `${firstInitial}${lastInitial}${code}`,
   ]);
 
   return Array.from(suggestions);
@@ -57,6 +46,7 @@ const getUsernameSuggestions = async (
 
 export default function Signup() {
   const router = useRouter();
+  const setAuth = useAuthStore((state) => state.setAuth);
   const [activeTab, setActiveTab] = useState("personal");
   const [formData, setFormData] = useState({
     first_name: "",
@@ -112,8 +102,8 @@ export default function Signup() {
   const handleTabChange = (tab: string) => {
     if (validateTab(activeTab)) {
       setActiveTab(tab);
-      if (tab === 'account' && formData.first_name && formData.last_name) {
-        handleGetUsernameSuggestions()
+      if (tab === "account" && formData.first_name && formData.last_name) {
+        handleGetUsernameSuggestions();
       }
     }
   };
@@ -125,7 +115,7 @@ export default function Signup() {
       setActiveTab(tabs[currentIndex - 1]);
     }
   };
-  const { signup, isLoading: storeLoading, error: storeError, clearError } = useAuthStore();
+  const { signup } = useAuthStore();
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateTab("security")) return;
@@ -141,18 +131,49 @@ export default function Signup() {
         last_name: formData.last_name,
         phone_number: "+12125552368",
       });
+      const username = formData.username;
+      const password = formData.password;
 
-      setSuccessMessage("Account created successfully! Redirecting to login...");
-      
+      try {
+        const response = await fetch(
+          "http://localhost:8000/access/api/login/",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ username, password }),
+          }
+        );
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.detail || "Invalid credentials");
+        }
+        console.log(response);
+        const authData = await response.json();
+
+        setAuth(authData);
+      } catch (err) {
+        setErrors({
+          submit:
+            err instanceof Error
+              ? err.message
+              : "Failed to login to your new account. Please try again.",
+        });
+      }
+      setSuccessMessage("Account created successfully!");
+
       // Add a slight delay before redirecting to ensure the success message is seen
       setTimeout(() => {
-        router.push("/login");
-      }, 2000);
+        router.push("/dashboard");
+      }, 1000);
     } catch (error) {
       setErrors({
-        submit: error instanceof Error 
-          ? error.message 
-          : "Failed to create account. Please try again."
+        submit:
+          error instanceof Error
+            ? error.message
+            : "Failed to create account. Please try again.",
       });
     } finally {
       setIsLoading(false);
@@ -160,18 +181,21 @@ export default function Signup() {
   };
 
   const handleGetUsernameSuggestions = async () => {
-    if (!formData.first_name || !formData.last_name) return
+    if (!formData.first_name || !formData.last_name) return;
 
-    setIsLoadingSuggestions(true)
+    setIsLoadingSuggestions(true);
     try {
-      const suggestions = await getUsernameSuggestions(formData.first_name, formData.last_name)
-      setUsernameSuggestions(suggestions)
+      const suggestions = await getUsernameSuggestions(
+        formData.first_name,
+        formData.last_name
+      );
+      setUsernameSuggestions(suggestions);
     } catch (error) {
-      console.error('Failed to get username suggestions:', error)
+      console.error("Failed to get username suggestions:", error);
     } finally {
-      setIsLoadingSuggestions(false)
+      setIsLoadingSuggestions(false);
     }
-  }
+  };
 
   const getProgress = () => {
     const steps = ["personal", "account", "security"];
@@ -182,7 +206,7 @@ export default function Signup() {
     <div className="container relative min-h-screen flex-col items-center justify-center grid lg:max-w-none lg:grid-cols-2 lg:px-0">
       <Link
         href="/"
-        className="absolute top-4 left-4 md:top-8 md:left-8 z-40 inline-flex items-center justify-center rounded-lg border bg-background px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground"
+        className="absolute top-4 right-4 md:top-8 md:right-8  z-40 inline-flex items-center justify-center rounded-lg border bg-background px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground"
       >
         <ArrowLeft className="mr-2 h-4 w-4" />
         Back to Homepage
@@ -297,7 +321,7 @@ export default function Signup() {
                             <Input
                               id="first_name"
                               name="first_name"
-                              placeholder="John"
+                              placeholder="Enter your first name"
                               value={formData.first_name}
                               onChange={handleChange}
                               required
@@ -320,7 +344,7 @@ export default function Signup() {
                             <Input
                               id="last_name"
                               name="last_name"
-                              placeholder="Doe"
+                              placeholder="Enter your last name"
                               value={formData.last_name}
                               onChange={handleChange}
                               required
@@ -358,7 +382,7 @@ export default function Signup() {
                             <Input
                               id="username"
                               name="username"
-                              placeholder="johndoe"
+                              placeholder="Enter a username"
                               value={formData.username}
                               onChange={handleChange}
                               required
@@ -421,7 +445,7 @@ export default function Signup() {
                             id="email"
                             name="email"
                             type="email"
-                            placeholder="john@example.com"
+                            placeholder="Enter your email address"
                             value={formData.email}
                             onChange={handleChange}
                             required
@@ -472,6 +496,7 @@ export default function Signup() {
                               type={showPassword ? "text" : "password"}
                               value={formData.password}
                               onChange={handleChange}
+                              placeholder="Enter a password"
                               required
                               className={cn(
                                 "pr-10 transition-colors",
@@ -515,6 +540,7 @@ export default function Signup() {
                               type={showConfirmPassword ? "text" : "password"}
                               value={formData.confirmPassword}
                               onChange={handleChange}
+                              placeholder="Confirm your password"
                               required
                               className={cn(
                                 "pr-10 transition-colors",
@@ -613,3 +639,4 @@ export default function Signup() {
     </div>
   );
 }
+
