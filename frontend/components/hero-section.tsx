@@ -1,23 +1,30 @@
-'use client'
+"use client";
 
-import { useRef } from "react"
-import { motion, useScroll, useTransform, useAnimationFrame, useMotionValue } from "framer-motion"
-import { Button } from "@/components/ui/button"
-import { Dna, ArrowRight } from 'lucide-react'
-import Link from "next/link"
-
-const STRAND_COUNT = 30
-const STRAND_LENGTH = 1000
+import { useRef } from "react";
+import {
+  motion,
+  useScroll,
+  useTransform,
+  useAnimationFrame,
+  useMotionValue,
+} from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Dna, ArrowRight } from "lucide-react";
+import Link from "next/link";
+import { useAuthStore } from "@/store/useAuthStore";
+const STRAND_COUNT = 30;
+const STRAND_LENGTH = 1000;
 
 export function HeroSection() {
-  const ref = useRef<HTMLDivElement>(null)
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const ref = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: ["start start", "end start"],
-  })
+  });
 
-  const opacity = useTransform(scrollYProgress, [0, 1], [1, 0])
-  const scale = useTransform(scrollYProgress, [0, 1], [1, 0.8])
+  const opacity = useTransform(scrollYProgress, [0, 1], [1, 0]);
+  const scale = useTransform(scrollYProgress, [0, 1], [1, 0.8]);
 
   return (
     <motion.div
@@ -42,7 +49,8 @@ export function HeroSection() {
             Revolutionizing Genome Annotation
           </h1>
           <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl dark:text-gray-400 mb-8">
-            Powerful tools for researchers and scientists to analyze, annotate, and visualize genomic data with unprecedented ease and accuracy.
+            Powerful tools for researchers and scientists to analyze, annotate,
+            and visualize genomic data with unprecedented ease and accuracy.
           </p>
         </motion.div>
 
@@ -52,12 +60,27 @@ export function HeroSection() {
           transition={{ duration: 0.5, delay: 0.2 }}
           className="flex flex-col sm:flex-row justify-center gap-4"
         >
-          <Link href="/signup">
-            <Button size="lg" className="group bg-primary hover:bg-primary/90 text-primary-foreground">
-              Get Started
-              <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-            </Button>
-          </Link>
+          {isAuthenticated ? (
+            <Link href="/signup">
+              <Button
+                size="lg"
+                className="group bg-primary hover:bg-primary/90 text-primary-foreground"
+              >
+                Get Started
+                <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </Button>
+            </Link>
+          ) : (
+            <Link href="/signup">
+              <Button
+                size="lg"
+                className="group bg-primary hover:bg-primary/90 text-primary-foreground"
+              >
+                Get Started
+                <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </Button>
+            </Link>
+          )}
           <Link href="/documentation">
             <Button variant="outline" size="lg" className="group">
               Documentation
@@ -76,15 +99,15 @@ export function HeroSection() {
         </motion.div>
       </div>
     </motion.div>
-  )
+  );
 }
 
 function DNAHelix() {
-  const baseY = useMotionValue(0)
+  const baseY = useMotionValue(0);
 
   useAnimationFrame((t) => {
-    baseY.set((t / 50) % STRAND_LENGTH)
-  })
+    baseY.set((t / 50) % STRAND_LENGTH);
+  });
 
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -93,19 +116,30 @@ function DNAHelix() {
           key={i}
           className="absolute inset-0"
           style={{
-            y: useTransform(baseY, (y) => (y + i * (STRAND_LENGTH / STRAND_COUNT)) % STRAND_LENGTH - STRAND_LENGTH / 2),
+            y: useTransform(
+              baseY,
+              (y) =>
+                ((y + i * (STRAND_LENGTH / STRAND_COUNT)) % STRAND_LENGTH) -
+                STRAND_LENGTH / 2
+            ),
           }}
         >
           <DNAStrand />
         </motion.div>
       ))}
     </div>
-  )
+  );
 }
 
 function DNAStrand() {
   return (
-    <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg
+      className="w-full h-full"
+      viewBox="0 0 100 100"
+      preserveAspectRatio="none"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
       <path
         d="M0 50C25 50 25 100 50 100C75 100 75 50 100 50"
         stroke="url(#dna-gradient)"
@@ -121,13 +155,19 @@ function DNAStrand() {
         vectorEffect="non-scaling-stroke"
       />
       <defs>
-        <linearGradient id="dna-gradient" x1="0" y1="0" x2="100" y2="0" gradientUnits="userSpaceOnUse">
+        <linearGradient
+          id="dna-gradient"
+          x1="0"
+          y1="0"
+          x2="100"
+          y2="0"
+          gradientUnits="userSpaceOnUse"
+        >
           <stop stopColor="rgba(99, 102, 241, 0.2)" />
           <stop offset="0.5" stopColor="rgba(168, 85, 247, 0.1)" />
           <stop offset="1" stopColor="rgba(236, 72, 153, 0.1)" />
         </linearGradient>
       </defs>
     </svg>
-  )
+  );
 }
-
