@@ -4,9 +4,10 @@ import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { BarChart2, Database, Edit, FolderOpen, ArrowRight, Bell, Clock, Users } from 'lucide-react'
 import { Button } from "@/components/ui/button"
-
+import { useAuthStore } from "@/store/useAuthStore"
 
 export default function Dashboard() {
+  const user = useAuthStore(state => state.user);
   return (
     <div className="container max-w-7xl mx-auto p-8">
       <motion.div
@@ -18,7 +19,7 @@ export default function Dashboard() {
         {/* Welcome Section */}
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Welcome back, Jaffar</h1>
+            <h1 className="text-3xl font-bold tracking-tight">Welcome back, {user?.first_name ? user.first_name.charAt(0).toUpperCase() + user.first_name.slice(1) : ''}</h1>
             <p className="text-muted-foreground mt-1">
               Here's what's happening with your dashboard today.
             </p>
