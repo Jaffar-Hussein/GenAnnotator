@@ -17,6 +17,7 @@ const PUBLIC_PATHS = [
   '/about',
   '/api/auth/login',
   '/api/auth/refresh',
+  '/documentation',
 ];
 
 export async function middleware(request: NextRequest) {

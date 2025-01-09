@@ -10,7 +10,7 @@ export default function Home() {
     <div className="relative">
       <GridBackground />
       <HeroSection />
-      <div className="container mx-auto py-8 pt-32">
+      <div className="container mx-auto py-8">
         <FeatureSection />
         {/* <TeamTestimonials /> */}
       </div>
