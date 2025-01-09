@@ -7,9 +7,10 @@ from zlib import compress, decompress
 # Create your models here.
 
 class Genome(models.Model):
-    name = models.CharField(max_length=100, unique=True)
+    name = models.CharField(max_length=100, unique=True, primary_key=True)
     species = models.CharField(max_length=100)
     description = models.TextField(blank=True)
+    header = models.TextField(blank=False, null=False, default=">Genome")
     sequence = models.BinaryField(blank=False, null=False, editable=True)
     length = models.IntegerField(editable=False, default=0)
     gc_content = models.FloatField(editable=False, default=0.0)
@@ -40,10 +41,11 @@ class Genome(models.Model):
     
 class Gene(models.Model):
     name = models.CharField(max_length=100, primary_key=True)
-    description = models.TextField()
+    description = models.TextField(blank=True, null=False)
     genome = models.ForeignKey(Genome, on_delete=models.CASCADE)
-    start = models.IntegerField()
-    end = models.IntegerField()
+    start = models.IntegerField(blank=False, null=False)
+    end = models.IntegerField(blank=False, null=False)
+    header = models.TextField(blank=False, null=False, default=">Gene")
     sequence = models.TextField()
     length = length = models.IntegerField(editable=False)
     gc_content = models.FloatField(editable=False, default=0.0)
@@ -70,6 +72,7 @@ class Gene(models.Model):
 class Peptide(models.Model):
     name = models.CharField(max_length=100, default="Peptide")
     gene = models.ForeignKey(Gene, on_delete=models.CASCADE)
+    header = models.TextField(blank=False, null=False, default=">Peptide")
     sequence = models.TextField()
     length = models.IntegerField(editable=False)
 
@@ -88,8 +91,13 @@ class Peptide(models.Model):
             return False
 
     def __str__(self):
-        return self.sequence
+        return self.name
 
 class Annotation(models.Model):
     gene = models.OneToOneField(Gene, on_delete=models.CASCADE, primary_key=True)
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, default=1)
+    date = models.DateTimeField(auto_now_add=True)
+    annotation = models.TextField(blank=False, null=False, editable=True, default="No annotation provided.")
+
+    def __str__(self):
+        return str(self.gene)
