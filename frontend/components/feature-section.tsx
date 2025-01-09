@@ -46,7 +46,7 @@ const features = [
 
 export function FeatureSection() {
   return (
-    <section className="relative overflow-hidden py-32">
+    <section className="relative overflow-hidden py-16">
       {/* Background Elements */}
       <div className="absolute inset-0 bg-gradient-to-b from-background via-background/50 to-background" />
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[1000px] bg-primary/5 rounded-full blur-3xl opacity-50" />
