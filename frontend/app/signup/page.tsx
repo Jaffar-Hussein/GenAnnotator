@@ -45,11 +45,11 @@ const getUsernameSuggestions = async (
   const code = Math.floor(Math.random() * 90 + 10);
 
   const suggestions = new Set([
-    `${first}${lastInitial}${code}`,      
-    `${firstInitial}${last}${code}`,      
-    `${first}${last}${code}`,             
-    `${lastInitial}${first}${code}`,      
-    `${firstInitial}${lastInitial}${code}` 
+    `${first}${lastInitial}${code}`,
+    `${firstInitial}${last}${code}`,
+    `${first}${last}${code}`,
+    `${lastInitial}${first}${code}`,
+    `${firstInitial}${lastInitial}${code}`,
   ]);
 
   return Array.from(suggestions);
@@ -57,6 +57,7 @@ const getUsernameSuggestions = async (
 
 export default function Signup() {
   const router = useRouter();
+  const setAuth = useAuthStore((state) => state.setAuth);
   const [activeTab, setActiveTab] = useState("personal");
   const [formData, setFormData] = useState({
     first_name: "",
@@ -112,8 +113,8 @@ export default function Signup() {
   const handleTabChange = (tab: string) => {
     if (validateTab(activeTab)) {
       setActiveTab(tab);
-      if (tab === 'account' && formData.first_name && formData.last_name) {
-        handleGetUsernameSuggestions()
+      if (tab === "account" && formData.first_name && formData.last_name) {
+        handleGetUsernameSuggestions();
       }
     }
   };
@@ -125,7 +126,7 @@ export default function Signup() {
       setActiveTab(tabs[currentIndex - 1]);
     }
   };
-  const { signup, isLoading: storeLoading, error: storeError, clearError } = useAuthStore();
+  const { signup } = useAuthStore();
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateTab("security")) return;
@@ -141,18 +142,49 @@ export default function Signup() {
         last_name: formData.last_name,
         phone_number: "+12125552368",
       });
+      const username = formData.username;
+      const password = formData.password;
 
-      setSuccessMessage("Account created successfully! Redirecting to login...");
-      
+      try {
+        const response = await fetch(
+          "http://localhost:8000/access/api/login/",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ username, password }),
+          }
+        );
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.detail || "Invalid credentials");
+        }
+        console.log(response);
+        const authData = await response.json();
+
+        setAuth(authData);
+      } catch (err) {
+        setErrors({
+          submit:
+            err instanceof Error
+              ? err.message
+              : "Failed to login to your new account. Please try again.",
+        });
+      }
+      setSuccessMessage("Account created successfully!");
+
       // Add a slight delay before redirecting to ensure the success message is seen
       setTimeout(() => {
-        router.push("/login");
-      }, 2000);
+        router.push("/dashboard");
+      }, 1000);
     } catch (error) {
       setErrors({
-        submit: error instanceof Error 
-          ? error.message 
-          : "Failed to create account. Please try again."
+        submit:
+          error instanceof Error
+            ? error.message
+            : "Failed to create account. Please try again.",
       });
     } finally {
       setIsLoading(false);
@@ -160,18 +192,21 @@ export default function Signup() {
   };
 
   const handleGetUsernameSuggestions = async () => {
-    if (!formData.first_name || !formData.last_name) return
+    if (!formData.first_name || !formData.last_name) return;
 
-    setIsLoadingSuggestions(true)
+    setIsLoadingSuggestions(true);
     try {
-      const suggestions = await getUsernameSuggestions(formData.first_name, formData.last_name)
-      setUsernameSuggestions(suggestions)
+      const suggestions = await getUsernameSuggestions(
+        formData.first_name,
+        formData.last_name
+      );
+      setUsernameSuggestions(suggestions);
     } catch (error) {
-      console.error('Failed to get username suggestions:', error)
+      console.error("Failed to get username suggestions:", error);
     } finally {
-      setIsLoadingSuggestions(false)
+      setIsLoadingSuggestions(false);
     }
-  }
+  };
 
   const getProgress = () => {
     const steps = ["personal", "account", "security"];
