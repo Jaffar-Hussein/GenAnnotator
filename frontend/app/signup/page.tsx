@@ -206,7 +206,7 @@ export default function Signup() {
     <div className="container relative min-h-screen flex-col items-center justify-center grid lg:max-w-none lg:grid-cols-2 lg:px-0">
       <Link
         href="/"
-        className="absolute top-4 left-4 md:top-8 md:left-8 z-40 inline-flex items-center justify-center rounded-lg border bg-background px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground"
+        className="absolute top-4 right-4 md:top-8 md:right-8  z-40 inline-flex items-center justify-center rounded-lg border bg-background px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground"
       >
         <ArrowLeft className="mr-2 h-4 w-4" />
         Back to Homepage
