@@ -37,23 +37,22 @@ const getUsernameSuggestions = async (
   firstName: string,
   lastName: string
 ): Promise<string[]> => {
-  await new Promise((resolve) => setTimeout(resolve, 1000));
+  const first = firstName.trim().toLowerCase();
+  const last = lastName.trim().toLowerCase();
+  const firstInitial = first[0];
+  const lastInitial = last[0];
 
-  const suggestions = [
-    `${firstName.toLowerCase()}${lastName.toLowerCase()}`,
-    `${firstName.toLowerCase()}.${lastName.toLowerCase()}`,
-    `${firstName.toLowerCase()}${lastName.toLowerCase()}${Math.floor(
-      Math.random() * 100
-    )}`,
-    `${firstName[0].toLowerCase()}${lastName.toLowerCase()}${Math.floor(
-      Math.random() * 1000
-    )}`,
-    `${lastName.toLowerCase()}${firstName[0].toLowerCase()}${Math.floor(
-      Math.random() * 100
-    )}`,
-  ];
+  const code = Math.floor(Math.random() * 90 + 10);
 
-  return suggestions;
+  const suggestions = new Set([
+    `${first}${lastInitial}${code}`,      
+    `${firstInitial}${last}${code}`,      
+    `${first}${last}${code}`,             
+    `${lastInitial}${first}${code}`,      
+    `${firstInitial}${lastInitial}${code}` 
+  ]);
+
+  return Array.from(suggestions);
 };
 
 export default function Signup() {
@@ -113,6 +112,9 @@ export default function Signup() {
   const handleTabChange = (tab: string) => {
     if (validateTab(activeTab)) {
       setActiveTab(tab);
+      if (tab === 'account' && formData.first_name && formData.last_name) {
+        handleGetUsernameSuggestions()
+      }
     }
   };
 
@@ -158,27 +160,18 @@ export default function Signup() {
   };
 
   const handleGetUsernameSuggestions = async () => {
-    if (!formData.first_name || !formData.last_name) {
-      setErrors({
-        ...errors,
-        username: "Please enter your first and last name",
-      });
-      return;
-    }
+    if (!formData.first_name || !formData.last_name) return
 
-    setIsLoadingSuggestions(true);
+    setIsLoadingSuggestions(true)
     try {
-      const suggestions = await getUsernameSuggestions(
-        formData.first_name,
-        formData.last_name
-      );
-      setUsernameSuggestions(suggestions);
+      const suggestions = await getUsernameSuggestions(formData.first_name, formData.last_name)
+      setUsernameSuggestions(suggestions)
     } catch (error) {
-      setErrors({ ...errors, username: "Failed to get username suggestions" });
+      console.error('Failed to get username suggestions:', error)
     } finally {
-      setIsLoadingSuggestions(false);
+      setIsLoadingSuggestions(false)
     }
-  };
+  }
 
   const getProgress = () => {
     const steps = ["personal", "account", "security"];
