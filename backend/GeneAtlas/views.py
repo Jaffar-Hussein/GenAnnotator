@@ -9,16 +9,20 @@ from .models import Genome, Gene, Peptide, Annotation
 
 class GenomeAPIView(APIView):
     def get(self, request):
-        params = {"name": request.data.get('name', None), 
-                  "species": request.data.get('species', None), 
-                  "description": request.data.get('description', None), 
-                  "length": request.data.get('length', None), 
-                  "gc_content": request.data.get('gc_content', None), 
-                  "annotation": request.data.get('annotation', None)}
         inf = Genome.objects.all()
-        query_results = inf.filter(**{k: v for k, v in params.items() if v is not None})
-        serializer = GenomeSerializer(query_results, many=True)
-        return Response(serializer.data)
+        if(request.GET.get('all', None) == 'true'):
+            serializer = GenomeSerializer(inf, many=True)
+            return Response(serializer.data)
+        else:
+            params = {"name": request.GET.get('name', None), 
+                    "species": request.GET.get('species', None), 
+                    "description": request.GET.get('description', None), 
+                    "length": request.GET.get('length', None), 
+                    "gc_content": request.GET.get('gc_content', None), 
+                    "annotation": request.GET.get('annotation', None)}
+            query_results = inf.filter(**{k: v for k, v in params.items() if v is not None})
+            serializer = GenomeSerializer(query_results, many=True)
+            return Response(serializer.data)
 
     def post(self, request):
         serializer = GenomeSerializer(data=request.data)
