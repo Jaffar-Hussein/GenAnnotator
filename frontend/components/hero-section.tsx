@@ -60,27 +60,15 @@ export function HeroSection() {
           transition={{ duration: 0.5, delay: 0.2 }}
           className="flex flex-col sm:flex-row justify-center gap-4"
         >
-          {isAuthenticated ? (
-            <Link href="/signup">
-              <Button
-                size="lg"
-                className="group bg-primary hover:bg-primary/90 text-primary-foreground"
-              >
-                Get Started
-                <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-              </Button>
-            </Link>
-          ) : (
-            <Link href="/signup">
-              <Button
-                size="lg"
-                className="group bg-primary hover:bg-primary/90 text-primary-foreground"
-              >
-                Get Started
-                <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-              </Button>
-            </Link>
-          )}
+          <Link href="/dashboard">
+            <Button
+              size="lg"
+              className="group bg-primary hover:bg-primary/90 text-primary-foreground"
+            >
+              Get Started
+              <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </Button>
+          </Link>
           <Link href="/documentation">
             <Button variant="outline" size="lg" className="group">
               Documentation
