@@ -53,9 +53,13 @@ export const FloatingNav = ({
   }, [lastScrollY]);
 
   const scrollToSection = (id: string) => {
+    
     const element = document.getElementById(id);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
+      const yOffset = -100;
+      const y = element.getBoundingClientRect().top + window.scrollY + yOffset;
+      window.scrollTo({ top: y, behavior: 'smooth' });
     }
   };
 
@@ -88,7 +92,7 @@ export const FloatingNav = ({
             <Button 
               variant="ghost" 
               className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors p-1 sm:p-2"
-              onClick={() => scrollToSection('contact')}
+              onClick={() => scrollToSection('footer')}
             >
               Contact
             </Button>

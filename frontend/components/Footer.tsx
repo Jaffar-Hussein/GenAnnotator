@@ -1,7 +1,7 @@
 
 export function Footer() {
   return (
-    <footer className="bg-gradient-to-t from-indigo-50 to-white dark:from-indigo-950 dark:to-gray-900 border-t border-indigo-100 dark:border-indigo-900">
+    <footer id="footer" className="bg-gradient-to-t from-indigo-50 to-white dark:from-indigo-950 dark:to-gray-900 border-t border-indigo-100 dark:border-indigo-900">
       <div className="container mx-auto px-4 py-12">
         <div className="flex flex-col md:flex-row justify-between items-center space-y-6 md:space-y-0">
           <div className="text-center md:text-left">
