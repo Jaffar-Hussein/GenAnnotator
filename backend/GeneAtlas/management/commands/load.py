@@ -10,15 +10,27 @@ class Command(BaseCommand):
 
     def parser(description: str):
 
-        annotation = {}
+        header, annotation = {}, {}
 
         key = None
 
         all_inf = description.split()
 
+        seq_inf = all_inf[2].split(":")
+
+        header["id"] = all_inf[0]
+
+        header["type"] = all_inf[1]
+
         if len(all_inf) > 3:
 
-            annotation["strand"] = (all_inf[2].split(":")[-1])
+            header["identifier"] = all_inf[0] + " " + all_inf[1] + " " + ":".join(seq_inf[:-1])
+
+            header["start"] = seq_inf[-3]
+
+            header["end"] = seq_inf[-2]
+
+            annotation["strand"] = (seq_inf[-1])
 
             for inf in all_inf[3:]:
                 if((":" in inf) and  (not "description" in annotation)):
@@ -32,7 +44,15 @@ class Command(BaseCommand):
                     if(key == "description"):
                         annotation[key] = annotation[key] + " " + inf
         
-        return annotation
+        else:
+
+            header["identifier"] =  description
+
+            header["start"] = seq_inf[-2]
+
+            header["end"] = seq_inf[-1]
+        
+        return [header, annotation]
 
     def handle(self, *args, **kwargs):
 
@@ -73,17 +93,17 @@ class Command(BaseCommand):
                     for seq_record in SeqIO.parse(cds_file, "fasta"):
                         kwargs_description = Command.parser(seq_record.description)
                         genome_instance = Genome.objects.get(name = genome)
-                        Gene(name = seq_record.id, genome = genome_instance, header = seq_record.description, sequence = str(seq_record.seq), start = 0, end = len(seq_record.seq), annotated = (len(kwargs_description) > 0)).save()
-                        if(len(kwargs_description) > 0):
-                            GeneAnnotation(gene_instance = Gene.objects.get(name = seq_record.id), **kwargs_description).save()
+                        Gene(name = seq_record.id, genome = genome_instance, header = kwargs_description[0]["identifier"], sequence = str(seq_record.seq), start = kwargs_description[0]["start"], end = kwargs_description[0]["end"], annotated = (len(kwargs_description[1]) > 0)).save()
+                        if(len(kwargs_description[1]) > 0):
+                            GeneAnnotation(gene_instance = Gene.objects.get(name = seq_record.id), **kwargs_description[1]).save()
 
                     # Parse Peptide
                     for seq_record in SeqIO.parse(peptide_file, "fasta"):
                         kwargs_description = Command.parser(seq_record.description)
                         gene_instance = Gene.objects.get(name = seq_record.id)
-                        Peptide(name = seq_record.id, gene = gene_instance, header = seq_record.description, sequence = str(seq_record.seq)).save()
-                        if(len(kwargs_description) > 0):
-                            PeptideAnnotation(peptide = Peptide.objects.get(name = seq_record.id), annotation = GeneAnnotation.objects.get(gene_instance = gene_instance), transcript = kwargs_description["transcript"]).save()
+                        Peptide(name = seq_record.id, gene = gene_instance, header = kwargs_description[0]["identifier"], sequence = str(seq_record.seq)).save()
+                        if(len(kwargs_description[1]) > 0):
+                            PeptideAnnotation(peptide = Peptide.objects.get(name = seq_record.id), annotation = GeneAnnotation.objects.get(gene_instance = gene_instance), transcript = (kwargs_description[1])["transcript"]).save()
 
             self.stdout.write("Data loaded successfully...")
         
