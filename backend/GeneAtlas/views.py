@@ -1,9 +1,9 @@
 from django.shortcuts import render
-from .serializers import GenomeSerializer, GeneSerializer, PeptideSerializer, AnnotationSerializer
+from .serializers import GenomeSerializer, GeneSerializer, PeptideSerializer, GeneAnnotationSerializer, PeptideAnnotationSerializer
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .models import Genome, Gene, Peptide, Annotation
+from .models import Genome, Gene, Peptide, GeneAnnotation, PeptideAnnotation
 
 # Create your views here.
 
@@ -52,7 +52,7 @@ class GeneAPIView(APIView):
         if(request.GET.get('all', None) == 'true'):
             if(params["genome"] is not None):
                 query_results = inf.filter(genome=params["genome"])
-                serializer = GenomeSerializer(query_results, many=True)
+                serializer = GeneSerializer(query_results, many=True)
             else:
                 return Response({"error": "No genome specified."}, status=status.HTTP_400_BAD_REQUEST)
         else:
@@ -116,3 +116,11 @@ class PeptideAPIView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class AnnotationAPIView(APIView):
+
+    def get(self, request):
+        pass
+    
+    def post(self, request):
+        pass

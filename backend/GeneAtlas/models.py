@@ -70,7 +70,7 @@ class Gene(models.Model):
         return self.name
     
 class Peptide(models.Model):
-    name = models.CharField(max_length=100, default="Peptide")
+    name = models.CharField(max_length=100, default="Peptide", primary_key=True)
     gene = models.ForeignKey(Gene, on_delete=models.CASCADE)
     header = models.TextField(blank=False, null=False, default=">Peptide")
     sequence = models.TextField()
@@ -92,12 +92,29 @@ class Peptide(models.Model):
 
     def __str__(self):
         return self.name
-
-class Annotation(models.Model):
-    gene = models.OneToOneField(Gene, on_delete=models.CASCADE, primary_key=True)
+    
+class GeneAnnotation(models.Model):
+    gene_instance = models.OneToOneField(Gene, on_delete=models.CASCADE, primary_key=True)
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, default=1)
     date = models.DateTimeField(auto_now_add=True)
     annotation = models.TextField(blank=False, null=False, editable=True, default="No annotation provided.")
+    strand = models.IntegerField(default=1)
+    gene = models.TextField(blank=False, null=False, editable=True, default="No gene provided.")
+    gene_biotype = models.TextField(blank=False, null=False, editable=True, default="No gene biotype provided.")
+    transcript_biotype = models.TextField(blank=False, null=False, editable=True, default="No transcript biotype provided.")
+    gene_symbol = models.TextField(blank=False, null=False, editable=True, default="No gene symbol provided.")
+    description = models.TextField(blank=False, null=False, editable=True, default="No description provided.")
+
 
     def __str__(self):
-        return str(self.gene)
+        return f"{str(self.gene)}, {self.user}, {self.date}"
+
+class PeptideAnnotation(models.Model):
+    peptide = models.OneToOneField(Peptide, on_delete=models.CASCADE, primary_key=True)
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, default=1)
+    date = models.DateTimeField(auto_now_add=True)
+    annotation = models.OneToOneField(GeneAnnotation,blank=False, null=False, editable=True, on_delete=models.CASCADE, default="No annotation provided.")
+    transcript = models.TextField(blank=False, null=False, editable=True, default="No transcript provided.")
+
+    def __str__(self):
+        return f"{str(self.peptide)}, {self.user}, {self.date}"

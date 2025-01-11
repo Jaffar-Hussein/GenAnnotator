@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Genome, Gene, Peptide, Annotation
+from .models import Genome, Gene, Peptide, GeneAnnotation, PeptideAnnotation
 
 class GenomeSerializer(serializers.ModelSerializer):
     sequence = serializers.CharField(write_only=True)
@@ -34,8 +34,12 @@ class PeptideSerializer(serializers.ModelSerializer):
         model = Peptide
         fields = '__all__'
 
-class AnnotationSerializer(serializers.ModelSerializer):
+class GeneAnnotationSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Annotation
+        model = GeneAnnotation
         fields = '__all__'
 
+class PeptideAnnotationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PeptideAnnotation
+        fields = '__all__'
