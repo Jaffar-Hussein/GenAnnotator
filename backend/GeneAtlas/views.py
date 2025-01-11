@@ -120,7 +120,18 @@ class PeptideAPIView(APIView):
 class AnnotationAPIView(APIView):
 
     def get(self, request):
-        pass
-    
+        inf_annotation_gene = GeneAnnotation.objects.all()
+        inf_annotation_peptide = PeptideAnnotation.objects.all()
+        params = {"gene_instance": request.GET.get('gene_instance', None), 
+                }
+        if(all(v is None for v in params.values())):
+            return Response({"error": "No gene provided."}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            query_results_gene_annotation = inf_annotation_gene.get(**{k: v for k, v in params.items()})
+            query_results_peptide_annotation = inf_annotation_peptide.get(annotation=query_results_gene_annotation)
+        
+        return Response({"gene": GeneAnnotationSerializer(query_results_gene_annotation).data, "peptide": PeptideAnnotationSerializer(query_results_peptide_annotation).data})
+
+
     def post(self, request):
         pass
