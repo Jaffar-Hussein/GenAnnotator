@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from AccessControl.models import CustomUser
 from .models import Genome, Gene, Peptide, GeneAnnotation, PeptideAnnotation
 
 class GenomeSerializer(serializers.ModelSerializer):
@@ -39,7 +40,17 @@ class GeneAnnotationSerializer(serializers.ModelSerializer):
         model = GeneAnnotation
         fields = '__all__'
 
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation["user"] = instance.user.username
+        return representation
+
 class PeptideAnnotationSerializer(serializers.ModelSerializer):
     class Meta:
         model = PeptideAnnotation
         fields = '__all__'
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation["user"] = instance.user.username
+        return representation

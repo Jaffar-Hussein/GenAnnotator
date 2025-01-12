@@ -4,6 +4,8 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import Genome, Gene, Peptide, GeneAnnotation, PeptideAnnotation
+from django.db import transaction
+from AccessControl.models import CustomUser
 
 # Create your views here.
 
@@ -134,4 +136,43 @@ class AnnotationAPIView(APIView):
 
 
     def post(self, request):
-        pass
+        try:
+
+            with transaction.atomic():
+
+                gene_annotation_data = {
+                    'gene_instance': request.data.get('gene_instance'),
+                    'user': CustomUser.objects.get(username=request.data.get('user')).id,
+                    'strand': request.data.get('strand'),
+                    'gene': request.data.get('gene'),
+                    'gene_biotype': request.data.get('gene_biotype'),
+                    'transcript_biotype': request.data.get('transcript_biotype'),
+                    'gene_symbol': request.data.get('gene_symbol'),
+                    'description': request.data.get('description')
+                }
+                
+                gene_serializer = GeneAnnotationSerializer(data=gene_annotation_data)
+
+                if not gene_serializer.is_valid():
+                    return Response(gene_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                
+                gene_annotation = gene_serializer.save()
+
+                peptide_annotation_data = {
+                    'peptide': request.data.get('peptide'),
+                    'user': CustomUser.objects.get(username=request.data.get('user')).id,
+                    'annotation': gene_annotation,
+                    'transcript': request.data.get('transcript')
+                }
+                
+                peptide_serializer = PeptideAnnotationSerializer(data=peptide_annotation_data)
+
+                if not peptide_serializer.is_valid():
+                    return Response(peptide_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                
+                peptide_serializer.save()
+
+                return Response({'gene_annotation': gene_serializer.data,'peptide_annotation': peptide_serializer.data}, status=status.HTTP_201_CREATED)
+    
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
