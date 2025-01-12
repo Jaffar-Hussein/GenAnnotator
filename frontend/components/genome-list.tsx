@@ -17,25 +17,25 @@ const GenomeListView = ({ genomes }) => {
   };
 
   return (
-    <Card className="border-purple-200/20 dark:border-purple-800/20">
-      <div className="divide-y divide-purple-100 dark:divide-purple-800/20">
+    <Card className="border-indigo-200/20 dark:border-indigo-800/20">
+      <div className="divide-y divide-indigo-100 dark:divide-indigo-800/20">
         {genomes.map((genome) => (
           <Link 
             key={genome.id} 
             href={`/genomes/${genome.id}`}
-            className="block group focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 rounded-lg"
+            className="block group focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 rounded-lg"
           >
-            <div className="flex items-center gap-6 p-6 transition-colors hover:bg-purple-50/50 dark:hover:bg-purple-900/20">
+            <div className="flex items-center gap-6 p-6 transition-colors hover:bg-indigo-50/50 dark:hover:bg-indigo-900/20">
               {/* Icon Section */}
-              <div className="shrink-0 w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-100 to-purple-50 dark:from-purple-900/50 dark:to-purple-800/30 flex items-center justify-center shadow-sm group-hover:shadow transition-shadow">
-                <Database className="h-8 w-8 text-purple-600 dark:text-purple-400" />
+              <div className="shrink-0 w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-100 to-indigo-50 dark:from-indigo-900/50 dark:to-indigo-800/30 flex items-center justify-center shadow-sm group-hover:shadow transition-shadow">
+                <Database className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />
               </div>
 
               {/* Content Section */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors truncate">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 group-hover:text-indigo-700 dark:group-hover:text-indigo-300 transition-colors truncate">
                       {genome.name}
                     </h3>
                     <p className="text-sm text-gray-500 dark:text-gray-400 truncate mt-1">
@@ -53,12 +53,12 @@ const GenomeListView = ({ genomes }) => {
                 {/* Stats Section */}
                 <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
                   <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
-                    <Dna className="h-4 w-4 text-purple-500" />
+                    <Dna className="h-4 w-4 text-indigo-500" />
                     <span>{genome.basePairs.toLocaleString()} bp</span>
                   </div>
 
                   <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
-                    <Activity className="h-4 w-4 text-purple-500" />
+                    <Activity className="h-4 w-4 text-indigo-500" />
                     <span>GC: {genome.gcPercentage}</span>
                   </div>
 
@@ -81,7 +81,7 @@ const GenomeListView = ({ genomes }) => {
 
               {/* Arrow Section */}
               <div className="shrink-0 flex items-center self-center">
-                <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-purple-500 dark:text-gray-600 dark:group-hover:text-purple-400 transform group-hover:translate-x-1 transition-all" />
+                <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-indigo-500 dark:text-gray-600 dark:group-hover:text-indigo-400 transform group-hover:translate-x-1 transition-all" />
               </div>
             </div>
           </Link>

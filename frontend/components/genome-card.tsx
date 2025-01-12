@@ -18,13 +18,13 @@ const GenomeCard = ({ genome }) => {
   
     return (
       <Link href={`/genomes/${genome.id}`} className="group block">
-        <Card className="relative overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-lg border border-purple-200/50 dark:border-purple-800/50 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm">
-          <div className="absolute inset-0 bg-gradient-to-br from-purple-50/50 to-transparent dark:from-purple-950/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        <Card className="relative overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-lg border border-indigo-200/50 dark:border-indigo-800/50 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm">
+          <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/50 to-transparent dark:from-indigo-950/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           
           <CardContent className="p-6 space-y-4 relative">
             <div className="flex items-start justify-between gap-4">
               <div className="space-y-1 min-w-0">
-                <CardTitle className="text-lg font-semibold text-purple-700 dark:text-purple-300 group-hover:text-purple-800 dark:group-hover:text-purple-200 transition-colors truncate">
+                <CardTitle className="text-lg font-semibold text-indigo-700 dark:text-indigo-300 group-hover:text-indigo-800 dark:group-hover:text-indigo-200 transition-colors truncate">
                   {genome.name}
                 </CardTitle>
                 <CardDescription className="text-gray-600 dark:text-gray-400 truncate">
@@ -37,8 +37,8 @@ const GenomeCard = ({ genome }) => {
             </div>
   
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2 p-3 rounded-lg bg-purple-50/50 dark:bg-purple-950/50">
-                <div className="flex items-center gap-2 text-sm text-purple-600 dark:text-purple-300">
+              <div className="space-y-2 p-3 rounded-lg bg-indigo-50/50 dark:bg-indigo-950/50">
+                <div className="flex items-center gap-2 text-sm text-indigo-600 dark:text-indigo-300">
                   <Database className="h-4 w-4" />
                   <span className="font-medium">Base Pairs</span>
                 </div>
@@ -46,8 +46,8 @@ const GenomeCard = ({ genome }) => {
                   {genome.basePairs.toLocaleString()}
                 </p>
               </div>
-              <div className="space-y-2 p-3 rounded-lg bg-purple-50/50 dark:bg-purple-950/50">
-                <div className="flex items-center gap-2 text-sm text-purple-600 dark:text-purple-300">
+              <div className="space-y-2 p-3 rounded-lg bg-indigo-50/50 dark:bg-indigo-950/50">
+                <div className="flex items-center gap-2 text-sm text-indigo-600 dark:text-indigo-300">
                   <span className="font-medium">GC Content</span>
                 </div>
                 <p className="text-sm text-gray-700 dark:text-gray-300">

@@ -162,7 +162,7 @@ export default function Genomes() {
           className="space-y-8"
         >
           {/* Scientific Header with Stats */}
-          <div className="rounded-2xl bg-white dark:bg-gray-900 shadow-sm border border-purple-100/20 dark:border-purple-900/20 p-6 lg:p-8">
+          <div className="rounded-2xl bg-white dark:bg-gray-900 shadow-sm border border-indigo-100/20 dark:border-indigo-900/20 p-6 lg:p-8">
             <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
               <div className="space-y-4">
                 <div className="space-y-2">
@@ -177,12 +177,12 @@ export default function Genomes() {
 
                 {/* Quick Stats */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 pt-4">
-                  <div className="p-6 rounded-xl bg-gradient-to-br from-purple-50 to-purple-100/50 dark:from-purple-900/50 dark:to-purple-800/30 border border-purple-100/50 dark:border-purple-700/20 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="p-6 rounded-xl bg-gradient-to-br from-indigo-50 to-indigo-100/50 dark:from-indigo-900/50 dark:to-indigo-800/30 border border-indigo-100/50 dark:border-indigo-700/20 shadow-sm hover:shadow-md transition-shadow">
                     <div className="flex flex-col">
-                      <p className="text-sm font-medium text-purple-600 dark:text-purple-300">
+                      <p className="text-sm font-medium text-indigo-600 dark:text-indigo-300">
                         Total Genomes
                       </p>
-                      <p className="mt-2 text-3xl font-semibold text-purple-700 dark:text-purple-200">
+                      <p className="mt-2 text-3xl font-semibold text-indigo-700 dark:text-indigo-200">
                         {genomes.length}
                       </p>
                     </div>
@@ -231,7 +231,7 @@ export default function Genomes() {
 
               {/* Action Buttons */}
               <div className="flex flex-col gap-3">
-                <Button className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 text-white shadow-lg shadow-purple-500/20" onClick={() => setIsUploadModalOpen(true)}>
+                <Button className="w-full sm:w-auto bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-700 hover:to-indigo-600 text-white shadow-lg shadow-indigo-500/20" onClick={() => setIsUploadModalOpen(true)}>
                   <Upload className="mr-2 h-4 w-4" />
                   Upload Genome
                 </Button>
@@ -240,7 +240,7 @@ export default function Genomes() {
           </div>
 
           {/* Search & Filters - Modernized */}
-          <Card className="border border-purple-100/20 dark:border-purple-900/20 shadow-sm">
+          <Card className="border border-indigo-100/20 dark:border-indigo-900/20 shadow-sm">
             <CardContent className="p-6">
               <div className="flex flex-col lg:flex-row gap-4 items-stretch">
                 <div className="relative flex-1 w-full">
@@ -305,7 +305,7 @@ export default function Genomes() {
                 {Array.from({ length: 6 }).map((_, i) => (
                   <Card
                     key={i}
-                    className="border-purple-100/20 dark:border-purple-900/20 hover:shadow-lg transition-all duration-300"
+                    className="border-indigo-100/20 dark:border-indigo-900/20 hover:shadow-lg transition-all duration-300"
                   >
                     <CardHeader className="pb-4">
                       <div className="flex items-start justify-between">
