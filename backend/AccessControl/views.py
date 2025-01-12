@@ -13,6 +13,8 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from .serializers import SignUpSerializer, LoginSerializer
 from .models import CustomUser
+from GeneAtlas.models import GeneAnnotation
+from GeneAtlas.serializers import GeneAnnotationSerializer
 from allauth.account.utils import send_email_confirmation
 
 
@@ -52,8 +54,10 @@ class LoginAPIView(APIView):
                     'email': user.email,
                     'first_name': user.first_name,
                     'last_name': user.last_name,
-                    'phone_number': user.phone_number.as_e164,
+                    #'phone_number': (user.phone_number).as_e164,
                     'role': user.role,
+                    'is_superuser': user.is_superuser,
+                    'is_staff': user.is_staff,
                     'refresh': str(refresh),
                     'access': str(refresh.access_token),
                 }, status=status.HTTP_200_OK)
