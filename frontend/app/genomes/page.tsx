@@ -35,7 +35,7 @@ import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import GenomeCard from "@/components/genome-card";
 import GenomeListView from "@/components/genome-list";
-
+import  UploadGenomeModal  from "@/components/ui/genome-upload";
 /**
  * Backend returns an array of these fields:
  * {
@@ -86,6 +86,7 @@ export default function Genomes() {
   const [genomes, setGenomes] = useState<Genome[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
   // Fetch Genomes
   useEffect(() => {
@@ -151,6 +152,7 @@ export default function Genomes() {
     });
 
   return (
+    <>
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-950 dark:to-gray-900">
       <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <motion.div
@@ -229,7 +231,7 @@ export default function Genomes() {
 
               {/* Action Buttons */}
               <div className="flex flex-col gap-3">
-                <Button className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 text-white shadow-lg shadow-purple-500/20">
+                <Button className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 text-white shadow-lg shadow-purple-500/20" onClick={() => setIsUploadModalOpen(true)}>
                   <Upload className="mr-2 h-4 w-4" />
                   Upload Genome
                 </Button>
@@ -352,8 +354,15 @@ export default function Genomes() {
           ) : (
             <GenomeListView genomes={filteredGenomes} />
           )}
+         
         </motion.div>
       </div>
+      
     </div>
+    <UploadGenomeModal 
+        open={isUploadModalOpen}
+        onOpenChange={setIsUploadModalOpen}
+      />
+  </>
   );
 }
