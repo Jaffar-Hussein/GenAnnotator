@@ -8,6 +8,8 @@ import {
   Search,
   Info,
   Loader,
+  Copy,
+  Check,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
@@ -28,6 +30,17 @@ const GenomeViewer = ({ genomeName = "Escherichia_coli_cft073" }) => {
   const [genes, setGenes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [copied, setCopied] = useState(false);
+
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(selectedGene.sequence);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy text:", err);
+    }
+  };
 
   // Load data on component mount
   useEffect(() => {
@@ -246,6 +259,14 @@ const GenomeViewer = ({ genomeName = "Escherichia_coli_cft073" }) => {
                           </p>
                           <p className="text-white dark:text-gray-200">
                             {(gene.end - gene.start + 1).toLocaleString()} bp
+                          </p>
+                        </div>
+                        <div className="col-span-2">
+                          <p className="text-gray-400 dark:text-gray-500">
+                            Sequence
+                          </p>
+                          <p className="bg-gray-900 rounded font-mono text-xs text-white overflow-hidden whitespace-nowrap text-ellipsis ">
+                            {gene.sequence}
                           </p>
                         </div>
                       </div>
@@ -632,13 +653,36 @@ const GenomeViewer = ({ genomeName = "Escherichia_coli_cft073" }) => {
 
                     {/* Header Information */}
                     <div className="bg-gray-900 dark:bg-black rounded-lg p-4">
-                      <h4 className="text-sm font-medium text-gray-200 dark:text-gray-300 mb-3">
-                        Header Information
-                      </h4>
-                      <div className="bg-gray-800 dark:bg-gray-900 rounded p-3 overflow-x-auto">
-                        <code className="text-xs text-gray-200 dark:text-gray-300 font-mono break-all">
-                          {selectedGene.header}
-                        </code>
+                      <div className="flex justify-between items-center mb-3">
+                        <h4 className="text-sm font-medium text-gray-200 dark:text-gray-300">
+                          Sequence Information
+                        </h4>
+                        <button
+                          onClick={copyToClipboard}
+                          className="flex items-center gap-1 px-2 py-1 text-xs rounded
+            bg-gray-800 dark:bg-gray-900 hover:bg-gray-700 dark:hover:bg-gray-800
+            text-gray-300 transition-colors duration-200"
+                        >
+                          {copied ? (
+                            <>
+                              <Check size={14} />
+                              <span>Copied!</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy size={14} />
+                              <span>Copy</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+
+                      <div className="bg-gray-800 dark:bg-gray-900 rounded-lg p-3 relative">
+                        <div className="overflow-x-auto h-20">
+                          <code className="text-xs leading-4 text-gray-200 dark:text-gray-300 font-mono whitespace-pre-wrap break-all block">
+                            {selectedGene.sequence}
+                          </code>
+                        </div>
                       </div>
                     </div>
                   </div>
