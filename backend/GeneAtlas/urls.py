@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import GenomeAPIView, GeneAPIView, PeptideAPIView, AnnotationAPIView, StatsAPIView
+from .views import GenomeAPIView, GeneAPIView, PeptideAPIView, AnnotationAPIView, StatsAPIView, DownloadAPIView
 
 urlpatterns = [
     path("api/genome/", GenomeAPIView.as_view(), name="genome_api"),
@@ -7,4 +7,5 @@ urlpatterns = [
     path("api/peptide/", PeptideAPIView.as_view(), name="peptide_api"),
     path("api/annotation/", AnnotationAPIView.as_view(), name="annotation_api"),
     path("api/stats/", StatsAPIView.as_view(), name="stats_api"),
+    path("api/download/", DownloadAPIView.as_view(), name="download_api"),
 ]
