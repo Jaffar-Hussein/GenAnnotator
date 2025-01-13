@@ -4,7 +4,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import Genome, Gene, Peptide, GeneAnnotation, PeptideAnnotation
-from django.db import transaction
+from django.db import transaction, models as db_models
 from AccessControl.models import CustomUser
 
 # Create your views here.
@@ -124,15 +124,20 @@ class AnnotationAPIView(APIView):
     def get(self, request):
         inf_annotation_gene = GeneAnnotation.objects.all()
         inf_annotation_peptide = PeptideAnnotation.objects.all()
-        params = {"gene_instance": request.GET.get('gene_instance', None), 
+        params = {"gene_instance": request.GET.get('gene_instance', None),
+                  "user": request.GET.get('user', None),
                 }
         if(all(v is None for v in params.values())):
-            return Response({"error": "No gene provided."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "No query parameters provided."}, status=status.HTTP_400_BAD_REQUEST)
         else:
-            query_results_gene_annotation = inf_annotation_gene.get(**{k: v for k, v in params.items()})
-            query_results_peptide_annotation = inf_annotation_peptide.get(annotation=query_results_gene_annotation)
+            if(params["user"] is not None):
+                params["user"] = CustomUser.objects.get(username=params["user"]).id
+            query_results_gene_annotation = inf_annotation_gene.filter(**{k: v for k, v in params.items() if v is not None})
+            gene_serializer = GeneAnnotationSerializer(query_results_gene_annotation, many=True)
+            query_results_peptide_annotation = inf_annotation_peptide.filter(annotation__in=[g["gene_instance"] for g in gene_serializer.data])
+            peptide_serializer = PeptideAnnotationSerializer(query_results_peptide_annotation, many=True)
         
-        return Response({"gene": GeneAnnotationSerializer(query_results_gene_annotation).data, "peptide": PeptideAnnotationSerializer(query_results_peptide_annotation).data})
+        return Response({"gene": sorted(gene_serializer.data, key=lambda x: x['gene_instance']), "peptide": sorted(peptide_serializer.data, key=lambda x: x['annotation'])})
 
 
     def post(self, request):
@@ -176,3 +181,40 @@ class AnnotationAPIView(APIView):
     
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+class StatsAPIView(APIView):
+
+    def get(self, request):
+        user = request.GET.get("user", None)
+        if(user is not None):
+            user_pk = CustomUser.objects.get(username=user).id
+            query = GeneAnnotation.objects.filter(user=user_pk)
+            return Response({"annotation_count": query.count(),
+                             "annotation": [a["gene_instance"] for a in GeneAnnotationSerializer(query, many=True).data]})
+        else:
+            genome_count = Genome.objects.count()
+            query_gene_by_genome = Gene.objects.values('genome').annotate(total=db_models.Count('genome'), annotated=db_models.Sum('annotated', output_field=db_models.IntegerField()))
+            genome_fully_annotated_count = Genome.objects.filter(annotation=True).count()
+            genome_waiting_annotated_count = len([g["genome"] for g in Gene.objects.values('genome').annotate(total=db_models.Sum('annotated', output_field=db_models.IntegerField())) if g["total"] == 0])
+            genome_incomplete_annotated_count = len([g["genome"] for g in query_gene_by_genome if g["annotated"] == g["total"]])
+            gene_count = Gene.objects.count()
+            peptide_count = Peptide.objects.count()
+            gene_annotation_count = GeneAnnotation.objects.count()
+            peptide_annotation_count = PeptideAnnotation.objects.count()
+            return Response({"genome_count": genome_count, 
+                            "genome_fully_annotated_count": genome_fully_annotated_count, 
+                            "genome_waiting_annotated_count": genome_waiting_annotated_count, 
+                            "genome_incomplete_annotated_count": genome_incomplete_annotated_count,
+                            "gene_by_genome": query_gene_by_genome,
+                            "gene_count": gene_count, "peptide_count": peptide_count, 
+                            "gene_annotation_count": gene_annotation_count, 
+                            "peptide_annotation_count": peptide_annotation_count})
+    
+    def post(self, request):
+        return Response({"error": "POST request not supported."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    
+    def put(self, request):
+        return Response({"error": "PUT request not supported."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    
+    def delete(self, request):
+        return Response({"error": "DELETE request not supported."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
