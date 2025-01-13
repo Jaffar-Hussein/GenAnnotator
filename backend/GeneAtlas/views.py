@@ -1,5 +1,7 @@
 from django.shortcuts import render
 from django.urls import reverse
+from GeneAtlas import urls
+from django.views.generic import CreateView
 from .serializers import GenomeSerializer, GeneSerializer, PeptideSerializer, GeneAnnotationSerializer, PeptideAnnotationSerializer
 from rest_framework import status, request
 from rest_framework.response import Response
@@ -9,10 +11,23 @@ from django.db import transaction, models as db_models
 from django.http import HttpResponse
 from AccessControl.models import CustomUser
 import csv
-from urllib.parse import urlencode
 import requests
 
 # Create your views here.
+
+class HomeView(CreateView):
+
+    def home_rendering(request):
+        endpoints = []
+        print('List of URL patterns:')
+        for pattern in urls.urlpatterns:
+            if(hasattr(pattern, 'name') and hasattr(pattern, 'pattern') and pattern.name != 'home'):
+                endpoints.append({"name": pattern.name.removesuffix("_api"), "url": pattern.pattern})
+        postman_examples = [
+            {"name": "Get All Genomes", "request": "GET /data/api/genome/?all=true"},
+            {"name": "Genome Query", "request": "GET /data/api/genome/?name=Escherichia_coli_cft073"},
+        ]
+        return render(request, "home.html", {"endpoints": endpoints, "postman_examples": postman_examples,"api_version": "v1.0"})
 
 class GenomeAPIView(APIView):
     def get(self, request):

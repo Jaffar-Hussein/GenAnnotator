@@ -1,18 +1,36 @@
 <!-- templates/home.html -->
 {% extends "base.html" %}
 
-{% block title %}Home{% endblock %}
+{% block title %}API Home{% endblock %}
 
 {% block content %}
-{% if user.is_authenticated %}
-<p>Welcome to GenAnnotator {{ user.username }}!</p>
-<form action="{% url 'logout' %}" method="post">
-    {% csrf_token %}
-    <button type="submit">Log Out</button>
-  </form>
-{% else %}
-<p>Welcome to GenAnnotator !</p>
-<a href="{% url 'login' %}">Log In</a>
-<a href="{% url 'signup' %}">Sign Up</a>
-{% endif %}
+<header>
+    <h1>GenAnnotator</h1>
+    <p>Welcome to GenAnnotator API!</p>
+</header>
+<main>
+    <h2>API Version: {{ api_version }}</h2>
+    <h2>Available Endpoints</h2>
+    <ul>
+        {% for endpoint in endpoints %}
+        <li class="endpoint">
+            <strong>{{ endpoint.name }}</strong>: 
+            <code>{{ endpoint.url }}</code>
+        </li>
+        {% endfor %}
+    </ul>
+    <h2>Postman Example Requests</h2>
+    <ul>
+        {% for example in postman_examples %}
+        <li class="postman-example">
+            <strong>{{ example.name }}</strong>: 
+            <code>{{ example.request }}</code>
+            <p>{{ example.description }}</p>
+        </li>
+        {% endfor %}
+    </ul>
+</main>
+<footer>
+    <p>Powered by Django</p>
+</footer>
 {% endblock %}
