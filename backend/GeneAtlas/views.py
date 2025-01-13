@@ -1,11 +1,16 @@
 from django.shortcuts import render
+from django.urls import reverse
 from .serializers import GenomeSerializer, GeneSerializer, PeptideSerializer, GeneAnnotationSerializer, PeptideAnnotationSerializer
-from rest_framework import status
+from rest_framework import status, request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import Genome, Gene, Peptide, GeneAnnotation, PeptideAnnotation
 from django.db import transaction, models as db_models
+from django.http import HttpResponse
 from AccessControl.models import CustomUser
+import csv
+from urllib.parse import urlencode
+import requests
 
 # Create your views here.
 
@@ -44,6 +49,7 @@ class GenomeAPIView(APIView):
 class GeneAPIView(APIView):
     def get(self, request):
         inf = Gene.objects.all()
+        print(request)
         params = {"name": request.GET.get('name', None), 
                 "genome": request.GET.get('genome', None), 
                 "description": request.GET.get('description', None), 
@@ -196,7 +202,7 @@ class StatsAPIView(APIView):
             query_gene_by_genome = Gene.objects.values('genome').annotate(total=db_models.Count('genome'), annotated=db_models.Sum('annotated', output_field=db_models.IntegerField()))
             genome_fully_annotated_count = Genome.objects.filter(annotation=True).count()
             genome_waiting_annotated_count = len([g["genome"] for g in Gene.objects.values('genome').annotate(total=db_models.Sum('annotated', output_field=db_models.IntegerField())) if g["total"] == 0])
-            genome_incomplete_annotated_count = len([g["genome"] for g in query_gene_by_genome if g["annotated"] == g["total"]])
+            genome_incomplete_annotated_count = len([g["genome"] for g in query_gene_by_genome if g["annotated"] < g["total"] and g["annotated"] > 0])
             gene_count = Gene.objects.count()
             peptide_count = Peptide.objects.count()
             gene_annotation_count = GeneAnnotation.objects.count()
@@ -209,6 +215,65 @@ class StatsAPIView(APIView):
                             "gene_count": gene_count, "peptide_count": peptide_count, 
                             "gene_annotation_count": gene_annotation_count, 
                             "peptide_annotation_count": peptide_annotation_count})
+    
+    def post(self, request):
+        return Response({"error": "POST request not supported."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    
+    def put(self, request):
+        return Response({"error": "PUT request not supported."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    
+    def delete(self, request):
+        return Response({"error": "DELETE request not supported."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    
+class DownloadAPIView(APIView):
+
+    def download(data: str, api: str, filters: dict, fields: list):
+        response = HttpResponse(content_type='text/plain')
+        query_params = filters
+        if(query_params is not None):
+            endpoint = "http://127.0.0.1:8000" + reverse(api)
+            response_endpoint = requests.get(endpoint, params=query_params)
+            if(response_endpoint.status_code == 200 and len(response_endpoint.json()) > 0):
+                response['Content-Disposition'] = f'attachment; filename="{data}.txt"'
+                writer = csv.writer(response, delimiter=';')
+                if(fields is not None):
+                    writer.writerow(fields)
+                    for row in response_endpoint.json():
+                        writer.writerow([row[f] for f in fields])
+                else:
+                    writer.writerow(response_endpoint.json()[0].keys())
+                    for row in response_endpoint.json():
+                        writer.writerow(row.values())
+                return response
+            else:
+                return Response({"error": f"Error in {data} query."}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({"error": "No filters provided."}, status=status.HTTP_400_BAD_REQUEST)
+
+    def get(self, request):
+
+        data = request.data.get("data",None)
+
+        if(data is not None):
+
+            if(data == "genome"):
+
+                return DownloadAPIView.download("genome", "genome_api", request.data.get("filters", None), request.data.get("fields", None))
+                
+            elif(data == "gene"):
+                
+                return DownloadAPIView.download("gene", "gene_api", request.data.get("filters", None), request.data.get("fields", None))
+                    
+            elif(data == "peptide"):
+                
+                return DownloadAPIView.download("peptide", "peptide_api", request.data.get("filters", None), request.data.get("fields", None))
+                    
+            elif(data == "annotation"):
+                pass
+            else:
+                return Response({"error": "Data parameter provided is not valid."}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({"error": "No database parameter provided."}, status=status.HTTP_400_BAD_REQUEST)
     
     def post(self, request):
         return Response({"error": "POST request not supported."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
