@@ -145,14 +145,10 @@ class AnnotationAPIView(APIView):
     def get(self, request):
         inf_annotation_gene = GeneAnnotation.objects.all()
         inf_annotation_peptide = PeptideAnnotation.objects.all()
-        params = {"gene_instance": request.GET.get('gene_instance', None),
-                  "user": request.GET.get('user', None),
-                }
+        params = {"gene_instance": request.GET.get('gene_instance', None)}
         if(all(v is None for v in params.values())):
             return Response({"error": "No query parameters provided."}, status=status.HTTP_400_BAD_REQUEST)
         else:
-            if(params["user"] is not None):
-                params["user"] = CustomUser.objects.get(username=params["user"]).id
             query_results_gene_annotation = inf_annotation_gene.filter(**{k: v for k, v in params.items() if v is not None})
             gene_serializer = GeneAnnotationSerializer(query_results_gene_annotation, many=True)
             query_results_peptide_annotation = inf_annotation_peptide.filter(annotation__in=[g["gene_instance"] for g in gene_serializer.data])
@@ -178,7 +174,6 @@ class AnnotationAPIView(APIView):
 
                 gene_annotation_data = {
                     'gene_instance': gene_instance,
-                    'user': CustomUser.objects.get(username=request.data.get('user',None)).id,
                     'strand': request.data.get('strand') if request.data.get('strand',None) is not None else existing_gene_annotation.strand,
                     'gene': request.data.get('gene') if request.data.get('gene',None) is not None else existing_gene_annotation.gene,
                     'gene_biotype': request.data.get('gene_biotype') if request.data.get('gene_biotype',None) is not None else existing_gene_annotation.gene_biotype,
@@ -202,7 +197,6 @@ class AnnotationAPIView(APIView):
 
                     peptide_annotation_data = {
                         'peptide': peptide_instance,
-                        'user': CustomUser.objects.get(username=request.data.get('user')).id,
                         'annotation': gene_annotation,
                         'transcript': request.data.get('transcript') if request.data.get('transcript',None) is not None else existing_peptide_annotation.transcript
                     }
@@ -231,15 +225,12 @@ class AnnotationStatusAPIView(APIView):
 
     def get(self, request):
         inf = GeneAnnotationStatus.objects.all()
-        params = {"gene": request.GET.get('gene', None), 
-                "user": request.GET.get('user', None), 
+        params = {"gene": request.GET.get('gene', None),  
                 "status": request.GET.get('status', None),
                 "annotator": request.GET.get('annotator', None)}
         if(all(v is None for v in params.values())):
             return Response({"error": "No query parameters provided."}, status=status.HTTP_400_BAD_REQUEST)
         else:
-            if(params["user"] is not None):
-                params["user"] = CustomUser.objects.get(username=params["user"]).id
             query_results = inf.filter(**{k: v for k, v in params.items() if v is not None})
             serializer = GeneAnnotationStatusSerializer(query_results, many=True)
         return Response(serializer.data)
@@ -265,6 +256,21 @@ class AnnotationStatusAPIView(APIView):
             status_obj.reject(reason=reason)
             return Response({'status': 'rejected'})
         
+        elif action == "setuser":
+            user = request.data.get('user',None)
+            if user:
+                user_instance = CustomUser.objects.get(username=user)
+                if(user_instance.role == "ANNOTATOR" or user_instance.role == "VALIDATOR"):
+                    if(status_obj.status != "APPROVED"):
+                        status_obj.setuser(user_instance)
+                        return Response({'status': f'user {user} set for {status_obj.gene}'})
+                    else:
+                        return Response({'error': 'A user cannot be set for gene annotation already approved'}, status=status.HTTP_400_BAD_REQUEST)
+                else:
+                    return Response({'error': 'Reader cannot be assigned to annotation'}, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                return Response({'error': 'User not provided'}, status=status.HTTP_400_BAD_REQUEST)
+        
         return Response(
             {'error': 'Invalid action'}, 
             status=status.HTTP_400_BAD_REQUEST
@@ -282,9 +288,9 @@ class StatsAPIView(APIView):
         user = request.GET.get("user", None)
         if(user is not None):
             user_pk = CustomUser.objects.get(username=user).id
-            query = GeneAnnotation.objects.filter(user=user_pk)
+            query = GeneAnnotationStatus.objects.filter(annotator=user_pk)
             return Response({"annotation_count": query.count(),
-                             "annotation": [a["gene_instance"] for a in GeneAnnotationSerializer(query, many=True).data]})
+                             "annotation": [a["gene"] for a in GeneAnnotationStatusSerializer(query, many=True).data]})
         else:
             genome_count = Genome.objects.count()
             query_gene_by_genome = Gene.objects.values('genome').annotate(total=db_models.Count('genome'), annotated=db_models.Sum('annotated', output_field=db_models.IntegerField()))

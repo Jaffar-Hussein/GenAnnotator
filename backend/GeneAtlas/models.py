@@ -95,8 +95,6 @@ class Peptide(models.Model):
     
 class GeneAnnotation(models.Model):
     gene_instance = models.OneToOneField(Gene, on_delete=models.CASCADE, primary_key=True)
-    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, default=1)
-    date = models.DateTimeField(auto_now_add=True)
     strand = models.IntegerField(blank=True, null=True, default=1)
     gene = models.TextField(blank=True, null=True, editable=True, default="No gene provided.")
     gene_biotype = models.TextField(blank=True, null=True, editable=True, default="No gene biotype provided.")
@@ -118,7 +116,7 @@ class GeneAnnotation(models.Model):
 
 
     def __str__(self):
-        return f"{str(self.gene_instance)}, {self.user}, {self.date}"
+        return f"{str(self.gene_instance)}"
     
 
 class GeneAnnotationStatus(models.Model):
@@ -126,17 +124,25 @@ class GeneAnnotationStatus(models.Model):
     def reject(self, reason):
         self.status = self.REJECTED
         self.rejection_reason = reason
+        self.updated_at = datetime.now()
         self.save()
 
     def approve(self):
         self.status = self.APPROVED
         self.validated_at = datetime.now()
+        self.updated_at = datetime.now()
         self.save()
     
     def reset(self):
         self.status = self.PENDING
         self.validated_at = None
         self.rejection_reason = None
+        self.updated_at = datetime.now()
+        self.save()
+
+    def setuser(self, user):
+        self.annotator = user
+        self.updated_at = datetime.now()
         self.save()
 
     PENDING = 'PENDING'
@@ -153,21 +159,20 @@ class GeneAnnotationStatus(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=PENDING)
     annotator = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(null=True, blank=True)
     validated_at = models.DateTimeField(null=True, blank=True)
     rejection_reason = models.TextField(null=True, blank=True)
     
     class Meta:
-        ordering = ['-created_at']
+        ordering = ['-updated_at']
 
     def __str__(self):
         return f"{self.gene} - {self.status} - {self.annotator}"
 
 class PeptideAnnotation(models.Model):
     peptide = models.OneToOneField(Peptide, on_delete=models.CASCADE, primary_key=True)
-    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, default=1)
-    date = models.DateTimeField(auto_now_add=True)
     annotation = models.OneToOneField(GeneAnnotation,blank=False, null=False, editable=True, on_delete=models.CASCADE, default="No annotation provided.")
     transcript = models.TextField(blank=False, null=False, editable=True, default="No transcript provided.")
 
     def __str__(self):
-        return f"{str(self.peptide)}, {self.user}, {self.date}"
+        return f"{str(self.peptide)}"
