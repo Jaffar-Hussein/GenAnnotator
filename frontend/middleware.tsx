@@ -7,6 +7,7 @@ const ROLE_PERMISSIONS = {
   '/admin': ['ADMIN', 'ANNOTATOR', 'READER','VALIDATOR'],
   '/dashboard': ['ADMIN', 'ANNOTATOR', 'READER','VALIDATOR'],
   '/editor': ['ADMIN', 'WRITER'],
+  '/profile': ['ADMIN', 'ANNOTATOR', 'READER','VALIDATOR'],
 } as const;
 
 // Add paths that don't require authentication
