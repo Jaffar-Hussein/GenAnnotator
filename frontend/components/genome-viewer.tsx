@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import SequenceTrackViewer from "./sequence-viewer";
 
 const GenomeViewer = ({ genomeName = "Escherichia_coli_cft073" }) => {
   const [viewportStart, setViewportStart] = useState(0);
@@ -687,6 +688,10 @@ const GenomeViewer = ({ genomeName = "Escherichia_coli_cft073" }) => {
                       </div>
                     </div>
                   </div>
+                          <div className="col-span-2">
+                          <SequenceTrackViewer sequence={selectedGene.sequence} title={selectedGene.name} />
+
+                          </div>
                 </div>
               </div>
             </div>
