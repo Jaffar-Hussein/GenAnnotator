@@ -4,8 +4,8 @@ import { jwtDecode } from 'jwt-decode';
 
 // Define which roles can access which paths
 const ROLE_PERMISSIONS = {
-  '/admin': ['ADMIN'],
-  '/dashboard': ['ADMIN', 'ANNOTATOR', 'READER'],
+  '/admin': ['ADMIN', 'ANNOTATOR', 'READER','VALIDATOR'],
+  '/dashboard': ['ADMIN', 'ANNOTATOR', 'READER','VALIDATOR'],
   '/editor': ['ADMIN', 'WRITER'],
 } as const;
 
@@ -18,6 +18,7 @@ const PUBLIC_PATHS = [
   '/api/auth/login',
   '/api/auth/refresh',
   '/documentation',
+  
 ];
 
 export async function middleware(request: NextRequest) {
