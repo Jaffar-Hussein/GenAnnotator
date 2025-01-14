@@ -121,6 +121,11 @@ class GeneAnnotation(models.Model):
 
 class GeneAnnotationStatus(models.Model):
 
+    def submit(self):
+        self.status = self.PENDING
+        self.updated_at = datetime.now()
+        self.save()
+
     def reject(self, reason):
         self.status = self.REJECTED
         self.rejection_reason = reason
@@ -131,10 +136,11 @@ class GeneAnnotationStatus(models.Model):
         self.status = self.APPROVED
         self.validated_at = datetime.now()
         self.updated_at = datetime.now()
+        self.rejection_reason = None
         self.save()
     
     def reset(self):
-        self.status = self.PENDING
+        self.status = self.RAW
         self.validated_at = None
         self.rejection_reason = None
         self.updated_at = datetime.now()
@@ -145,18 +151,20 @@ class GeneAnnotationStatus(models.Model):
         self.updated_at = datetime.now()
         self.save()
 
+    RAW = 'RAW'
     PENDING = 'PENDING'
     APPROVED = 'APPROVED'
     REJECTED = 'REJECTED'
 
     STATUS_CHOICES = [
+        (RAW, 'Raw'),
         (PENDING, 'Pending'),
         (APPROVED, 'Approved'),
         (REJECTED, 'Rejected'),
     ]
 
     gene = models.OneToOneField(Gene, on_delete=models.CASCADE, primary_key=True)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=PENDING)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=RAW)
     annotator = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(null=True, blank=True)

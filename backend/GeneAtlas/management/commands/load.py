@@ -93,7 +93,7 @@ class Command(BaseCommand):
 
                     # Parse Genome
                     for seq_record in SeqIO.parse(genome_file, "fasta"):
-                        Genome(name = str(genome), species = "eColi", header = seq_record.description, sequence = str(seq_record.seq).encode()).save()
+                        Genome(name = str(genome), species = "eColi", header = seq_record.description, sequence = str(seq_record.seq).encode(), annotation = True).save()
 
                     # Parse CDS
                     for seq_record in SeqIO.parse(cds_file, "fasta"):

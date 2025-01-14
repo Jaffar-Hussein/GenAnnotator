@@ -240,11 +240,21 @@ class AnnotationStatusAPIView(APIView):
         
         if status_obj is None:
             return Response({'error': 'No status found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        user = request.data.get('user',None)
+        user_instance = CustomUser.objects.get(username=user)
     
         action = request.data.get('action')
+
         if action == 'approve':
-            status_obj.approve()
-            return Response({'status': 'approved'})
+            if(user_instance.role == "VALIDATOR"):
+                if(status_obj.status == "PENDING" or status_obj.status == "REJECTED"):
+                    status_obj.approve()
+                    return Response({'status': f'{status_obj.gene} approved'})
+                else:
+                    return Response({'error': f'Annotation {status_obj.gene} with status {status_obj.status} cannot be approved'}, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                return Response({'error': f'User with role {user_instance.role} cannot approve annotations'}, status=status.HTTP_400_BAD_REQUEST)
         
         elif action == 'reject':
             reason = request.data.get('reason')
@@ -253,21 +263,36 @@ class AnnotationStatusAPIView(APIView):
                     {'error': 'Rejection reason required'}, 
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            status_obj.reject(reason=reason)
-            return Response({'status': 'rejected'})
+            else:
+                if(user_instance.role == "VALIDATOR"):
+                    if(status_obj.status == "PENDING" or status_obj.status == "APPROVED"):
+                        status_obj.reject(reason=reason)
+                        return Response({'status': f'{status_obj.gene} rejected'})
+                    else:
+                        return Response({'error': f'Annotation {status_obj.gene} with status {status_obj.status} cannot be rejected'}, status=status.HTTP_400_BAD_REQUEST)
+                else:
+                    return Response({'error': f'User with role {user_instance.role} cannot reject annotations'}, status=status.HTTP_400_BAD_REQUEST)
+                
+        elif action == 'submit':
+            if((user_instance.role == "ANNOTATOR" or user_instance.role == "VALIDATOR")):
+                if(status_obj.status == "RAW"):
+                    status_obj.submit()
+                    return Response({'status': f' {status_obj.gene} submitted'})
+                else:
+                    return Response({'error': f'Annotation {status_obj.gene} with status {status_obj.status} cannot be submitted'}, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                return Response({'error': f'User with role {user_instance.role} cannot submit annotations'}, status=status.HTTP_400_BAD_REQUEST)
         
         elif action == "setuser":
-            user = request.data.get('user',None)
             if user:
-                user_instance = CustomUser.objects.get(username=user)
                 if(user_instance.role == "ANNOTATOR" or user_instance.role == "VALIDATOR"):
                     if(status_obj.status != "APPROVED"):
                         status_obj.setuser(user_instance)
                         return Response({'status': f'user {user} set for {status_obj.gene}'})
                     else:
-                        return Response({'error': 'A user cannot be set for gene annotation already approved'}, status=status.HTTP_400_BAD_REQUEST)
+                        return Response({'error': f'A user cannot be set for gene annotation with status {status_obj.status}'}, status=status.HTTP_400_BAD_REQUEST)
                 else:
-                    return Response({'error': 'Reader cannot be assigned to annotation'}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response({'error': f'User with role {user_instance.role} cannot be assigned to annotation'}, status=status.HTTP_400_BAD_REQUEST)
             else:
                 return Response({'error': 'User not provided'}, status=status.HTTP_400_BAD_REQUEST)
         
