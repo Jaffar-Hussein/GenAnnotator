@@ -239,8 +239,9 @@ const GenomeViewer = ({ genomeName = "Escherichia_coli_cft073" }) => {
                       <p className="font-bold text-sm text-indigo-400">
                         {gene.name}
                       </p>
-                      <p className="text-xs text-gray-300 dark:text-gray-400 mt-1">
-                        {gene.description || "No description available"}
+                      <p className= {`mt-1 text-xs font-semibold ${gene.annotated ? 'text-green-600' : 'text-yellow-600'}`}>
+                      {gene.annotated ? 'Annotated' : 'Annotation Pending'}
+                        
                       </p>
                     </div>
 
@@ -688,10 +689,12 @@ const GenomeViewer = ({ genomeName = "Escherichia_coli_cft073" }) => {
                       </div>
                     </div>
                   </div>
-                          <div className="col-span-2">
-                          <SequenceTrackViewer sequence={selectedGene.sequence} title={selectedGene.name} />
-
-                          </div>
+                  <div className="col-span-2">
+                    <SequenceTrackViewer
+                      sequence={selectedGene.sequence}
+                      title={selectedGene.name}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
