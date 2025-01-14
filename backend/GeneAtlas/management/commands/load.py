@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 from django.db.models.signals import post_save
-from GeneAtlas.signals import create_gene_status
+from GeneAtlas.signals import create_gene_status, update_genome_status
 from GeneAtlas.models import Genome, Gene, Peptide, GeneAnnotation, PeptideAnnotation, GeneAnnotationStatus
 from AccessControl.models import CustomUser
 from Bio import SeqIO
@@ -76,6 +76,7 @@ class Command(BaseCommand):
                 GeneAnnotation.objects.all().delete()
 
                 post_save.disconnect(create_gene_status, sender=Gene)
+                post_save.disconnect(update_genome_status, sender=GeneAnnotationStatus)
 
                 for genome_file in genomes_files:
 
@@ -93,7 +94,10 @@ class Command(BaseCommand):
 
                     # Parse Genome
                     for seq_record in SeqIO.parse(genome_file, "fasta"):
-                        Genome(name = str(genome), species = "eColi", header = seq_record.description, sequence = str(seq_record.seq).encode(), annotation = True).save()
+                        if(genome == "new_coli"):
+                            Genome(name = str(genome), species = "eColi", header = seq_record.description, sequence = str(seq_record.seq).encode()).save()
+                        else:
+                            Genome(name = str(genome), species = "eColi", header = seq_record.description, sequence = str(seq_record.seq).encode(), annotation = True).save()
 
                     # Parse CDS
                     for seq_record in SeqIO.parse(cds_file, "fasta"):
@@ -119,6 +123,7 @@ class Command(BaseCommand):
                             PeptideAnnotation(peptide = Peptide.objects.get(name = seq_record.id), annotation = GeneAnnotation.objects.get(gene_instance = gene_instance), transcript = (kwargs_description[1])["transcript"]).save()
 
             post_save.connect(create_gene_status, sender=Gene)
+            post_save.connect(update_genome_status, sender=GeneAnnotationStatus)
 
             self.stdout.write("Data loaded successfully...")
         

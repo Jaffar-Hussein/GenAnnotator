@@ -34,7 +34,6 @@ def update_genome_status(sender, instance, created, **kwargs):
         if isinstance(instance, GeneAnnotationStatus):
             genome = Genome.objects.get(pk=instance.gene.genome.pk)
             if not created:
-                print("GeneAnnotationStatus updated")
                 if instance.status == GeneAnnotationStatus.REJECTED or instance.status == GeneAnnotationStatus.APPROVED:
                     status_counts = GeneAnnotationStatus.objects.values(
                         'gene__genome', 
