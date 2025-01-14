@@ -91,9 +91,9 @@ export default function UploadGenomeModal({ open, onOpenChange }) {
     e.preventDefault();
     setLoading(true);
     setError('');
-    
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
     try {
-      const response = await fetch('http://127.0.0.1:8000/data/api/genome/', {
+      const response = await fetch(`${backendUrl}/data/api/genome/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

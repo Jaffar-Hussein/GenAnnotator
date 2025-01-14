@@ -133,10 +133,10 @@ export default function Signup() {
       });
       const username = formData.username;
       const password = formData.password;
-
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
       try {
         const response = await fetch(
-          "http://localhost:8000/access/api/login/",
+          `${backendUrl}/access/api/login/`,
           {
             method: "POST",
             headers: {

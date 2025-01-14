@@ -50,6 +50,7 @@ interface AuthState {
   clearError: () => void;
 }
 
+const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
@@ -63,7 +64,7 @@ export const useAuthStore = create<AuthState>()(
       signup: async (signupData: SignupData) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await fetch('http://localhost:8000/access/api/new/', {
+          const response = await fetch(`${backendUrl}/access/api/new/`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

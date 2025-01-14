@@ -37,7 +37,6 @@ export default function Login() {
   const setAuth = useAuthStore((state) => state.setAuth);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    console.log("submit");
     e.preventDefault();
     setLoading(true);
     setError(null);
@@ -45,9 +44,10 @@ export default function Login() {
     const formData = new FormData(e.currentTarget);
     const username = formData.get("username") as string;
     const password = formData.get("password") as string;
-
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+    console.log(backendUrl);
     try {
-      const response = await fetch("http://localhost:8000/access/api/login/", {
+      const response = await fetch(`${backendUrl}/access/api/login/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -62,8 +62,7 @@ export default function Login() {
 
       const authData = await response.json();
 
-      // Set auth data in Zustand store
-      // In your login handler
+     
 
       setAuth(authData);
 
@@ -76,6 +75,7 @@ export default function Login() {
 
       router.push(redirectTo);
     } catch (err) {
+      console.error(err);
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
       setLoading(false);

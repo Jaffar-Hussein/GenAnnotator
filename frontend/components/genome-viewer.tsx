@@ -48,8 +48,9 @@ const GenomeViewer = ({ genomeName = "Escherichia_coli_cft073" }) => {
       try {
         setIsLoading(true);
         setError(null);
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
         const response = await fetch(
-          `http://127.0.0.1:8000/data/api/gene/?genome=${genomeName}`
+          `${backendUrl}/data/api/gene/?genome=${genomeName}`
         );
         if (!response.ok) {
           throw new Error("Failed to fetch genes");

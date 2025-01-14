@@ -91,10 +91,11 @@ export default function Genomes() {
   // Fetch Genomes
   useEffect(() => {
     async function fetchGenomes() {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
       setLoading(true);
       try {
         const response = await fetch(
-          "http://127.0.0.1:8000/data/api/genome/?all=true"
+          `${backendUrl}/data/api/genome/?all=true`
         );
         if (!response.ok) {
           throw new Error(
