@@ -1,3 +1,4 @@
+from datetime import datetime
 from django.db import models
 from AccessControl.models import CustomUser
 from Bio.Seq import Seq
@@ -9,7 +10,6 @@ from zlib import compress, decompress
 class Genome(models.Model):
     name = models.CharField(max_length=100, unique=True, primary_key=True)
     species = models.CharField(max_length=100)
-    description = models.TextField(blank=True)
     header = models.TextField(blank=False, null=False, default=">Genome")
     sequence = models.BinaryField(blank=False, null=False, editable=True)
     length = models.IntegerField(editable=False, default=0)
@@ -40,8 +40,8 @@ class Genome(models.Model):
         return self.name
     
 class Gene(models.Model):
+
     name = models.CharField(max_length=100, primary_key=True)
-    description = models.TextField(blank=True, null=False)
     genome = models.ForeignKey(Genome, on_delete=models.CASCADE)
     start = models.IntegerField(blank=False, null=False)
     end = models.IntegerField(blank=False, null=False)
@@ -58,11 +58,11 @@ class Gene(models.Model):
     
     def search_motif(self, motif):
         if(motif[0] == "%" and motif[-1] == "%"):
-            return self.get_sequence().find(motif[1:-1]) != -1
+            return self.sequence.find(motif[1:-1]) != -1
         elif(motif[0] == "%"):
-            return self.get_sequence().endswith(motif[1:])
+            return self.sequence.endswith(motif[1:])
         elif(motif[-1] == "%"):
-            return self.get_sequence().startswith(motif[:-1])
+            return self.sequence.startswith(motif[:-1])
         else:
             return False
 
@@ -97,17 +97,70 @@ class GeneAnnotation(models.Model):
     gene_instance = models.OneToOneField(Gene, on_delete=models.CASCADE, primary_key=True)
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, default=1)
     date = models.DateTimeField(auto_now_add=True)
-    annotation = models.TextField(blank=False, null=False, editable=True, default="No annotation provided.")
-    strand = models.IntegerField(default=1)
-    gene = models.TextField(blank=False, null=False, editable=True, default="No gene provided.")
-    gene_biotype = models.TextField(blank=False, null=False, editable=True, default="No gene biotype provided.")
-    transcript_biotype = models.TextField(blank=False, null=False, editable=True, default="No transcript biotype provided.")
-    gene_symbol = models.TextField(blank=False, null=False, editable=True, default="No gene symbol provided.")
-    description = models.TextField(blank=False, null=False, editable=True, default="No description provided.")
+    strand = models.IntegerField(blank=True, null=True, default=1)
+    gene = models.TextField(blank=True, null=True, editable=True, default="No gene provided.")
+    gene_biotype = models.TextField(blank=True, null=True, editable=True, default="No gene biotype provided.")
+    transcript_biotype = models.TextField(blank=True, null=True, editable=True, default="No transcript biotype provided.")
+    gene_symbol = models.TextField(blank=True, null=True, editable=True, default="No gene symbol provided.")
+    description = models.TextField(blank=True, null=True, editable=True, default="No description provided.")
+    is_current = models.BooleanField(default=True)
+    status = models.OneToOneField('GeneAnnotationStatus', blank=True, null=True, on_delete=models.CASCADE, related_name='annotations')
+
+    def save(self, *args, **kwargs):
+        if self.is_current:
+            GeneAnnotation.objects.filter(
+                gene_instance=self.gene_instance,
+                is_current=True
+            ).update(is_current=False)
+        if not self.status:
+            self.status = GeneAnnotationStatus.objects.get(gene=self.gene_instance)
+        super().save(*args, **kwargs)
 
 
     def __str__(self):
-        return f"{str(self.gene)}, {self.user}, {self.date}"
+        return f"{str(self.gene_instance)}, {self.user}, {self.date}"
+    
+
+class GeneAnnotationStatus(models.Model):
+
+    def reject(self, reason):
+        self.status = self.REJECTED
+        self.rejection_reason = reason
+        self.save()
+
+    def approve(self):
+        self.status = self.APPROVED
+        self.validated_at = datetime.now()
+        self.save()
+    
+    def reset(self):
+        self.status = self.PENDING
+        self.validated_at = None
+        self.rejection_reason = None
+        self.save()
+
+    PENDING = 'PENDING'
+    APPROVED = 'APPROVED'
+    REJECTED = 'REJECTED'
+
+    STATUS_CHOICES = [
+        (PENDING, 'Pending'),
+        (APPROVED, 'Approved'),
+        (REJECTED, 'Rejected'),
+    ]
+
+    gene = models.OneToOneField(Gene, on_delete=models.CASCADE, primary_key=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=PENDING)
+    annotator = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    validated_at = models.DateTimeField(null=True, blank=True)
+    rejection_reason = models.TextField(null=True, blank=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.gene} - {self.status} - {self.annotator}"
 
 class PeptideAnnotation(models.Model):
     peptide = models.OneToOneField(Peptide, on_delete=models.CASCADE, primary_key=True)

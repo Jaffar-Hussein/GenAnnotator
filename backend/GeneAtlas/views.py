@@ -2,11 +2,11 @@ from django.shortcuts import render
 from django.urls import reverse
 from GeneAtlas import urls
 from django.views.generic import CreateView
-from .serializers import GenomeSerializer, GeneSerializer, PeptideSerializer, GeneAnnotationSerializer, PeptideAnnotationSerializer
+from .serializers import GenomeSerializer, GeneSerializer, PeptideSerializer, GeneAnnotationSerializer, PeptideAnnotationSerializer, GeneAnnotationStatusSerializer
 from rest_framework import status, request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .models import Genome, Gene, Peptide, GeneAnnotation, PeptideAnnotation
+from .models import Genome, Gene, Peptide, GeneAnnotation, PeptideAnnotation, GeneAnnotationStatus
 from django.db import transaction, models as db_models
 from django.http import HttpResponse
 from AccessControl.models import CustomUser
@@ -161,47 +161,120 @@ class AnnotationAPIView(APIView):
         return Response({"gene": sorted(gene_serializer.data, key=lambda x: x['gene_instance']), "peptide": sorted(peptide_serializer.data, key=lambda x: x['annotation'])})
 
 
-    def post(self, request):
+    def put(self, request):
         try:
 
             with transaction.atomic():
 
+                gene_instance = request.data.get('gene_instance',None)
+
+                if gene_instance is None:
+                    return Response({'error': 'No gene instance provided'}, status=status.HTTP_400_BAD_REQUEST)
+                
+                if Gene.objects.get(name=gene_instance).annotated:
+                    return Response({'error': 'Gene already annotated with APPROVED status'}, status=status.HTTP_400_BAD_REQUEST)
+
+                existing_gene_annotation = GeneAnnotation.objects.filter(gene_instance=gene_instance).first()
+
                 gene_annotation_data = {
-                    'gene_instance': request.data.get('gene_instance'),
-                    'user': CustomUser.objects.get(username=request.data.get('user')).id,
-                    'strand': request.data.get('strand'),
-                    'gene': request.data.get('gene'),
-                    'gene_biotype': request.data.get('gene_biotype'),
-                    'transcript_biotype': request.data.get('transcript_biotype'),
-                    'gene_symbol': request.data.get('gene_symbol'),
-                    'description': request.data.get('description')
+                    'gene_instance': gene_instance,
+                    'user': CustomUser.objects.get(username=request.data.get('user',None)).id,
+                    'strand': request.data.get('strand') if request.data.get('strand',None) is not None else existing_gene_annotation.strand,
+                    'gene': request.data.get('gene') if request.data.get('gene',None) is not None else existing_gene_annotation.gene,
+                    'gene_biotype': request.data.get('gene_biotype') if request.data.get('gene_biotype',None) is not None else existing_gene_annotation.gene_biotype,
+                    'transcript_biotype': request.data.get('transcript_biotype') if request.data.get('transcript_biotype',None) is not None else existing_gene_annotation.transcript_biotype,
+                    'gene_symbol': request.data.get('gene_symbol') if request.data.get('gene_symbol',None) is not None else existing_gene_annotation.gene_symbol,
+                    'description': request.data.get('description') if request.data.get('description',None) is not None else existing_gene_annotation.description,
                 }
                 
-                gene_serializer = GeneAnnotationSerializer(data=gene_annotation_data)
+                gene_serializer = GeneAnnotationSerializer(instance = existing_gene_annotation, data=gene_annotation_data)
 
                 if not gene_serializer.is_valid():
                     return Response(gene_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
                 
                 gene_annotation = gene_serializer.save()
 
-                peptide_annotation_data = {
-                    'peptide': request.data.get('peptide'),
-                    'user': CustomUser.objects.get(username=request.data.get('user')).id,
-                    'annotation': gene_annotation,
-                    'transcript': request.data.get('transcript')
-                }
-                
-                peptide_serializer = PeptideAnnotationSerializer(data=peptide_annotation_data)
+                peptide_instance = request.data.get('peptide',None)
 
-                if not peptide_serializer.is_valid():
-                    return Response(peptide_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-                
-                peptide_serializer.save()
+                if not peptide_instance is None:
 
-                return Response({'gene_annotation': gene_serializer.data,'peptide_annotation': peptide_serializer.data}, status=status.HTTP_201_CREATED)
+                    existing_peptide_annotation = PeptideAnnotation.objects.filter(peptide=peptide_instance).first()
+
+                    peptide_annotation_data = {
+                        'peptide': peptide_instance,
+                        'user': CustomUser.objects.get(username=request.data.get('user')).id,
+                        'annotation': gene_annotation,
+                        'transcript': request.data.get('transcript') if request.data.get('transcript',None) is not None else existing_peptide_annotation.transcript
+                    }
+                
+                    peptide_serializer = PeptideAnnotationSerializer(instance = existing_peptide_annotation, data=peptide_annotation_data)
+
+                    if not peptide_serializer.is_valid():
+                        return Response(peptide_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                
+                    peptide_serializer.save()
+
+                    return Response({'gene_annotation': gene_serializer.data,'peptide_annotation': peptide_serializer.data}, status=status.HTTP_201_CREATED)
+                
+                return Response({'gene_annotation': gene_serializer.data}, status=status.HTTP_201_CREATED)
     
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+    def post(self, request):
+        return Response({"error": "POST request not supported."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    
+    def delete(self, request):
+        return Response({"error": "DELETE request not supported."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+class AnnotationStatusAPIView(APIView):
+
+    def get(self, request):
+        inf = GeneAnnotationStatus.objects.all()
+        params = {"gene": request.GET.get('gene', None), 
+                "user": request.GET.get('user', None), 
+                "status": request.GET.get('status', None),
+                "annotator": request.GET.get('annotator', None)}
+        if(all(v is None for v in params.values())):
+            return Response({"error": "No query parameters provided."}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            if(params["user"] is not None):
+                params["user"] = CustomUser.objects.get(username=params["user"]).id
+            query_results = inf.filter(**{k: v for k, v in params.items() if v is not None})
+            serializer = GeneAnnotationStatusSerializer(query_results, many=True)
+        return Response(serializer.data)
+
+    def put(self, request):
+        status_obj = GeneAnnotationStatus.objects.get(gene=request.data.get('gene', None))
+        
+        if status_obj is None:
+            return Response({'error': 'No status found'}, status=status.HTTP_404_NOT_FOUND)
+    
+        action = request.data.get('action')
+        if action == 'approve':
+            status_obj.approve()
+            return Response({'status': 'approved'})
+        
+        elif action == 'reject':
+            reason = request.data.get('reason')
+            if not reason:
+                return Response(
+                    {'error': 'Rejection reason required'}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            status_obj.reject(reason=reason)
+            return Response({'status': 'rejected'})
+        
+        return Response(
+            {'error': 'Invalid action'}, 
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    def post(self, request):
+        return Response({"error": "POST request not supported."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    
+    def delete(self, request):
+        return Response({"error": "DELETE request not supported."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
         
 class StatsAPIView(APIView):
 

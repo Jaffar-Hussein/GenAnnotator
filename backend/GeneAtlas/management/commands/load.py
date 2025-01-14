@@ -1,5 +1,8 @@
 from django.core.management.base import BaseCommand
-from GeneAtlas.models import Genome, Gene, Peptide, GeneAnnotation, PeptideAnnotation
+from django.db.models.signals import post_save
+from GeneAtlas.signals import create_gene_status
+from GeneAtlas.models import Genome, Gene, Peptide, GeneAnnotation, PeptideAnnotation, GeneAnnotationStatus
+from AccessControl.models import CustomUser
 from Bio import SeqIO
 import os, glob
 from django.db import transaction
@@ -70,6 +73,9 @@ class Command(BaseCommand):
                 Genome.objects.all().delete()
                 Gene.objects.all().delete()
                 Peptide.objects.all().delete()
+                GeneAnnotation.objects.all().delete()
+
+                post_save.disconnect(create_gene_status, sender=Gene)
 
                 for genome_file in genomes_files:
 
@@ -93,9 +99,16 @@ class Command(BaseCommand):
                     for seq_record in SeqIO.parse(cds_file, "fasta"):
                         kwargs_description = Command.parser(seq_record.description)
                         genome_instance = Genome.objects.get(name = genome)
-                        Gene(name = seq_record.id, genome = genome_instance, header = kwargs_description[0]["identifier"], sequence = str(seq_record.seq), start = kwargs_description[0]["start"], end = kwargs_description[0]["end"], annotated = (len(kwargs_description[1]) > 0)).save()
+                        gene = Gene(name = seq_record.id, genome = genome_instance, header = kwargs_description[0]["identifier"], sequence = str(seq_record.seq), start = kwargs_description[0]["start"], end = kwargs_description[0]["end"], annotated = (len(kwargs_description[1]) > 0))
+                        gene.save()
                         if(len(kwargs_description[1]) > 0):
-                            GeneAnnotation(gene_instance = Gene.objects.get(name = seq_record.id), **kwargs_description[1]).save()
+                            status = GeneAnnotationStatus(gene = gene, annotator = CustomUser.objects.get(pk=1), status = "APPROVED")
+                            status.save()
+                            GeneAnnotation(gene_instance = gene, status=status, **kwargs_description[1]).save()
+                        else:
+                            status = GeneAnnotationStatus(gene = gene)
+                            status.save()
+                            GeneAnnotation(gene_instance = gene, status=status).save()
 
                     # Parse Peptide
                     for seq_record in SeqIO.parse(peptide_file, "fasta"):
@@ -104,6 +117,8 @@ class Command(BaseCommand):
                         Peptide(name = seq_record.id, gene = gene_instance, header = kwargs_description[0]["identifier"], sequence = str(seq_record.seq)).save()
                         if(len(kwargs_description[1]) > 0):
                             PeptideAnnotation(peptide = Peptide.objects.get(name = seq_record.id), annotation = GeneAnnotation.objects.get(gene_instance = gene_instance), transcript = (kwargs_description[1])["transcript"]).save()
+
+            post_save.connect(create_gene_status, sender=Gene)
 
             self.stdout.write("Data loaded successfully...")
         
