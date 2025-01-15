@@ -28,7 +28,7 @@ const GenomeCard = ({ genome }) => {
                   {genome.name}
                 </CardTitle>
                 <CardDescription className="text-gray-600 dark:text-gray-400 truncate">
-                  {genome.species} • {genome.strain}
+                  {genome.species} • {genome.header ? genome.header.split(' ')[0] : ''}
                 </CardDescription>
               </div>
               <Badge variant="secondary" className={`shrink-0 ${getStatusColor(genome.status)}`}>
@@ -65,8 +65,8 @@ const GenomeCard = ({ genome }) => {
                 <span>{genome.completeness}</span>
               </div>
               <span className="text-xs">
-                Modified {genome.lastModified}
-              </span>
+  Modified {genome.lastModified && genome.lastModified !== 'N/A' ? genome.lastModified : '0 days ago'}
+</span>
             </div>
           </CardContent>
         </Card>

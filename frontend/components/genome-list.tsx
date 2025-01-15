@@ -39,7 +39,7 @@ const GenomeListView = ({ genomes }) => {
                       {genome.name}
                     </h3>
                     <p className="text-sm text-gray-500 dark:text-gray-400 truncate mt-1">
-                      {genome.species} • {genome.strain}
+                      {genome.species} • {genome.header ? genome.header.split(' ')[0] : ''}
                     </p>
                   </div>
                   <Badge 
@@ -74,7 +74,9 @@ const GenomeListView = ({ genomes }) => {
 
                   <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
                     <Calendar className="h-4 w-4" />
-                    <span>Modified {genome.lastModified}</span>
+                                        <span className="text-xs">
+                      Modified {genome.lastModified && genome.lastModified !== 'N/A' ? genome.lastModified : '0 days ago'}
+                    </span>
                   </div>
                 </div>
               </div>
