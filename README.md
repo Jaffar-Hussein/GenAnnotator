@@ -18,7 +18,9 @@ cd GenAnnotator/backend
 python -m venv venv
 # Windows: venv\Scripts\activate | macOS/Linux: source venv/bin/activate
 pip install -r requirements.txt
-python manage.py migrate
+python manage.py migrateo
+python manage.py createsuperuser
+python manage.py load
 python manage.py runserver
 ```
 Backend runs at http://localhost:8000
