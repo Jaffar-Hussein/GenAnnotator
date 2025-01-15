@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import SequenceTrackViewer from "./sequence-viewer";
+import { useAuthStore } from "@/store/useAuthStore";
 
 const GenomeViewer = ({ genomeName = "Escherichia_coli_cft073" }) => {
   const [viewportStart, setViewportStart] = useState(0);
@@ -32,6 +33,7 @@ const GenomeViewer = ({ genomeName = "Escherichia_coli_cft073" }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [copied, setCopied] = useState(false);
+  const user = useAuthStore((state) => state.user);
 
   const copyToClipboard = async () => {
     try {
@@ -239,9 +241,12 @@ const GenomeViewer = ({ genomeName = "Escherichia_coli_cft073" }) => {
                       <p className="font-bold text-sm text-indigo-400">
                         {gene.name}
                       </p>
-                      <p className= {`mt-1 text-xs font-semibold ${gene.annotated ? 'text-green-600' : 'text-yellow-600'}`}>
-                      {gene.annotated ? 'Annotated' : 'Annotation Pending'}
-                        
+                      <p
+                        className={`mt-1 text-xs font-semibold ${
+                          gene.annotated ? "text-green-600" : "text-yellow-600"
+                        }`}
+                      >
+                        {gene.annotated ? "Annotated" : "Annotation Pending"}
                       </p>
                     </div>
 
@@ -528,173 +533,183 @@ const GenomeViewer = ({ genomeName = "Escherichia_coli_cft073" }) => {
 
           {/* Selected Gene Details */}
           {selectedGene && (
-            <div
-              className="mt-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 
-    dark:border-gray-700 shadow-lg overflow-hidden"
-            >
-              {/* Header */}
-              <div
-                className="p-4 bg-gray-50 dark:bg-gray-900/50 border-b 
-      border-gray-200 dark:border-gray-700 flex justify-between items-center"
-              >
-                <div>
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                    {selectedGene.name}
-                  </h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                    Gene Information
-                  </p>
-                </div>
-                <button
-                  onClick={() => setSelectedGene(null)}
-                  className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 
-          text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 
-          transition-colors"
-                  aria-label="Close gene details"
-                >
-                  <span className="text-xl">×</span>
-                </button>
-              </div>
-
-              {/* Content */}
-              <div className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  {/* Location Information */}
-                  <div className="space-y-6">
-                    <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
-                      <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                        Location
-                      </h4>
-                      <div className="space-y-3">
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">
-                            Start Position
+            <div className="mt-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-lg overflow-hidden">
+              {/* Enhanced Header with Visual Hierarchy */}
+              <div className="p-6 bg-gradient-to-r from-indigo-600 to-indigo-700 dark:from-indigo-800 dark:to-indigo-900">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h2 className="text-2xl font-bold text-white mb-2">
+                      {selectedGene.name}
+                    </h2>
+                    <div className="flex items-center gap-3">
+                      <span className="px-3 py-1 bg-white/20 rounded-full text-sm text-white">
+                        ID: {selectedGene.gene_instance || "AAN78502"}
+                      </span>
+                      <span className="px-3 py-1 bg-white/20 rounded-full text-sm text-white">
+                        Type: {selectedGene.gene_biotype || "protein_coding"}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        {selectedGene.annotated ? (
+                          <span className="px-3 py-1 bg-green-500/20 rounded-full text-sm text-white flex items-center gap-2">
+                            <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                            Annotated
                           </span>
-                          <span className="text-sm text-indigo-600 dark:text-indigo-400">
-                            {selectedGene.start.toLocaleString()}
+                        ) : (
+                          <span className="px-3 py-1 bg-yellow-500/20 rounded-full text-sm text-white flex items-center gap-2">
+                            <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
+                            Annotation Pending
                           </span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">
-                            End Position
-                          </span>
-                          <span className="text-sm text-indigo-600 dark:text-indigo-400">
-                            {selectedGene.end.toLocaleString()}
-                          </span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">
-                            Length
-                          </span>
-                          <span className="text-sm text-indigo-600 dark:text-indigo-400">
-                            {(
-                              selectedGene.end -
-                              selectedGene.start +
-                              1
-                            ).toLocaleString()}{" "}
-                            bp
-                          </span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">
-                            Feature Type
-                          </span>
-                          <span className="text-sm text-indigo-600 dark:text-indigo-400">
-                            {selectedGene.header.split(" ")[1] || "Unknown"}
-                          </span>
-                        </div>
+                        )}
                       </div>
                     </div>
+                  </div>
+                  <button
+                    onClick={() => setSelectedGene(null)}
+                    className="p-2 rounded-full hover:bg-white/20 text-white transition-colors"
+                    aria-label="Close gene details"
+                  >
+                    <span className="text-xl">×</span>
+                  </button>
+                </div>
+              </div>
 
-                    {/* Additional Stats */}
-                    <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-lg p-4">
-                      <div className="text-sm text-indigo-900 dark:text-indigo-300">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="w-2 h-2 bg-indigo-500 rounded-full"></span>
-                          Located in viewport {viewportStart.toLocaleString()}-
-                          {(viewportStart + viewportSize).toLocaleString()} bp
-                        </div>
+              {/* Main Content with Clear Visual Groups */}
+              <div className="p-6">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  {/* Key Information Panel */}
+                  <div className="lg:col-span-1">
+                    <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-6 space-y-6">
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                          <span className="w-1 h-6 bg-indigo-500 rounded-full"></span>
+                          Key Information
+                        </h3>
+                        <dl className="space-y-4">
+                          <div>
+                            <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                              Gene Symbol
+                            </dt>
+                            <dd className="mt-1 text-sm text-gray-900 dark:text-white">
+                              {selectedGene.gene_symbol ||
+                                "No gene symbol provided."}
+                            </dd>
+                          </div>
+                          <div>
+                            <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                              Transcript Biotype
+                            </dt>
+                            <dd className="mt-1 text-sm text-gray-900 dark:text-white">
+                              {selectedGene.transcript_biotype ||
+                                "protein_coding"}
+                            </dd>
+                          </div>
+                          <div>
+                            <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                              Description
+                            </dt>
+                            <dd className="mt-1 text-sm text-gray-900 dark:text-white">
+                              {selectedGene.description ||
+                                "Hypothetical protein"}
+                            </dd>
+                          </div>
+                        </dl>
                       </div>
                     </div>
                   </div>
 
-                  {/* Details Information */}
-                  <div className="space-y-6">
-                    <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
-                      <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                        Details
-                      </h4>
-                      <div className="space-y-4">
-                        {selectedGene.description && (
-                          <div>
-                            <span className="text-sm text-gray-600 dark:text-gray-400 font-medium block mb-1">
-                              Description
+                  {/* Location Information */}
+                  <div className="lg:col-span-2">
+                    <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-6">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                        <span className="w-1 h-6 bg-indigo-500 rounded-full"></span>
+                        Location & Metrics
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-4">
+                          <div className="flex justify-between items-center p-3 bg-white dark:bg-gray-800 rounded-lg">
+                            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                              Start Position
                             </span>
-                            <p className="text-sm text-gray-800 dark:text-gray-200">
-                              {selectedGene.description}
-                            </p>
+                            <span className="text-sm font-semibold text-indigo-600 dark:text-indigo-400">
+                              {selectedGene.start?.toLocaleString()}
+                            </span>
                           </div>
-                        )}
-                        <div>
-                          <span className="text-sm text-gray-600 dark:text-gray-400 font-medium block mb-1">
-                            Assembly
-                          </span>
-                          <p className="text-sm text-gray-800 dark:text-gray-200">
-                            {selectedGene.header.split(":")[1] || "Unknown"}
-                          </p>
+                          <div className="flex justify-between items-center p-3 bg-white dark:bg-gray-800 rounded-lg">
+                            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                              End Position
+                            </span>
+                            <span className="text-sm font-semibold text-indigo-600 dark:text-indigo-400">
+                              {selectedGene.end?.toLocaleString()}
+                            </span>
+                          </div>
                         </div>
-                        <div>
-                          <span className="text-sm text-gray-600 dark:text-gray-400 font-medium block mb-1">
-                            Location
-                          </span>
-                          <p className="text-sm text-gray-800 dark:text-gray-200">
-                            {selectedGene.header.split(":")[2] || "Unknown"}
-                          </p>
+                        <div className="space-y-4">
+                          <div className="flex justify-between items-center p-3 bg-white dark:bg-gray-800 rounded-lg">
+                            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                              Length
+                            </span>
+                            <span className="text-sm font-semibold text-indigo-600 dark:text-indigo-400">
+                              {(
+                                (selectedGene.end || 0) -
+                                (selectedGene.start || 0) +
+                                1
+                              ).toLocaleString()}{" "}
+                              bp
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center p-3 bg-white dark:bg-gray-800 rounded-lg">
+                            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                              Feature Type
+                            </span>
+                            <span className="text-sm font-semibold text-indigo-600 dark:text-indigo-400">
+                              {selectedGene.header?.split(" ")[1] || "Unknown"}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>
 
-                    {/* Header Information */}
-                    <div className="bg-gray-900 dark:bg-black rounded-lg p-4">
-                      <div className="flex justify-between items-center mb-3">
-                        <h4 className="text-sm font-medium text-gray-200 dark:text-gray-300">
+                    {/* Sequence Information */}
+                    <div className="mt-6 bg-gray-900 dark:bg-black rounded-lg p-6">
+                      <div className="flex justify-between items-center mb-4">
+                        <h4 className="text-lg font-semibold text-white">
                           Sequence Information
                         </h4>
                         <button
                           onClick={copyToClipboard}
-                          className="flex items-center gap-1 px-2 py-1 text-xs rounded
-            bg-gray-800 dark:bg-gray-900 hover:bg-gray-700 dark:hover:bg-gray-800
-            text-gray-300 transition-colors duration-200"
+                          className="flex items-center gap-2 px-4 py-2 rounded-lg
+                bg-indigo-600 hover:bg-indigo-700 text-white transition-colors duration-200"
                         >
                           {copied ? (
                             <>
-                              <Check size={14} />
+                              <Check size={16} />
                               <span>Copied!</span>
                             </>
                           ) : (
                             <>
-                              <Copy size={14} />
-                              <span>Copy</span>
+                              <Copy size={16} />
+                              <span>Copy Sequence</span>
                             </>
                           )}
                         </button>
                       </div>
-
-                      <div className="bg-gray-800 dark:bg-gray-900 rounded-lg p-3 relative">
-                        <div className="overflow-x-auto h-20">
-                          <code className="text-xs leading-4 text-gray-200 dark:text-gray-300 font-mono whitespace-pre-wrap break-all block">
+                      <div className="bg-gray-800 dark:bg-gray-900 rounded-lg p-4">
+                        <div className="overflow-x-auto max-h-48">
+                          <code className="text-sm leading-relaxed text-gray-200 dark:text-gray-300 font-mono whitespace-pre-wrap break-all block">
                             {selectedGene.sequence}
                           </code>
                         </div>
                       </div>
                     </div>
                   </div>
-                  <div className="col-span-2">
-                    <SequenceTrackViewer
-                      sequence={selectedGene.sequence}
-                      title={selectedGene.name}
-                    />
-                  </div>
+                </div>
+
+                {/* Sequence Track Viewer */}
+                <div className="mt-6">
+                  <SequenceTrackViewer
+                    sequence={selectedGene.sequence}
+                    title={selectedGene.name}
+                  />
                 </div>
               </div>
             </div>
