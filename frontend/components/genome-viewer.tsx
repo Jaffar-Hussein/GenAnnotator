@@ -8,8 +8,6 @@ import {
   Search,
   Info,
   Loader,
-  Copy,
-  Check,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import GeneDetails from "@/components/gene-details";
@@ -20,8 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import SequenceTrackViewer from "./sequence-viewer";
-import { useAuthStore } from "@/store/useAuthStore";
+import EmptyGenomeViewer from "@/components/empty-genome-viewer";
 
 const GenomeViewer = ({ genomeName = "Escherichia_coli_cft073" }) => {
   const [viewportStart, setViewportStart] = useState(0);
@@ -34,7 +31,6 @@ const GenomeViewer = ({ genomeName = "Escherichia_coli_cft073" }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [copied, setCopied] = useState(false);
-  const user = useAuthStore((state) => state.user);
 
   const copyToClipboard = async () => {
     try {
@@ -98,6 +94,12 @@ const GenomeViewer = ({ genomeName = "Escherichia_coli_cft073" }) => {
           </div>
         </CardContent>
       </Card>
+    );
+  }
+
+  if (!genes || genes.length === 0) {
+    return (
+      <EmptyGenomeViewer genomeName={genomeName} />
     );
   }
 
