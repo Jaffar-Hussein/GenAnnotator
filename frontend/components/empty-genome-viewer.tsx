@@ -10,9 +10,8 @@ import {
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectTrigger, SelectValue } from "@/components/ui/select";
-
+import Link from "next/link";
 const EmptyGenomeViewer = ({ genomeName }) => {
-  const onBackToGenomes = () => {};
   return (
     <>
       <Card className="w-full max-w-6xl relative">
@@ -177,7 +176,7 @@ const EmptyGenomeViewer = ({ genomeName }) => {
         </CardContent>
       </Card>
       <div
-        className="absolute inset-0 flex items-center justify-center bg-white/50 
+        className="absolute inset-0 flex flex-col items-center justify-center bg-white/50 
     dark:bg-gray-900/50 z-20"
       >
         <div className="text-center max-w-md p-6">
@@ -210,30 +209,19 @@ const EmptyGenomeViewer = ({ genomeName }) => {
               <span className="w-1 h-1 rounded-full bg-gray-400 mt-2" />
               Server connection issues
             </li>
-            <li className="flex items-start gap-2">
-              <button
-                onClick={onBackToGenomes}
-                className="inline-flex items-center gap-2 text-indigo-600 hover:text-indigo-700 
-                        dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors group"
-              >
-                <ChevronLeft className="w-4 h-4 transform group-hover:-translate-x-0.5 transition-transform" />
-                <span>Select a different genome</span>
-              </button>
-            </li>
           </ul>
         </div>
         <div className="flex items-start gap-2">
-        <button
-          onClick={onBackToGenomes}
-          className="inline-flex items-center gap-2 text-indigo-600 hover:text-indigo-700 
+          <Link
+            href="/genomes"
+            className="inline-flex items-center gap-2 text-indigo-600 hover:text-indigo-700 
                         dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors group"
-        >
-          <ChevronLeft className="w-4 h-4 transform group-hover:-translate-x-0.5 transition-transform" />
-          <span>Select a different genome</span>
-        </button>
+          >
+            <ChevronLeft className="w-4 h-4 transform group-hover:-translate-x-0.5 transition-transform" />
+            <span>Select a different genome</span>
+          </Link>
+        </div>
       </div>
-      </div>
-      
     </>
   );
 };
