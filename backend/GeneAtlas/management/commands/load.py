@@ -6,6 +6,7 @@ from AccessControl.models import CustomUser
 from Bio import SeqIO
 import os, glob
 from django.db import transaction
+from pathlib import Path
 
 
 class Command(BaseCommand):
@@ -63,10 +64,11 @@ class Command(BaseCommand):
 
         keywords = ["cds","pep"]
         extension = "fa"
-        relpath = "./data/"
+        relpath = Path("./data/")
+        print(relpath)
 
-        genomes_files = [file for file in glob.glob(f"{relpath}*.{extension}") if not any(keyword in file for keyword in keywords)]
-
+        genomes_files = [file for file in relpath.glob(f"*.{extension}") if not any(keyword in file.name for keyword in keywords)]
+        print(genomes_files)
         try:
             with transaction.atomic():
 
@@ -79,18 +81,15 @@ class Command(BaseCommand):
                 post_save.disconnect(update_genome_status, sender=GeneAnnotationStatus)
 
                 for genome_file in genomes_files:
+                
+                    genome = genome_file.stem
 
-                    genome = (genome_file.split("/")[-1]).split(".")[0]
-
-                    self.stdout.write("Genome: " + genome)
-
-                    cds_file = relpath + genome + "_" + keywords[0] + "." + extension
-
-                    self.stdout.write("CDS: " + cds_file)
-
-                    peptide_file = relpath + genome + "_" + keywords[1] + "." + extension
-
-                    self.stdout.write("Peptide: " + peptide_file, ending="\n")
+                    self.stdout.write(f"Genome: {genome}")
+                    
+                    cds_file = relpath / f"{genome}_{keywords[0]}.{extension}"
+                    peptide_file = relpath / f"{genome}_{keywords[1]}.{extension}"
+                    self.stdout.write(f"CDS: {cds_file}")
+                    self.stdout.write(f"Peptide: {peptide_file}", ending="\n")
 
                     # Parse Genome
                     for seq_record in SeqIO.parse(genome_file, "fasta"):
