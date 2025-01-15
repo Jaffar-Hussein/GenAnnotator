@@ -6,7 +6,7 @@
 - npm/Yarn, pip
 - (Optional) Python virtualenv
 
-> **Nota Bene:** Ensure you have both `.env` (for Django) and `.env.local` (for Next.js) files set up with required environment variables. Request sample from us.
+> **Nota Bene:** Ensure you have both `.env` (for Django) and `.env` (for Next.js) files set up with required environment variables. Request sample from us.
 
 ---
 
