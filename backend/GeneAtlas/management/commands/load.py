@@ -65,10 +65,9 @@ class Command(BaseCommand):
         keywords = ["cds","pep"]
         extension = "fa"
         relpath = Path("./data/")
-        print(relpath)
 
         genomes_files = [file for file in relpath.glob(f"*.{extension}") if not any(keyword in file.name for keyword in keywords)]
-        print(genomes_files)
+        
         try:
             with transaction.atomic():
 
