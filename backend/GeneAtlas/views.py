@@ -6,6 +6,7 @@ from .serializers import GenomeSerializer, GeneSerializer, PeptideSerializer, Ge
 from rest_framework import status, request
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.pagination import LimitOffsetPagination
 from .models import Genome, Gene, Peptide, GeneAnnotation, PeptideAnnotation, GeneAnnotationStatus
 from django.db import transaction, models as db_models
 from django.http import HttpResponse
@@ -33,7 +34,7 @@ class GenomeAPIView(APIView):
     def get(self, request):
         inf = Genome.objects.all()
         if(request.GET.get('all', None) == 'true'):
-            serializer = GenomeSerializer(inf, many=True)
+            query_results = inf
         else:
             params = {"name": request.GET.get('name', None), 
                     "species": request.GET.get('species', None), 
@@ -51,8 +52,14 @@ class GenomeAPIView(APIView):
                         return Response({"error": "Motif must be at least 3 characters long."}, status=status.HTTP_400_BAD_REQUEST)
                     else:
                         query_results = [g for g in query_results if g.search_motif(params["motif"])]
-                serializer = GenomeSerializer(query_results, many=True)
-        return Response(serializer.data)
+        if(request.GET.get("limit",None)):
+            paginator = LimitOffsetPagination()
+            query_results = paginator.paginate_queryset(query_results, request)
+            serializer = GenomeSerializer(query_results, many=True)
+            return paginator.get_paginated_response(serializer.data)
+        else:
+            serializer = GenomeSerializer(query_results, many=True)
+            return Response(serializer.data)
 
     def post(self, request):
         serializer = GenomeSerializer(data=request.data)
@@ -75,9 +82,8 @@ class GeneAPIView(APIView):
         if(request.GET.get('all', None) == 'true'):
             if(params["genome"] is not None):
                 query_results = inf.filter(genome=params["genome"])
-                serializer = GeneSerializer(query_results, many=True)
             else:
-                return Response({"error": "No genome specified."}, status=status.HTTP_400_BAD_REQUEST)
+                query_results = inf
         else:
             if(all(v is None for v in params.values())):
                 return Response({"error": "No query parameters provided."}, status=status.HTTP_400_BAD_REQUEST)
@@ -88,8 +94,14 @@ class GeneAPIView(APIView):
                         return Response({"error": "Motif must be at least 3 characters long."}, status=status.HTTP_400_BAD_REQUEST)
                     else:
                         query_results = [g for g in query_results if g.search_motif(params["motif"])]
-                serializer = GeneSerializer(query_results, many=True)
-        return Response(serializer.data)
+        if(request.GET.get("limit",None)):
+            paginator = LimitOffsetPagination()
+            query_results = paginator.paginate_queryset(query_results, request)
+            serializer = GeneSerializer(query_results, many=True)
+            return paginator.get_paginated_response(serializer.data)
+        else:
+            serializer = GeneSerializer(query_results, many=True)
+            return Response(serializer.data)
 
     def post(self, request):
         serializer = GeneSerializer(data=request.data)
@@ -111,7 +123,7 @@ class PeptideAPIView(APIView):
                 query_results = inf.filter(gene=params["gene"])
                 serializer = PeptideSerializer(query_results, many=True)
             else:
-                return Response({"error": "No gene specified."}, status=status.HTTP_400_BAD_REQUEST)
+                query_results = inf
         else:
             if(all(v is None for v in params.values())):
                 return Response({"error": "No query parameters provided."}, status=status.HTTP_400_BAD_REQUEST)
@@ -130,8 +142,14 @@ class PeptideAPIView(APIView):
                         else:
                             if(not gene_query_result.annotated):
                                 query_results.remove(p)
-                serializer = PeptideSerializer(query_results, many=True)
-        return Response(serializer.data)
+        if(request.GET.get("limit",None)):
+            paginator = LimitOffsetPagination()
+            query_results = paginator.paginate_queryset(query_results, request)
+            serializer = PeptideSerializer(query_results, many=True)
+            return paginator.get_paginated_response(serializer.data)
+        else:
+            serializer = PeptideSerializer(query_results, many=True)
+            return Response(serializer.data)
 
     def post(self, request):
         serializer = PeptideSerializer(data=request.data)
