@@ -140,24 +140,27 @@ class GeneAnnotationStatus(models.Model):
         self.save()
     
     def reset(self):
-        self.status = self.RAW
+        self.status = self.ONOGING
         self.validated_at = None
         self.rejection_reason = None
         self.updated_at = datetime.now()
         self.save()
 
     def setuser(self, user):
+        self.status = self.ONGOING
         self.annotator = user
         self.updated_at = datetime.now()
         self.save()
 
     RAW = 'RAW'
+    ONGOING = 'ONGOING'
     PENDING = 'PENDING'
     APPROVED = 'APPROVED'
     REJECTED = 'REJECTED'
 
     STATUS_CHOICES = [
         (RAW, 'Raw'),
+        (ONGOING, 'Ongoing'),
         (PENDING, 'Pending'),
         (APPROVED, 'Approved'),
         (REJECTED, 'Rejected'),

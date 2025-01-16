@@ -250,23 +250,46 @@ class AnnotationStatusAPIView(APIView):
             return Response({"error": "No query parameters provided."}, status=status.HTTP_400_BAD_REQUEST)
         else:
             query_results = inf.filter(**{k: v for k, v in params.items() if v is not None})
-            serializer = GeneAnnotationStatusSerializer(query_results, many=True)
-        return Response(serializer.data)
+            if(request.GET.get("limit",None)):
+                paginator = LimitOffsetPagination()
+                query_results = paginator.paginate_queryset(query_results, request)
+                serializer = GeneAnnotationStatusSerializer(query_results, many=True)
+                return paginator.get_paginated_response(serializer.data)
+            else:    
+                serializer = GeneAnnotationStatusSerializer(query_results, many=True)
+                return Response(serializer.data)
 
     def put(self, request):
-        status_obj = GeneAnnotationStatus.objects.get(gene=request.data.get('gene', None))
+
+        action = request.data.get('action')
+
+        gene_params = request.data.get('gene', None)
+        
+        if(not gene_params is None):
+            if(isinstance(gene_params, list)):
+                status_obj = GeneAnnotationStatus.objects.filter(gene__in=gene_params)
+                if(action != 'setuser'):
+                    return Response({'error': 'Bulk actions not supported for approve, reject or submit'}, status=status.HTTP_400_BAD_REQUEST)
+            elif(isinstance(gene_params, str)):
+                if(action == 'setuser'):
+                    status_obj = [GeneAnnotationStatus.objects.get(gene=gene_params)]
+                else:
+                    status_obj = GeneAnnotationStatus.objects.get(gene=gene_params)
+                    
+            else:
+                return Response({'error': f'Gene parameter cannot be of type {type(gene_params)}'}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({'error': 'A gene parameter must be provided'}, status=status.HTTP_400_BAD_REQUEST)
         
         if status_obj is None:
             return Response({'error': 'No status found'}, status=status.HTTP_404_NOT_FOUND)
         
         user = request.data.get('user',None)
         user_instance = CustomUser.objects.get(username=user)
-    
-        action = request.data.get('action')
 
         if action == 'approve':
             if(user_instance.role == "VALIDATOR"):
-                if(status_obj.status == "PENDING" or status_obj.status == "REJECTED"):
+                if(status_obj.status == GeneAnnotationStatus.PENDING or status_obj.status == GeneAnnotationStatus.REJECTED):
                     status_obj.approve()
                     return Response({'status': f'{status_obj.gene} approved'})
                 else:
@@ -283,7 +306,7 @@ class AnnotationStatusAPIView(APIView):
                 )
             else:
                 if(user_instance.role == "VALIDATOR"):
-                    if(status_obj.status == "PENDING" or status_obj.status == "APPROVED"):
+                    if(status_obj.status == GeneAnnotationStatus.PENDING or status_obj.status == GeneAnnotationStatus.APPROVED):
                         status_obj.reject(reason=reason)
                         return Response({'status': f'{status_obj.gene} rejected'})
                     else:
@@ -293,7 +316,7 @@ class AnnotationStatusAPIView(APIView):
                 
         elif action == 'submit':
             if((user_instance.role == "ANNOTATOR" or user_instance.role == "VALIDATOR")):
-                if(status_obj.status == "RAW"):
+                if(status_obj.status == GeneAnnotationStatus.ONGOING):
                     status_obj.submit()
                     return Response({'status': f' {status_obj.gene} submitted'})
                 else:
@@ -302,13 +325,19 @@ class AnnotationStatusAPIView(APIView):
                 return Response({'error': f'User with role {user_instance.role} cannot submit annotations'}, status=status.HTTP_400_BAD_REQUEST)
         
         elif action == "setuser":
+            response = {'status': {},
+                        'message': {}}
             if user:
                 if(user_instance.role == "ANNOTATOR" or user_instance.role == "VALIDATOR"):
-                    if(status_obj.status != "APPROVED"):
-                        status_obj.setuser(user_instance)
-                        return Response({'status': f'user {user} set for {status_obj.gene}'})
-                    else:
-                        return Response({'error': f'A user cannot be set for gene annotation with status {status_obj.status}'}, status=status.HTTP_400_BAD_REQUEST)
+                    for obj in status_obj:
+                        if(obj.status == GeneAnnotationStatus.RAW):
+                            obj.setuser(user_instance)
+                            response['status'][obj.gene.name] = True
+                            response['message'][obj.gene.name] = f'user {user} set for {obj.gene}'
+                        else:
+                            response['status'][obj.gene.name] = False
+                            response['message'][obj.gene.name] = f'A user cannot be set for gene annotation with status {obj.status}'
+                    return Response(response, status=status.HTTP_200_OK)
                 else:
                     return Response({'error': f'User with role {user_instance.role} cannot be assigned to annotation'}, status=status.HTTP_400_BAD_REQUEST)
             else:
