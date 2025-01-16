@@ -7,6 +7,8 @@ from rest_framework import status, request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from AccessControl.permissions import IsAnnotatorUser, IsValidatorUser, ReadOnly
 from .models import Genome, Gene, Peptide, GeneAnnotation, PeptideAnnotation, GeneAnnotationStatus
 from django.db import transaction, models as db_models
 from django.http import HttpResponse
@@ -160,6 +162,8 @@ class PeptideAPIView(APIView):
     
 class AnnotationAPIView(APIView):
 
+    permission_classes = [IsAuthenticated&(IsAnnotatorUser|IsValidatorUser|ReadOnly)]
+
     def get(self, request):
         inf_annotation_gene = GeneAnnotation.objects.all()
         inf_annotation_peptide = PeptideAnnotation.objects.all()
@@ -241,6 +245,8 @@ class AnnotationAPIView(APIView):
 
 class AnnotationStatusAPIView(APIView):
 
+    permission_classes = [IsAuthenticated&(IsValidatorUser|ReadOnly)]
+
     def get(self, request):
         inf = GeneAnnotationStatus.objects.all()
         params = {"gene": request.GET.get('gene', None),  
@@ -250,23 +256,46 @@ class AnnotationStatusAPIView(APIView):
             return Response({"error": "No query parameters provided."}, status=status.HTTP_400_BAD_REQUEST)
         else:
             query_results = inf.filter(**{k: v for k, v in params.items() if v is not None})
-            serializer = GeneAnnotationStatusSerializer(query_results, many=True)
-        return Response(serializer.data)
+            if(request.GET.get("limit",None)):
+                paginator = LimitOffsetPagination()
+                query_results = paginator.paginate_queryset(query_results, request)
+                serializer = GeneAnnotationStatusSerializer(query_results, many=True)
+                return paginator.get_paginated_response(serializer.data)
+            else:    
+                serializer = GeneAnnotationStatusSerializer(query_results, many=True)
+                return Response(serializer.data)
 
     def put(self, request):
-        status_obj = GeneAnnotationStatus.objects.get(gene=request.data.get('gene', None))
+
+        action = request.data.get('action')
+
+        gene_params = request.data.get('gene', None)
+        
+        if(not gene_params is None):
+            if(isinstance(gene_params, list)):
+                status_obj = GeneAnnotationStatus.objects.filter(gene__in=gene_params)
+                if(action != 'setuser'):
+                    return Response({'error': 'Bulk actions not supported for approve, reject or submit'}, status=status.HTTP_400_BAD_REQUEST)
+            elif(isinstance(gene_params, str)):
+                if(action == 'setuser'):
+                    status_obj = [GeneAnnotationStatus.objects.get(gene=gene_params)]
+                else:
+                    status_obj = GeneAnnotationStatus.objects.get(gene=gene_params)
+                    
+            else:
+                return Response({'error': f'Gene parameter cannot be of type {type(gene_params)}'}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({'error': 'A gene parameter must be provided'}, status=status.HTTP_400_BAD_REQUEST)
         
         if status_obj is None:
             return Response({'error': 'No status found'}, status=status.HTTP_404_NOT_FOUND)
         
         user = request.data.get('user',None)
         user_instance = CustomUser.objects.get(username=user)
-    
-        action = request.data.get('action')
 
         if action == 'approve':
             if(user_instance.role == "VALIDATOR"):
-                if(status_obj.status == "PENDING" or status_obj.status == "REJECTED"):
+                if(status_obj.status == GeneAnnotationStatus.PENDING or status_obj.status == GeneAnnotationStatus.REJECTED):
                     status_obj.approve()
                     return Response({'status': f'{status_obj.gene} approved'})
                 else:
@@ -283,7 +312,7 @@ class AnnotationStatusAPIView(APIView):
                 )
             else:
                 if(user_instance.role == "VALIDATOR"):
-                    if(status_obj.status == "PENDING" or status_obj.status == "APPROVED"):
+                    if(status_obj.status == GeneAnnotationStatus.PENDING or status_obj.status == GeneAnnotationStatus.APPROVED):
                         status_obj.reject(reason=reason)
                         return Response({'status': f'{status_obj.gene} rejected'})
                     else:
@@ -293,7 +322,7 @@ class AnnotationStatusAPIView(APIView):
                 
         elif action == 'submit':
             if((user_instance.role == "ANNOTATOR" or user_instance.role == "VALIDATOR")):
-                if(status_obj.status == "RAW"):
+                if(status_obj.status == GeneAnnotationStatus.ONGOING):
                     status_obj.submit()
                     return Response({'status': f' {status_obj.gene} submitted'})
                 else:
@@ -302,13 +331,19 @@ class AnnotationStatusAPIView(APIView):
                 return Response({'error': f'User with role {user_instance.role} cannot submit annotations'}, status=status.HTTP_400_BAD_REQUEST)
         
         elif action == "setuser":
+            response = {'status': {},
+                        'message': {}}
             if user:
                 if(user_instance.role == "ANNOTATOR" or user_instance.role == "VALIDATOR"):
-                    if(status_obj.status != "APPROVED"):
-                        status_obj.setuser(user_instance)
-                        return Response({'status': f'user {user} set for {status_obj.gene}'})
-                    else:
-                        return Response({'error': f'A user cannot be set for gene annotation with status {status_obj.status}'}, status=status.HTTP_400_BAD_REQUEST)
+                    for obj in status_obj:
+                        if(obj.status == GeneAnnotationStatus.RAW):
+                            obj.setuser(user_instance)
+                            response['status'][obj.gene.name] = True
+                            response['message'][obj.gene.name] = f'user {user} set for {obj.gene}'
+                        else:
+                            response['status'][obj.gene.name] = False
+                            response['message'][obj.gene.name] = f'A user cannot be set for gene annotation with status {obj.status}'
+                    return Response(response, status=status.HTTP_200_OK)
                 else:
                     return Response({'error': f'User with role {user_instance.role} cannot be assigned to annotation'}, status=status.HTTP_400_BAD_REQUEST)
             else:
@@ -328,30 +363,44 @@ class AnnotationStatusAPIView(APIView):
 class StatsAPIView(APIView):
 
     def get(self, request):
-        user = request.GET.get("user", None)
-        if(user is not None):
-            user_pk = CustomUser.objects.get(username=user).id
-            query = GeneAnnotationStatus.objects.filter(annotator=user_pk)
-            return Response({"annotation_count": query.count(),
-                             "annotation": [a["gene"] for a in GeneAnnotationStatusSerializer(query, many=True).data]})
-        else:
-            genome_count = Genome.objects.count()
-            query_gene_by_genome = Gene.objects.values('genome').annotate(total=db_models.Count('genome'), annotated=db_models.Sum('annotated', output_field=db_models.IntegerField()))
-            genome_fully_annotated_count = Genome.objects.filter(annotation=True).count()
-            genome_waiting_annotated_count = len([g["genome"] for g in Gene.objects.values('genome').annotate(total=db_models.Sum('annotated', output_field=db_models.IntegerField())) if g["total"] == 0])
-            genome_incomplete_annotated_count = len([g["genome"] for g in query_gene_by_genome if g["annotated"] < g["total"] and g["annotated"] > 0])
-            gene_count = Gene.objects.count()
-            peptide_count = Peptide.objects.count()
-            gene_annotation_count = GeneAnnotation.objects.count()
-            peptide_annotation_count = PeptideAnnotation.objects.count()
-            return Response({"genome_count": genome_count, 
-                            "genome_fully_annotated_count": genome_fully_annotated_count, 
-                            "genome_waiting_annotated_count": genome_waiting_annotated_count, 
-                            "genome_incomplete_annotated_count": genome_incomplete_annotated_count,
-                            "gene_by_genome": query_gene_by_genome,
-                            "gene_count": gene_count, "peptide_count": peptide_count, 
-                            "gene_annotation_count": gene_annotation_count, 
-                            "peptide_annotation_count": peptide_annotation_count})
+        try:
+            user = request.GET.get("user", None)
+            if(user is not None):
+                user_pk = CustomUser.objects.get(username=user).id
+                annotations = GeneAnnotationStatus.objects.filter(annotator=user_pk)
+                annotations_ongoing = annotations.filter(status=GeneAnnotationStatus.ONGOING)
+                annotations_pending = annotations.filter(status=GeneAnnotationStatus.PENDING)
+                annotations_approved = annotations.filter(status=GeneAnnotationStatus.APPROVED)
+                annotations_rejected = annotations.filter(status=GeneAnnotationStatus.REJECTED)
+                return Response({"annotations": annotations.count(),
+                                "ongoing": {"count": annotations_ongoing.count(), 
+                                             "annotation": [a["gene"] for a in GeneAnnotationStatusSerializer(annotations_ongoing, many=True).data]},
+                                "pending": {"count": annotations_pending.count(), 
+                                            "annotation": [a["gene"] for a in GeneAnnotationStatusSerializer(annotations_pending, many=True).data]},
+                                "approved": {"count": annotations_approved.count(), 
+                                             "annotation": [a["gene"] for a in GeneAnnotationStatusSerializer(annotations_approved, many=True).data]},
+                                "rejected": {"count": annotations_rejected.count(), 
+                                             "annotation": [a["gene"] for a in GeneAnnotationStatusSerializer(annotations_rejected, many=True).data]}})
+            else:
+                genome_count = Genome.objects.count()
+                query_gene_by_genome = Gene.objects.values('genome').annotate(total=db_models.Count('genome'), annotated=db_models.Sum('annotated', output_field=db_models.IntegerField()))
+                genome_fully_annotated_count = Genome.objects.filter(annotation=True).count()
+                genome_waiting_annotated_count = len([g["genome"] for g in Gene.objects.values('genome').annotate(total=db_models.Sum('annotated', output_field=db_models.IntegerField())) if g["total"] == 0])
+                genome_incomplete_annotated_count = len([g["genome"] for g in query_gene_by_genome if g["annotated"] < g["total"] and g["annotated"] > 0])
+                gene_count = Gene.objects.count()
+                peptide_count = Peptide.objects.count()
+                gene_annotation_count = GeneAnnotation.objects.count()
+                peptide_annotation_count = PeptideAnnotation.objects.count()
+                return Response({"genome_count": genome_count, 
+                                "genome_fully_annotated_count": genome_fully_annotated_count, 
+                                "genome_waiting_annotated_count": genome_waiting_annotated_count, 
+                                "genome_incomplete_annotated_count": genome_incomplete_annotated_count,
+                                "gene_by_genome": query_gene_by_genome,
+                                "gene_count": gene_count, "peptide_count": peptide_count, 
+                                "gene_annotation_count": gene_annotation_count, 
+                                "peptide_annotation_count": peptide_annotation_count})
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
     
     def post(self, request):
         return Response({"error": "POST request not supported."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)

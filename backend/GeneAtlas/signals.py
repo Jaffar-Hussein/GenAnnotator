@@ -57,7 +57,7 @@ def update_genome_status(sender, instance, created, **kwargs):
 #@receiver(post_save, sender=PeptideAnnotation)
 def reset_rejected_status_if_updated(sender, instance, created, **kwargs):
     """
-    If an annotation is added/updated and its status was REJECTED / SUBMITTED, reset it to RAW.
+    If an annotation is added/updated and its status was REJECTED / SUBMITTED, reset it to ONGOING.
     """
     try:
         existing_status = GeneAnnotationStatus.objects.get(gene=instance.gene_instance)
