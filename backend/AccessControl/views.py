@@ -11,11 +11,13 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
-from .serializers import SignUpSerializer, LoginSerializer
+from .serializers import SignUpSerializer, LoginSerializer, UserSerializer
 from .models import CustomUser
 from GeneAtlas.models import GeneAnnotation
 from GeneAtlas.serializers import GeneAnnotationSerializer
 from allauth.account.utils import send_email_confirmation
+from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 
 
 class SignUpView(CreateView):
@@ -41,6 +43,7 @@ class SignupAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class LoginAPIView(APIView):
+
     def post(self, request, *args, **kwargs):
         serializer = LoginSerializer(data=request.data)
         if serializer.is_valid():
@@ -63,3 +66,40 @@ class LoginAPIView(APIView):
                 }, status=status.HTTP_200_OK)
             return Response({"error": "Invalid credentials"}, status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def get(self, request, *args, **kwargs):
+        return Response({"error": "GET request not supported."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    
+    def put(self, request, *args, **kwargs):
+        return Response({"error": "PUT request not supported."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    
+    def delete(self, request, *args, **kwargs):
+        return Response({"error": "DELETE request not supported."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    
+class UserAPIView(APIView):
+
+    permission_classes = [IsAuthenticated|IsAdminUser]
+
+    def get(self, request, *args, **kwargs):
+        users = CustomUser.objects.all()
+        paginator = LimitOffsetPagination()
+        users = paginator.paginate_queryset(users, request)
+        serializer = UserSerializer(users, many=True)
+        return paginator.get_paginated_response(serializer.data)
+
+    def put(self, request, user, *args, **kwargs):
+        user = CustomUser.objects.get(username=user)
+        new_role = request.data.get('role',None)
+        if new_role:
+            if user.setrole(new_role):
+                return Response({"success": f"Role updated to {new_role}."}, status=status.HTTP_200_OK)
+            else:
+                return Response({"error": f"Invalid role provided {new_role}."}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({"error": "Role not provided."}, status=status.HTTP_400_BAD_REQUEST)
+
+    def post(self, request, *args, **kwargs):
+        return Response({"error": "POST request not supported."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    
+    def delete(self, request, user_id, *args, **kwargs):
+        return Response({"error": "DELETE request not supported."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)

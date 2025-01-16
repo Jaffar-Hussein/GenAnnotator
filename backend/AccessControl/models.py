@@ -5,6 +5,14 @@ from phonenumber_field.modelfields import PhoneNumberField
 
 class CustomUser(AbstractUser):
 
+    def setrole(self, role):
+        if role in [self.reader, self.annotator, self.validator]:
+            self.role = role
+            self.save()
+            return True
+        else:
+            return False
+
     # Additional fields
     email = models.EmailField(max_length=254, unique=True, blank=False, null=False, validators=[validate_email])
     phone_number = PhoneNumberField(blank=True)

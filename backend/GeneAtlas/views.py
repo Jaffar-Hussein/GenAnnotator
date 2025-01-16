@@ -7,6 +7,8 @@ from rest_framework import status, request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from AccessControl.permissions import IsAnnotatorUser, IsValidatorUser, ReadOnly
 from .models import Genome, Gene, Peptide, GeneAnnotation, PeptideAnnotation, GeneAnnotationStatus
 from django.db import transaction, models as db_models
 from django.http import HttpResponse
@@ -160,6 +162,8 @@ class PeptideAPIView(APIView):
     
 class AnnotationAPIView(APIView):
 
+    permission_classes = [IsAuthenticated&(IsAnnotatorUser|IsValidatorUser|ReadOnly)]
+
     def get(self, request):
         inf_annotation_gene = GeneAnnotation.objects.all()
         inf_annotation_peptide = PeptideAnnotation.objects.all()
@@ -240,6 +244,8 @@ class AnnotationAPIView(APIView):
         return Response({"error": "DELETE request not supported."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 class AnnotationStatusAPIView(APIView):
+
+    permission_classes = [IsAuthenticated&(IsValidatorUser|ReadOnly)]
 
     def get(self, request):
         inf = GeneAnnotationStatus.objects.all()
