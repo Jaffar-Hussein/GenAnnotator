@@ -5,6 +5,7 @@ from dj_rest_auth.views import PasswordChangeView, PasswordResetView, PasswordRe
 from dj_rest_auth.registration.views import VerifyEmailView, ResendEmailVerificationView
 from rest_framework_simplejwt.views import TokenVerifyView, TokenRefreshView
 
+# URL patterns for the AccessControl application
 urlpatterns = [
     path("api/new/", SignupAPIView.as_view(), name="signup_api"),
     path("api/login/", LoginAPIView.as_view(), name="login_api"),
