@@ -179,15 +179,30 @@ const GeneAssignment = () => {
         return newSelection.slice(0, MAX_SELECTED_GENES); // Limit to 10 genes
       }
     });
+    
+    // Check if we need to load more genes
+    const remainingUnselectedGenes = filteredGenes.filter(
+      g => !selectedGenes.includes(g)
+    ).length;
+    
+    if (remainingUnselectedGenes <= 5 && !isLoading && nextPage) { 
+      loadMoreGenes();
+    }
   };
 
   const handleQuickSelect = () => {
-    const genesToSelect = filteredGenes.slice(0, MAX_SELECTED_GENES);
+    const availableForSelection = unassignedGenes.filter(gene => !selectedGenes.includes(gene));
+    const genesToSelect = availableForSelection.slice(0, MAX_SELECTED_GENES - selectedGenes.length);
+    
     setSelectedGenes((prev) => {
-      const newSelection = [...new Set([...prev, ...genesToSelect])];
-      return newSelection.slice(0, MAX_SELECTED_GENES); // Limit to 10 genes
+      const newSelection = [...prev, ...genesToSelect];
+      // Check if we need to load more
+      if (availableForSelection.length <= MAX_SELECTED_GENES && nextPage && !isLoading) {
+        loadMoreGenes();
+      }
+      return newSelection;
     });
-  };
+};
 
   const handleAssignment = async () => {
     if (!selectedAnnotator || selectedGenes.length === 0) return;
@@ -251,7 +266,13 @@ const GeneAssignment = () => {
 
   const AssignmentResults = ({ results }) => {
     if (!results) return null;
+    useEffect(() => {
+      const timer = setTimeout(() => {
+        setShowResults(false);
+      }, 5000);
 
+      return () => clearTimeout(timer);
+    }, []);
     const successCount = Object.values(results.status).filter(
       (status) => status
     ).length;
