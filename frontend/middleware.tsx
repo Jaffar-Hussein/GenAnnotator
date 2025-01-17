@@ -19,7 +19,7 @@ const PUBLIC_PATHS = [
   '/api/auth/login',
   '/api/auth/refresh',
   '/documentation',
-  
+  '/gene-assignment',
 ];
 
 export async function middleware(request: NextRequest) {

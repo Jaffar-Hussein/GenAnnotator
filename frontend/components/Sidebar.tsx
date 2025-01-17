@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   Home,
   Database,
-  Edit,
+  ClipboardList,
   BarChart2,
   FolderOpen,
   FileText,
@@ -29,6 +29,7 @@ const navigation = [
   { name: "Reports", href: "/reports", icon: FileText },
   { name: "Settings", href: "/settings", icon: Settings },
   { name: "User Management", href: "/admin/users", icon: Users },
+  {name: "Gene Assignment", href: "/gene-assignment", icon: ClipboardList}
 ];
 
 export function AppSidebar() {
