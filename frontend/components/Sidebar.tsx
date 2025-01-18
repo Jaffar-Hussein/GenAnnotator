@@ -7,13 +7,13 @@ import {
   Home,
   Database,
   ClipboardList,
-  BarChart2,
-  FolderOpen,
   FileText,
   Settings,
   Users,
   LogOut,
   Moon,
+  Dna,
+  AtomIcon
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeSwitcher } from "@/components/ui/theme-switcher";
@@ -24,8 +24,8 @@ import { useRouter } from 'next/navigation';
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: Home },
   { name: "Genomes", href: "/genomes", icon: Database },
-  { name: "Visualization", href: "/visualization", icon: BarChart2 },
-  { name: "Projects", href: "/projects", icon: FolderOpen },
+  { name: "Genes", href: "/genes", icon: Dna },
+  { name: "Peptides", href: "/peptides", icon: AtomIcon },
   { name: "Reports", href: "/reports", icon: FileText },
   { name: "Settings", href: "/settings", icon: Settings },
   { name: "User Management", href: "/admin/users", icon: Users },
@@ -192,8 +192,9 @@ export function AppSidebar() {
           {/* Logout Button */}
           <button
             onClick={() => {
-              logout();
               router.push('/');
+              logout();
+              
             }}
             className={cn(
               "w-full flex items-center p-3 rounded-lg",
