@@ -163,7 +163,7 @@ export default function Genomes() {
           className="space-y-8"
         >
           {/* Scientific Header with Stats */}
-          <div className="rounded-2xl bg-white dark:bg-gray-900 shadow-sm border border-indigo-100/20 dark:border-indigo-900/20 p-6 lg:p-8">
+          <div className="rounded-2xl bg-white dark:bg-gray-800 border dark:border-gray-700 shadow-sm   p-6 lg:p-8">
             <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
               <div className="space-y-4">
                 <div className="space-y-2">
@@ -241,7 +241,7 @@ export default function Genomes() {
           </div>
 
           {/* Search & Filters - Modernized */}
-          <Card className="border border-indigo-100/20 dark:border-indigo-900/20 shadow-sm">
+          <Card className="bg-white dark:bg-gray-800 border border-indigo-100/20 dark:border-indigo-900/20 shadow-sm">
             <CardContent className="p-6">
               <div className="flex flex-col lg:flex-row gap-4 items-stretch">
                 <div className="relative flex-1 w-full">
@@ -250,12 +250,12 @@ export default function Genomes() {
                     placeholder="Search by name, species, or strain..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 w-full"
+                    className="pl-9 bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-900 w-full"
                   />
                 </div>
                 <div className="flex flex-wrap gap-2 lg:w-auto">
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-[180px] bg-white dark:bg-gray-900">
+                    <SelectTrigger className="w-[180px] bg-white dark:bg-gray-700">
                       <Filter className="mr-2 h-4 w-4" />
                       <SelectValue placeholder="Filter by status" />
                     </SelectTrigger>
@@ -266,7 +266,7 @@ export default function Genomes() {
                     </SelectContent>
                   </Select>
                   <Select value={sortBy} onValueChange={setSortBy}>
-                    <SelectTrigger className="w-[180px] bg-white dark:bg-gray-900">
+                    <SelectTrigger className="w-[180px] bg-white dark:bg-gray-700">
                       <SlidersHorizontal className="mr-2 h-4 w-4" />
                       <SelectValue placeholder="Sort by" />
                     </SelectTrigger>
@@ -276,7 +276,7 @@ export default function Genomes() {
                       <SelectItem value="gc">GC Content</SelectItem>
                     </SelectContent>
                   </Select>
-                  <div className="flex items-center rounded-md border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
+                  <div className="flex items-center rounded-md border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700">
                     <Button
                       variant={viewMode === "grid" ? "secondary" : "ghost"}
                       size="icon"

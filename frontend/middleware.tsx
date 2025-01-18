@@ -8,6 +8,7 @@ const ROLE_PERMISSIONS = {
   '/dashboard': ['ADMIN', 'ANNOTATOR', 'READER','VALIDATOR'],
   '/editor': ['ADMIN', 'WRITER'],
   '/profile': ['ADMIN', 'ANNOTATOR', 'READER','VALIDATOR'],
+  '/gene-assignment': ['ADMIN','VALIDATOR'],
 } as const;
 
 // Add paths that don't require authentication
@@ -19,7 +20,7 @@ const PUBLIC_PATHS = [
   '/api/auth/login',
   '/api/auth/refresh',
   '/documentation',
-  '/gene-assignment',
+  
 ];
 
 export async function middleware(request: NextRequest) {

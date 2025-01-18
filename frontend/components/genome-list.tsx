@@ -17,7 +17,7 @@ const GenomeListView = ({ genomes }) => {
   };
 
   return (
-    <Card className="border-indigo-200/20 dark:border-indigo-800/20">
+    <Card className="border-indigo-200/20 dark:border-indigo-800/20 bg-white dark:bg-gray-800">
       <div className="divide-y divide-indigo-100 dark:divide-indigo-800/20">
         {genomes.map((genome) => (
           <Link 
