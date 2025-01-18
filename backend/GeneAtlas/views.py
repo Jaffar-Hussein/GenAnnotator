@@ -73,24 +73,24 @@ class GenomeAPIView(APIView):
 class GeneAPIView(APIView):
     def get(self, request):
         inf = Gene.objects.all()
-        print(request)
+        motif = request.GET.get('motif', None)
         params = {"name": request.GET.get('name', None), 
                 "genome": request.GET.get('genome', None), 
                 "description": request.GET.get('description', None), 
                 "length": request.GET.get('length', None),
-                "motif": request.GET.get('motif', None),
                 "gc_content": request.GET.get('gc_content', None), 
                 "annotated": request.GET.get('annotated', None),
                 "limit": request.GET.get('limit', None)}
+        if(motif): 
+            if(len(motif) < 3):
+                return Response({"error": "Motif must be at least 3 characters long."}, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                params[Gene.query_motif(motif)] = (motif).strip("%")
         if(all(v is None for v in params.values())):
             return Response({"error": "No query parameters provided. Please paginate the result."}, status=status.HTTP_400_BAD_REQUEST)
         else:
-            query_results = inf.filter(**{k: v for k, v in params.items() if v is not None and k not in ["motif","limit"]})
-            if(params["motif"] is not None):
-                if(len(params["motif"]) < 3):
-                    return Response({"error": "Motif must be at least 3 characters long."}, status=status.HTTP_400_BAD_REQUEST)
-                else:
-                    query_results = [g for g in query_results if g.search_motif(params["motif"])]
+            query_results = inf.filter(**{k: v for k, v in params.items() if v is not None and k not in ["limit"]})
+
         if(params["limit"] is not None):
             paginator = LimitOffsetPagination()
             query_results = paginator.paginate_queryset(query_results, request)
@@ -111,26 +111,23 @@ class PeptideAPIView(APIView):
     def get(self, request):
         try:
             inf = Peptide.objects.all()
+            motif = request.GET.get('motif', None)
             params = {"name": request.GET.get('name', None), 
                     "gene": request.GET.get('gene', None),  
                     "length": request.GET.get('length', None),
-                    "motif": request.GET.get('motif', None),
-                    "annotated": request.GET.get('annotated', None),
+                    "gene__annotated": request.GET.get('annotated', None),
                     "limit": request.GET.get('limit', None)}
+            if(motif):
+                if(len(motif) < 3):
+                    return Response({"error": "Motif must be at least 3 characters long."}, status=status.HTTP_400_BAD_REQUEST)
+                else:
+                    params[Peptide.query_motif(motif)] = (motif).strip("%")
             if(all(v is None for v in params.values())):
                 return Response({"error": "No query parameters provided. Please paginate the result"}, status=status.HTTP_400_BAD_REQUEST)
             else:
-                query_results = inf.filter(**{k: v for k, v in params.items() if v is not None and k not in ["motif", "annotated", "limit"]})
+                query_results = inf.filter(**{k: v for k, v in params.items() if v is not None and k not in ["limit"]})
                 if(query_results.count() == 0):
                     return Response({"error": "Peptide(s) not found."}, status=status.HTTP_404_NOT_FOUND)
-                else:
-                    if(params["motif"] is not None):
-                        if(len(params["motif"]) < 3):
-                            return Response({"error": "Motif must be at least 3 characters long."}, status=status.HTTP_400_BAD_REQUEST)
-                        else:
-                            query_results = [p for p in query_results if p.search_motif(params["motif"])]
-                    if(params["annotated"] is not None):
-                        query_results = [p for p in query_results if Gene.objects.get(name=p.gene.name).annotated == eval(params["annotated"])]
                                     
             if(params["limit"] is not None):
                 paginator = LimitOffsetPagination()
