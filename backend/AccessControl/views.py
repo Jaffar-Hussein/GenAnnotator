@@ -121,22 +121,26 @@ class UserAPIView(APIView):
 
     # Method for PUT requests
     def put(self, request, user, *args, **kwargs):
-        # Get the user requested
-        user = CustomUser.objects.get(username=user)
-        # Get the new role to set
-        new_role = request.data.get('role',None)
-        # If role is provided, set the new role
-        if new_role:
-            # Call the setrole method from the user model
-            if user.setrole(new_role):
-                # Response if the role is updated
-                return Response({"success": f"Role updated to {new_role}."}, status=status.HTTP_200_OK)
+        try:
+            # Get the user requested
+            user = CustomUser.objects.get(username=user)
+            # Get the new role to set
+            new_role = request.data.get('role',None)
+            # If role is provided, set the new role
+            if new_role:
+                # Call the setrole method from the user model
+                if user.setrole(new_role):
+                    # Response if the role is updated
+                    return Response({"success": f"Role updated to {new_role}."}, status=status.HTTP_200_OK)
+                else:
+                    # Response if the role provided is invalid
+                    return Response({"error": f"Invalid role provided {new_role}."}, status=status.HTTP_400_BAD_REQUEST)
             else:
-                # Response if the role provided is invalid
-                return Response({"error": f"Invalid role provided {new_role}."}, status=status.HTTP_400_BAD_REQUEST)
-        else:
-            # Response if the role is not provided in the request
-            return Response({"error": "Role not provided."}, status=status.HTTP_400_BAD_REQUEST)
+                # Response if the role is not provided in the request
+                return Response({"error": "Role not provided."}, status=status.HTTP_400_BAD_REQUEST)
+        except CustomUser.DoesNotExist:
+            # Response if the user does not exist
+            return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
 
     # Methods not allowed
 
