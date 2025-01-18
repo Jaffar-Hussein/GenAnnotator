@@ -56,15 +56,18 @@ class Gene(models.Model):
         self.gc_content = gc_fraction(Seq(self.sequence))
         return super().save(*args, **kwargs)
     
-    def search_motif(self, motif):
-        if(motif[0] == "%" and motif[-1] == "%"):
-            return self.sequence.find(motif[1:-1]) != -1
-        elif(motif[0] == "%"):
-            return self.sequence.endswith(motif[1:])
-        elif(motif[-1] == "%"):
-            return self.sequence.startswith(motif[:-1])
+    def query_motif(motif: str) -> str:
+        if(motif):
+            if(motif[0] == "%" and motif[-1] == "%"):
+                return "sequence__icontains"
+            elif(motif[0] == "%"):
+                return "sequence__endswith"
+            elif(motif[-1] == "%"):
+                return "sequence__startswith"
+            else:
+                return "sequence__iexact"
         else:
-            return False
+            return "sequence__icontains"
 
     def __str__(self):
         return self.name
@@ -80,15 +83,18 @@ class Peptide(models.Model):
         self.length = len(self.sequence)
         return super().save(*args, **kwargs)
     
-    def search_motif(self, motif):
-        if(motif[0] == "%" and motif[-1] == "%"):
-            return self.get_sequence().find(motif[1:-1]) != -1
-        elif(motif[0] == "%"):
-            return self.get_sequence().endswith(motif[1:])
-        elif(motif[-1] == "%"):
-            return self.get_sequence().startswith(motif[:-1])
+    def query_motif(motif: str) -> str:
+        if(motif):
+            if(motif[0] == "%" and motif[-1] == "%"):
+                return "sequence__icontains"
+            elif(motif[0] == "%"):
+                return "sequence__endswith"
+            elif(motif[-1] == "%"):
+                return "sequence__startswith"
+            else:
+                return "sequence__iexact"
         else:
-            return False
+            return "sequence__icontains"
 
     def __str__(self):
         return self.name
