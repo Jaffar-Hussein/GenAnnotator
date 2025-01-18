@@ -80,23 +80,18 @@ class GeneAPIView(APIView):
                 "length": request.GET.get('length', None),
                 "motif": request.GET.get('motif', None),
                 "gc_content": request.GET.get('gc_content', None), 
-                "annotated": request.GET.get('annotated', None)}
-        if(request.GET.get('all', None) == 'true'):
-            if(params["genome"] is not None):
-                query_results = inf.filter(genome=params["genome"])
-            else:
-                query_results = inf
+                "annotated": request.GET.get('annotated', None),
+                "limit": request.GET.get('limit', None)}
+        if(all(v is None for v in params.values())):
+            return Response({"error": "No query parameters provided. Please paginate the result."}, status=status.HTTP_400_BAD_REQUEST)
         else:
-            if(all(v is None for v in params.values())):
-                return Response({"error": "No query parameters provided."}, status=status.HTTP_400_BAD_REQUEST)
-            else:
-                query_results = inf.filter(**{k: v for k, v in params.items() if v is not None and k != "motif"})
-                if(params["motif"] is not None):
-                    if(len(params["motif"]) < 3):
-                        return Response({"error": "Motif must be at least 3 characters long."}, status=status.HTTP_400_BAD_REQUEST)
-                    else:
-                        query_results = [g for g in query_results if g.search_motif(params["motif"])]
-        if(request.GET.get("limit",None)):
+            query_results = inf.filter(**{k: v for k, v in params.items() if v is not None and k not in ["motif","limit"]})
+            if(params["motif"] is not None):
+                if(len(params["motif"]) < 3):
+                    return Response({"error": "Motif must be at least 3 characters long."}, status=status.HTTP_400_BAD_REQUEST)
+                else:
+                    query_results = [g for g in query_results if g.search_motif(params["motif"])]
+        if(params["limit"] is not None):
             paginator = LimitOffsetPagination()
             query_results = paginator.paginate_queryset(query_results, request)
             serializer = GeneSerializer(query_results, many=True)
@@ -120,30 +115,24 @@ class PeptideAPIView(APIView):
                     "gene": request.GET.get('gene', None),  
                     "length": request.GET.get('length', None),
                     "motif": request.GET.get('motif', None),
-                    "annotated": request.GET.get('annotated', None)}
-            if(request.GET.get('all', None) == 'true'):
-                if(params["gene"] is not None):
-                    query_results = inf.filter(gene=params["gene"])
-                    serializer = PeptideSerializer(query_results, many=True)
-                else:
-                    query_results = inf
+                    "annotated": request.GET.get('annotated', None),
+                    "limit": request.GET.get('limit', None)}
+            if(all(v is None for v in params.values())):
+                return Response({"error": "No query parameters provided. Please paginate the result"}, status=status.HTTP_400_BAD_REQUEST)
             else:
-                if(all(v is None for v in params.values())):
-                    return Response({"error": "No query parameters provided."}, status=status.HTTP_400_BAD_REQUEST)
+                query_results = inf.filter(**{k: v for k, v in params.items() if v is not None and k not in ["motif", "annotated", "limit"]})
+                if(query_results.count() == 0):
+                    return Response({"error": "Peptide(s) not found."}, status=status.HTTP_404_NOT_FOUND)
                 else:
-                    query_results = inf.filter(**{k: v for k, v in params.items() if v is not None and k not in ["motif", "annotated"]})
-                    if(query_results.count() == 0):
-                        return Response({"error": "Peptide(s) not found."}, status=status.HTTP_404_NOT_FOUND)
-                    else:
-                        if(params["motif"] is not None):
-                            if(len(params["motif"]) < 3):
-                                return Response({"error": "Motif must be at least 3 characters long."}, status=status.HTTP_400_BAD_REQUEST)
-                            else:
-                                query_results = [p for p in query_results if p.search_motif(params["motif"])]
-                        if(params["annotated"] is not None):
-                            query_results = [p for p in query_results if Gene.objects.get(name=p.gene.name).annotated == eval(params["annotated"])]
+                    if(params["motif"] is not None):
+                        if(len(params["motif"]) < 3):
+                            return Response({"error": "Motif must be at least 3 characters long."}, status=status.HTTP_400_BAD_REQUEST)
+                        else:
+                            query_results = [p for p in query_results if p.search_motif(params["motif"])]
+                    if(params["annotated"] is not None):
+                        query_results = [p for p in query_results if Gene.objects.get(name=p.gene.name).annotated == eval(params["annotated"])]
                                     
-            if(request.GET.get("limit",None)):
+            if(params["limit"] is not None):
                 paginator = LimitOffsetPagination()
                 query_results = paginator.paginate_queryset(query_results, request)
                 serializer = PeptideSerializer(query_results, many=True)
