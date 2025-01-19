@@ -146,7 +146,7 @@ class GeneAnnotationStatus(models.Model):
         self.save()
     
     def reset(self):
-        self.status = self.ONOGING
+        self.status = self.ONGOING
         self.validated_at = None
         self.rejection_reason = None
         self.updated_at = datetime.now()

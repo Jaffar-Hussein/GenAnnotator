@@ -166,23 +166,21 @@ class AnnotationAPIView(APIView):
         return Response({"gene": sorted(gene_serializer.data, key=lambda x: x['gene_instance']), "peptide": sorted(peptide_serializer.data, key=lambda x: x['annotation'])})
 
 
-    def put(self, request):
+    def put(self, request, gene = None) -> Response:
         try:
 
             with transaction.atomic():
 
-                gene_instance = request.data.get('gene_instance',None)
-
-                if gene_instance is None:
+                if gene is None:
                     return Response({'error': 'No gene instance provided'}, status=status.HTTP_400_BAD_REQUEST)
                 
-                if Gene.objects.get(name=gene_instance).annotated:
+                if Gene.objects.get(name=gene).annotated:
                     return Response({'error': 'Gene already annotated with APPROVED status'}, status=status.HTTP_400_BAD_REQUEST)
 
-                existing_gene_annotation = GeneAnnotation.objects.filter(gene_instance=gene_instance).first()
+                existing_gene_annotation = GeneAnnotation.objects.filter(gene_instance=gene).first()
 
                 gene_annotation_data = {
-                    'gene_instance': gene_instance,
+                    'gene_instance': gene,
                     'strand': request.data.get('strand') if request.data.get('strand',None) is not None else existing_gene_annotation.strand,
                     'gene': request.data.get('gene') if request.data.get('gene',None) is not None else existing_gene_annotation.gene,
                     'gene_biotype': request.data.get('gene_biotype') if request.data.get('gene_biotype',None) is not None else existing_gene_annotation.gene_biotype,
@@ -252,7 +250,7 @@ class AnnotationStatusAPIView(APIView):
                 serializer = GeneAnnotationStatusSerializer(query_results, many=True)
                 return Response(serializer.data)
 
-    def put(self, request):
+    def put(self, request) -> Response:
 
         action = request.data.get('action')
 
