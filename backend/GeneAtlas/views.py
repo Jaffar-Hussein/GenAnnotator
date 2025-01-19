@@ -166,23 +166,21 @@ class AnnotationAPIView(APIView):
         return Response({"gene": sorted(gene_serializer.data, key=lambda x: x['gene_instance']), "peptide": sorted(peptide_serializer.data, key=lambda x: x['annotation'])})
 
 
-    def put(self, request):
+    def put(self, request, gene = None) -> Response:
         try:
 
             with transaction.atomic():
 
-                gene_instance = request.data.get('gene_instance',None)
-
-                if gene_instance is None:
+                if gene is None:
                     return Response({'error': 'No gene instance provided'}, status=status.HTTP_400_BAD_REQUEST)
                 
-                if Gene.objects.get(name=gene_instance).annotated:
+                if Gene.objects.get(name=gene).annotated:
                     return Response({'error': 'Gene already annotated with APPROVED status'}, status=status.HTTP_400_BAD_REQUEST)
 
-                existing_gene_annotation = GeneAnnotation.objects.filter(gene_instance=gene_instance).first()
+                existing_gene_annotation = GeneAnnotation.objects.filter(gene_instance=gene).first()
 
                 gene_annotation_data = {
-                    'gene_instance': gene_instance,
+                    'gene_instance': gene,
                     'strand': request.data.get('strand') if request.data.get('strand',None) is not None else existing_gene_annotation.strand,
                     'gene': request.data.get('gene') if request.data.get('gene',None) is not None else existing_gene_annotation.gene,
                     'gene_biotype': request.data.get('gene_biotype') if request.data.get('gene_biotype',None) is not None else existing_gene_annotation.gene_biotype,
@@ -252,7 +250,7 @@ class AnnotationStatusAPIView(APIView):
                 serializer = GeneAnnotationStatusSerializer(query_results, many=True)
                 return Response(serializer.data)
 
-    def put(self, request):
+    def put(self, request) -> Response:
 
         action = request.data.get('action')
 
@@ -361,19 +359,19 @@ class StatsAPIView(APIView):
                 annotations_rejected = annotations.filter(status=GeneAnnotationStatus.REJECTED)
                 return Response({"annotations": annotations.count(),
                                 "ongoing": {"count": annotations_ongoing.count(), 
-                                             "annotation": [a["gene"] for a in GeneAnnotationStatusSerializer(annotations_ongoing, many=True).data]},
+                                             "annotation": annotations_ongoing.values_list('gene', flat=True)},
                                 "pending": {"count": annotations_pending.count(), 
-                                            "annotation": [a["gene"] for a in GeneAnnotationStatusSerializer(annotations_pending, many=True).data]},
+                                            "annotation": annotations_pending.values_list('gene', flat=True)},
                                 "approved": {"count": annotations_approved.count(), 
-                                             "annotation": [a["gene"] for a in GeneAnnotationStatusSerializer(annotations_approved, many=True).data]},
+                                             "annotation": annotations_approved.values_list('gene', flat=True)},
                                 "rejected": {"count": annotations_rejected.count(), 
-                                             "annotation": [a["gene"] for a in GeneAnnotationStatusSerializer(annotations_rejected, many=True).data]}})
+                                             "annotation": annotations_rejected.values_list('gene', flat=True)}})
             else:
                 genome_count = Genome.objects.count()
-                query_gene_by_genome = Gene.objects.values('genome').annotate(total=db_models.Count('genome'), annotated=db_models.Sum('annotated', output_field=db_models.IntegerField()))
-                genome_fully_annotated_count = Genome.objects.filter(annotation=True).count()
-                genome_waiting_annotated_count = len([g["genome"] for g in Gene.objects.values('genome').annotate(total=db_models.Sum('annotated', output_field=db_models.IntegerField())) if g["total"] == 0])
-                genome_incomplete_annotated_count = len([g["genome"] for g in query_gene_by_genome if g["annotated"] < g["total"] and g["annotated"] > 0])
+                stats_by_genome = Gene.objects.values('genome').annotate(total=db_models.Count('genome'), annotated=db_models.Sum('annotated', output_field=db_models.IntegerField()))
+                genome_fully_annotated_count = stats_by_genome.filter(annotated=db_models.F('total')).count()
+                genome_waiting_annotated_count = stats_by_genome.filter(annotated=0).count()
+                genome_incomplete_annotated_count = stats_by_genome.filter(annotated__lt=db_models.F('total'), annotated__gt=0).count()
                 gene_count = Gene.objects.count()
                 peptide_count = Peptide.objects.count()
                 gene_annotation_count = GeneAnnotation.objects.count()
@@ -382,7 +380,7 @@ class StatsAPIView(APIView):
                                 "genome_fully_annotated_count": genome_fully_annotated_count, 
                                 "genome_waiting_annotated_count": genome_waiting_annotated_count, 
                                 "genome_incomplete_annotated_count": genome_incomplete_annotated_count,
-                                "gene_by_genome": query_gene_by_genome,
+                                "gene_by_genome": stats_by_genome,
                                 "gene_count": gene_count, "peptide_count": peptide_count, 
                                 "gene_annotation_count": gene_annotation_count, 
                                 "peptide_annotation_count": peptide_annotation_count})

@@ -8,6 +8,7 @@ urlpatterns = [
     path("api/gene/", GeneAPIView.as_view(), name="gene_api"),
     path("api/peptide/", PeptideAPIView.as_view(), name="peptide_api"),
     path("api/annotation/", AnnotationAPIView.as_view(), name="annotation_api"),
+    path("api/annotation/<str:gene>", AnnotationAPIView.as_view(), name="annotation_api_set"),
     path("api/stats/", StatsAPIView.as_view(), name="stats_api"),
     path("api/download/", DownloadAPIView.as_view(), name="download_api"),
     path("api/status/", AnnotationStatusAPIView.as_view(), name="status_api"),
