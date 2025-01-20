@@ -1,7 +1,6 @@
 "use client";
-
-import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import {
   Search,
   Filter,
@@ -10,116 +9,74 @@ import {
   SlidersHorizontal,
   Database,
   AlertCircle,
-  Upload,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+} from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Separator } from "@/components/ui/separator";
-import Link from "next/link";
-import { Skeleton } from "@/components/ui/skeleton";
-import GenomeCard from "@/components/genome-card";
-import GenomeListView from "@/components/genome-list";
-import  UploadGenomeModal  from "@/components/ui/genome-upload";
-/**
- * Backend returns an array of these fields:
- * {
- *   "name": "Escherichia_coli_o157_h7_str_edl933",
- *   "species": "eColi",
- *   "description": "",
- *   "header": "...",
- *   "length": 5528445,
- *   "gc_content": 0.5044473518613253,
- *   "annotation": false,
- *   "sequence": "AGCTTTT..."
- * }
- */
-interface RawGenome {
+} from '@/components/ui/select';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Skeleton } from '@/components/ui/skeleton';
+
+interface Peptide {
   name: string;
-  species: string;
-  description: string;
   header: string;
+  sequence: string;
   length: number;
-  gc_content: number;
-  annotation: boolean;
-  sequence: string;
+  gene: string;
 }
 
-/**
- * Transformed Genome object for the UI
- */
-interface Genome {
-  id: string;
-  name: string;
-  species: string;
-  strain: string;
-  basePairs: number;
-  gcPercentage: string;
-  coverage: string;
-  status: string;
-  completeness: string;
-  header: string;
-  lastModified: string;
-  sequence: string;
-}
+import PeptideCard from '@/components/peptides-card';
 
-export default function Genomes() {
+const PeptideListView = ({ peptides }: { peptides: Peptide[] }) => (
+  <div className="space-y-4">
+    {peptides.map((peptide) => (
+      <Card key={peptide.name} className="hover:shadow-md transition-all duration-300">
+        <CardContent className="p-4">
+          <div className="flex justify-between items-start">
+            <div className="space-y-1">
+              <h3 className="font-medium">{peptide.name}</h3>
+              <p className="text-sm text-gray-500">{peptide.gene}</p>
+              <p className="text-sm font-mono">{peptide.sequence}</p>
+            </div>
+            <Badge variant="outline">{peptide.length} aa</Badge>
+          </div>
+        </CardContent>
+      </Card>
+    ))}
+  </div>
+);
+
+export default function Peptides() {
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [statusFilter, setStatusFilter] = useState("all");
   const [sortBy, setSortBy] = useState("name");
-  const [genomes, setGenomes] = useState<Genome[]>([]);
+  const [peptides, setPeptides] = useState<Peptide[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
-  // Fetch Genomes
   useEffect(() => {
-    async function fetchGenomes() {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+    async function fetchPeptides() {
       setLoading(true);
       try {
-        const response = await fetch(
-          `${backendUrl}/data/api/genome/?all=true`
-        );
+        const response = await fetch('http://127.0.0.1:8000/data/api/peptide/?limit=10');
         if (!response.ok) {
-          throw new Error(
-            `Failed to fetch genome data: ${response.status} ${response.statusText}`
-          );
+          throw new Error(`Failed to fetch peptide data: ${response.status} ${response.statusText}`);
         }
-        const data: RawGenome[] = await response.json();
-
-        const transformedData: Genome[] = data.map((item) => ({
-          id: item.name,
-          name: item.name,
-          species: item.species,
-          strain: item.description || "Unknown",
-          basePairs: item.length,
-          gcPercentage: (item.gc_content * 100).toFixed(2) + "%",
-          coverage: item.annotation ? "Full Coverage" : "No Coverage",
-          status: item.annotation ? "Annotated" : "Pending",
-          completeness: item.annotation ? "100%" : "0%",
-          header: item.header,
-          lastModified: "N/A", // or parse a real date if your backend provides it
-          sequence: item.sequence,
-        }));
-
-        setGenomes(transformedData);
+        const data = await response.json();
+        setPeptides(data.results);
         setError(null);
       } catch (err: any) {
         setError(err.message);
@@ -127,34 +84,31 @@ export default function Genomes() {
         setLoading(false);
       }
     }
-    fetchGenomes();
+    fetchPeptides();
   }, []);
 
-  // Filter & Sort
-  const filteredGenomes = genomes
-    .filter((genome) => {
-      const matchesSearch =
-        genome.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        genome.species.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesStatus =
-        statusFilter === "all" ||
-        genome.status.toLowerCase() === statusFilter.toLowerCase();
-      return matchesSearch && matchesStatus;
+  const filteredPeptides = peptides
+    .filter((peptide) => {
+      const searchLower = searchQuery.toLowerCase();
+      return (
+        peptide.name.toLowerCase().includes(searchLower) ||
+        peptide.gene.toLowerCase().includes(searchLower) ||
+        peptide.sequence.toLowerCase().includes(searchLower)
+      );
     })
     .sort((a, b) => {
       switch (sortBy) {
         case "name":
           return a.name.localeCompare(b.name);
-        case "size":
-          return a.basePairs - b.basePairs;
+        case "length":
+          return a.length - b.length;
         default:
           return 0;
       }
     });
 
   return (
-    <>
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-5 dark:from-gray-800 dark:to-gray-900">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-900">
       <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -162,121 +116,85 @@ export default function Genomes() {
           transition={{ duration: 0.5 }}
           className="space-y-8"
         >
-          {/* Scientific Header with Stats */}
-          <div className="rounded-2xl bg-white dark:bg-gray-900 shadow-sm border border-indigo-100/20 dark:border-indigo-900/20 p-6 lg:p-8">
-            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <h1 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-gray-50">
-                    Peptides
-                  </h1>
-                  <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl">
-                    Advanced gene analysis platform with comprehensive
-                    annotation tools.
-                  </p>
-                </div>
-
-                {/* Quick Stats */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 pt-4">
-                  <div className="p-6 rounded-xl bg-gradient-to-br from-indigo-50 to-indigo-100/50 dark:from-indigo-900/50 dark:to-indigo-800/30 border border-indigo-100/50 dark:border-indigo-700/20 shadow-sm hover:shadow-md transition-shadow">
-                    <div className="flex flex-col">
-                      <p className="text-sm font-medium text-indigo-600 dark:text-indigo-300">
-                        Total Genomes
-                      </p>
-                      <p className="mt-2 text-3xl font-semibold text-indigo-700 dark:text-indigo-200">
-                        {genomes.length}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="p-6 rounded-xl bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-900/50 dark:to-emerald-800/30 border border-emerald-100/50 dark:border-emerald-700/20 shadow-sm hover:shadow-md transition-shadow">
-                    <div className="flex flex-col">
-                      <p className="text-sm font-medium text-emerald-600 dark:text-emerald-300">
-                        Annotated
-                      </p>
-                      <p className="mt-2 text-3xl font-semibold text-emerald-700 dark:text-emerald-200">
-                        {genomes.filter((g) => g.status === "Annotated").length}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="p-6 rounded-xl bg-gradient-to-br from-amber-50 to-amber-100/50 dark:from-amber-900/50 dark:to-amber-800/30 border border-amber-100/50 dark:border-amber-700/20 shadow-sm hover:shadow-md transition-shadow">
-                    <div className="flex flex-col">
-                      <p className="text-sm font-medium text-amber-600 dark:text-amber-300">
-                        Pending
-                      </p>
-                      <p className="mt-2 text-3xl font-semibold text-amber-700 dark:text-amber-200">
-                        {genomes.filter((g) => g.status === "Pending").length}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="p-6 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/50 dark:to-blue-800/30 border border-blue-100/50 dark:border-blue-700/20 shadow-sm hover:shadow-md transition-shadow">
-                    <div className="flex flex-col">
-                      <p className="text-sm font-medium text-blue-600 dark:text-blue-300">
-                        Total Base Pairs
-                      </p>
-                      <p className="mt-2 text-3xl font-semibold text-blue-700 dark:text-blue-200">
-                        {(
-                          genomes.reduce(
-                            (acc, genome) => acc + genome.basePairs,
-                            0
-                          ) / 1e6
-                        ).toFixed(1)}
-                        M
-                      </p>
-                    </div>
-                  </div>
-                </div>
+          {/* Header with Stats */}
+          <div className="rounded-2xl bg-white dark:bg-gray-800 border dark:border-gray-700 shadow-sm p-6 lg:p-8">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <h1 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-gray-50">
+                  Peptides
+                </h1>
+                <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl">
+                  Comprehensive peptide sequence database and analysis platform.
+                </p>
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex flex-col gap-3">
-                <Button className="w-full sm:w-auto bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-700 hover:to-indigo-600 text-white shadow-lg shadow-indigo-500/20" onClick={() => setIsUploadModalOpen(true)}>
-                  <Upload className="mr-2 h-4 w-4" />
-                  Upload Peptide
-                </Button>
+              {/* Quick Stats */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-6 pt-4">
+                <div className="p-6 rounded-xl bg-gradient-to-br from-indigo-50 to-indigo-100/50 dark:from-indigo-900/50 dark:to-indigo-800/30 border border-indigo-100/50 dark:border-indigo-700/20">
+                  <div className="flex flex-col">
+                    <p className="text-sm font-medium text-indigo-600 dark:text-indigo-300">
+                      Total Peptides
+                    </p>
+                    <p className="mt-2 text-3xl font-semibold text-indigo-700 dark:text-indigo-200">
+                      {peptides.length}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-6 rounded-xl bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-900/50 dark:to-emerald-800/30 border border-emerald-100/50 dark:border-emerald-700/20">
+                  <div className="flex flex-col">
+                    <p className="text-sm font-medium text-emerald-600 dark:text-emerald-300">
+                      Average Length
+                    </p>
+                    <p className="mt-2 text-3xl font-semibold text-emerald-700 dark:text-emerald-200">
+                      {peptides.length > 0
+                        ? Math.round(
+                            peptides.reduce((acc, p) => acc + p.length, 0) / peptides.length
+                          )
+                        : 0}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-6 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/50 dark:to-blue-800/30 border border-blue-100/50 dark:border-blue-700/20">
+                  <div className="flex flex-col">
+                    <p className="text-sm font-medium text-blue-600 dark:text-blue-300">
+                      Unique Genes
+                    </p>
+                    <p className="mt-2 text-3xl font-semibold text-blue-700 dark:text-blue-200">
+                      {new Set(peptides.map(p => p.gene)).size}
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Search & Filters - Modernized */}
-          <Card className="border border-indigo-100/20 dark:border-indigo-900/20 shadow-sm">
+          {/* Search & Filters */}
+          <Card className="bg-white dark:bg-gray-800 border border-indigo-100/20 dark:border-indigo-900/20">
             <CardContent className="p-6">
               <div className="flex flex-col lg:flex-row gap-4 items-stretch">
-                <div className="relative flex-1 w-full">
+                <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                   <Input
-                    placeholder="Search by name, species, or strain..."
+                    placeholder="Search by name, gene, or sequence..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 w-full"
+                    className="pl-9 bg-white dark:bg-gray-700"
                   />
                 </div>
-                <div className="flex flex-wrap gap-2 lg:w-auto">
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-[180px] bg-white dark:bg-gray-900">
-                      <Filter className="mr-2 h-4 w-4" />
-                      <SelectValue placeholder="Filter by status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Status</SelectItem>
-                      <SelectItem value="annotated">Annotated</SelectItem>
-                      <SelectItem value="pending">Pending</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="flex flex-wrap gap-2">
                   <Select value={sortBy} onValueChange={setSortBy}>
-                    <SelectTrigger className="w-[180px] bg-white dark:bg-gray-900">
+                    <SelectTrigger className="w-[180px] bg-white dark:bg-gray-700">
                       <SlidersHorizontal className="mr-2 h-4 w-4" />
                       <SelectValue placeholder="Sort by" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="name">Name</SelectItem>
-                      <SelectItem value="size">Base Pairs</SelectItem>
-                      <SelectItem value="gc">GC Content</SelectItem>
+                      <SelectItem value="length">Length</SelectItem>
                     </SelectContent>
                   </Select>
-                  <div className="flex items-center rounded-md border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
+                  <div className="flex items-center rounded-md border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700">
                     <Button
                       variant={viewMode === "grid" ? "secondary" : "ghost"}
                       size="icon"
@@ -299,15 +217,12 @@ export default function Genomes() {
             </CardContent>
           </Card>
 
-          {/* Loading State */}
+          {/* Content */}
           {loading ? (
             <div className="space-y-6">
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {Array.from({ length: 6 }).map((_, i) => (
-                  <Card
-                    key={i}
-                    className="border-indigo-100/20 dark:border-indigo-900/20 hover:shadow-lg transition-all duration-300"
-                  >
+                  <Card key={i} className="border-indigo-100/20 dark:border-indigo-900/20">
                     <CardHeader className="pb-4">
                       <div className="flex items-start justify-between">
                         <div className="space-y-2">
@@ -318,10 +233,8 @@ export default function Genomes() {
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-2">
-                      <Skeleton className="h-3 w-1/2" />
-                      <Skeleton className="h-3 w-1/3" />
+                      <Skeleton className="h-3 w-full" />
                       <Skeleton className="h-3 w-2/3" />
-                      <Skeleton className="h-3 w-1/2" />
                     </CardContent>
                   </Card>
                 ))}
@@ -334,36 +247,29 @@ export default function Genomes() {
                 {error}
               </AlertDescription>
             </Alert>
-          ) : filteredGenomes.length === 0 ? (
+          ) : filteredPeptides.length === 0 ? (
             <div className="text-center py-12">
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 mb-4">
                 <Database className="h-8 w-8 text-gray-400" />
               </div>
               <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">
-                No genomes found
+                No peptides found
               </h3>
               <p className="mt-1 text-gray-500 dark:text-gray-400">
-                Try adjusting your search or filter criteria
+                Try adjusting your search criteria
               </p>
             </div>
           ) : viewMode === "grid" ? (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {filteredGenomes.map((genome) => (
-                <GenomeCard key={genome.id} genome={genome} />
+              {filteredPeptides.map((peptide) => (
+                <PeptideCard key={peptide.name} peptide={peptide} />
               ))}
             </div>
           ) : (
-            <GenomeListView genomes={filteredGenomes} />
+            <PeptideListView peptides={filteredPeptides} />
           )}
-         
         </motion.div>
       </div>
-      
     </div>
-    <UploadGenomeModal 
-        open={isUploadModalOpen}
-        onOpenChange={setIsUploadModalOpen}
-      />
-  </>
   );
 }
