@@ -30,7 +30,7 @@ class SignupAPIView(APIView):
     # Everyone can access this view
 
     # Method for POST requests
-    def post(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs) -> Response:
         serializer = SignUpSerializer(data=request.data)
         # Check if the serializer is valid
         if serializer.is_valid():
@@ -57,7 +57,7 @@ class LoginAPIView(APIView):
     # Everyone can access this view
 
     # Method for POST requests
-    def post(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs) -> Response:
         # Serialize the request data
         serializer = LoginSerializer(data=request.data)
         # Check if the serializer is valid
@@ -90,13 +90,13 @@ class LoginAPIView(APIView):
     
     # Methods not allowed
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request, *args, **kwargs) -> Response:
         return Response({"error": "GET request not supported."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
     
-    def put(self, request, *args, **kwargs):
+    def put(self, request, *args, **kwargs) -> Response :
         return Response({"error": "PUT request not supported."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
     
-    def delete(self, request, *args, **kwargs):
+    def delete(self, request, *args, **kwargs) -> Response:
         return Response({"error": "DELETE request not supported."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
     
 class UserAPIView(APIView):
@@ -107,20 +107,34 @@ class UserAPIView(APIView):
     permission_classes = [IsAuthenticated|IsAdminUser]
 
     # Method for GET requests
-    def get(self, request, *args, **kwargs):
+    def get(self, request, *args, **kwargs) -> Response:
         # Get all users
         users = CustomUser.objects.all()
 
+        # Query parameters
+        params = {"username": request.GET.get('username',None),
+                  "role": request.GET.get('role', None)}
+        
+        if(not all(value is None for value in params.values())):
+            # Filter the users based on the query parameters
+            users = users.filter(**{k: v for k, v in params.items() if v is not None})
+            if(users.count() == 0):
+                return Response({"error": "No users found with query parameters provided."}, status=status.HTTP_404_NOT_FOUND)
+        
         # Pagination
-        paginator = LimitOffsetPagination()
-        users = paginator.paginate_queryset(users, request)
-
-        serializer = UserSerializer(users, many=True)
-
-        return paginator.get_paginated_response(serializer.data)
+        if(request.GET.get('limit',None)):
+            paginator = LimitOffsetPagination()
+            users = paginator.paginate_queryset(users, request)
+            serializer = UserSerializer(users, many=True)
+            return paginator.get_paginated_response(serializer.data)
+        else:
+            # Serialize the users
+            serializer = UserSerializer(users, many=True)
+            # Return the serialized users
+            return Response(serializer.data, status=status.HTTP_200_OK)
 
     # Method for PUT requests
-    def put(self, request, user, *args, **kwargs):
+    def put(self, request, user, *args, **kwargs) -> Response:
         try:
             # Get the user requested
             user = CustomUser.objects.get(username=user)
@@ -144,8 +158,8 @@ class UserAPIView(APIView):
 
     # Methods not allowed
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs) -> Response:
         return Response({"error": "POST request not supported."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
     
-    def delete(self, request, user_id, *args, **kwargs):
+    def delete(self, request, user_id, *args, **kwargs) -> Response:
         return Response({"error": "DELETE request not supported."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)

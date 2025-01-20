@@ -4,6 +4,9 @@ from AccessControl.models import CustomUser
 from Bio.Seq import Seq
 from Bio.SeqUtils import gc_fraction
 from zlib import compress, decompress
+from .decorators import validator_only
+from rest_framework.response import Response
+from rest_framework import status
 
 # Create your models here.
 
@@ -127,23 +130,34 @@ class GeneAnnotation(models.Model):
 
 class GeneAnnotationStatus(models.Model):
 
-    def submit(self):
+    def submit(self) -> Response:
         self.status = self.PENDING
         self.updated_at = datetime.now()
         self.save()
+        return Response({'status': f'Annotation {self.gene} submitted'}, status=status.HTTP_200_OK)
 
-    def reject(self, reason):
+    @validator_only()
+    def reject(self, request, *args, **kwargs) -> Response:
+        reason = request.data.get('reason', None)
+        if not reason:
+            return Response(
+                {'error': 'Rejection reason required'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
         self.status = self.REJECTED
-        self.rejection_reason = reason
+        self.rejection_reason = request.data.get('reason', None)
         self.updated_at = datetime.now()
         self.save()
+        return Response({'status': f'Annotation {self.gene} rejected'}, status=status.HTTP_200_OK)
 
-    def approve(self):
+    @validator_only()
+    def approve(self, request, *args, **kwargs) -> Response:
         self.status = self.APPROVED
         self.validated_at = datetime.now()
         self.updated_at = datetime.now()
         self.rejection_reason = None
         self.save()
+        return Response({'status': f'Annotation {self.gene} approved'}, status=status.HTTP_200_OK)
     
     def reset(self):
         self.status = self.ONGOING
@@ -152,11 +166,20 @@ class GeneAnnotationStatus(models.Model):
         self.updated_at = datetime.now()
         self.save()
 
-    def setuser(self, user):
-        self.status = self.ONGOING
-        self.annotator = user
-        self.updated_at = datetime.now()
-        self.save()
+    @validator_only()
+    def setuser(self, request, *args, **kwargs) -> Response:
+        if kwargs.get('user') is None:
+            return Response(
+                {'error': 'User required'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        else:
+            user = kwargs.get('user')
+            self.status = self.ONGOING
+            self.annotator = user
+            self.updated_at = datetime.now()
+            self.save()
+            return Response({'status': f'Annotation {self.gene} assigned to {user}'}, status=status.HTTP_200_OK)
 
     RAW = 'RAW'
     ONGOING = 'ONGOING'
