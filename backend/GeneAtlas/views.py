@@ -33,7 +33,7 @@ class HomeView(CreateView):
         return render(request, "home.html", {"endpoints": endpoints, "postman_examples": postman_examples,"api_version": "v1.0"})
 
 class GenomeAPIView(APIView):
-    def get(self, request):
+    def get(self, request) -> Response:
         inf = Genome.objects.all()
         if(request.GET.get('all', None) == 'true'):
             query_results = inf
@@ -63,7 +63,7 @@ class GenomeAPIView(APIView):
             serializer = GenomeSerializer(query_results, many=True)
             return Response(serializer.data)
 
-    def post(self, request):
+    def post(self, request) -> Response:
         serializer = GenomeSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -71,7 +71,7 @@ class GenomeAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class GeneAPIView(APIView):
-    def get(self, request):
+    def get(self, request) -> Response:
         inf = Gene.objects.all()
         motif = request.GET.get('motif', None)
         params = {"name": request.GET.get('name', None), 
@@ -100,7 +100,7 @@ class GeneAPIView(APIView):
             serializer = GeneSerializer(query_results, many=True)
             return Response(serializer.data)
 
-    def post(self, request):
+    def post(self, request) -> Response:
         serializer = GeneSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -108,7 +108,7 @@ class GeneAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class PeptideAPIView(APIView):
-    def get(self, request):
+    def get(self, request) -> Response:
         try:
             inf = Peptide.objects.all()
             motif = request.GET.get('motif', None)
@@ -140,7 +140,7 @@ class PeptideAPIView(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-    def post(self, request):
+    def post(self, request) -> Response:
         serializer = PeptideSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -151,7 +151,7 @@ class AnnotationAPIView(APIView):
 
     permission_classes = [IsAuthenticated&(IsAnnotatorUser|IsValidatorUser|ReadOnly)]
 
-    def get(self, request):
+    def get(self, request) -> Response:
         inf_annotation_gene = GeneAnnotation.objects.all()
         inf_annotation_peptide = PeptideAnnotation.objects.all()
         params = {"gene_instance": request.GET.get('gene_instance', None)}
@@ -222,17 +222,17 @@ class AnnotationAPIView(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         
-    def post(self, request):
+    def post(self, request) -> Response:
         return Response({"error": "POST request not supported."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
     
-    def delete(self, request):
+    def delete(self, request) -> Response:
         return Response({"error": "DELETE request not supported."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 class AnnotationStatusAPIView(APIView):
 
-    permission_classes = [IsAuthenticated&(IsValidatorUser|ReadOnly)]
+    permission_classes = [IsAuthenticated&(IsAnnotatorUser|IsValidatorUser|ReadOnly)]
 
-    def get(self, request):
+    def get(self, request) -> Response:
         inf = GeneAnnotationStatus.objects.all()
         params = {"gene": request.GET.get('gene', None),  
                 "status": request.GET.get('status', None),
@@ -252,85 +252,69 @@ class AnnotationStatusAPIView(APIView):
 
     def put(self, request) -> Response:
 
-        action = request.data.get('action')
-
-        gene_params = request.data.get('gene', None)
+        params = {"action": request.data.get('action', None), # Action can be approve, reject, submit or setuser
+                "gene": request.data.get('gene', None), # Gene(s) for which the action is to be performed
+                "user": request.data.get('user', None)} # User to be assigned to the gene annotation
         
-        if(not gene_params is None):
-            if(isinstance(gene_params, list)):
-                status_obj = GeneAnnotationStatus.objects.filter(gene__in=gene_params)
-                if(action != 'setuser'):
+        # Ensure that gene keyworded object is a list or a string
+        if(not params["gene"] is None):
+            if(isinstance(params["gene"], list)):
+                status_obj = GeneAnnotationStatus.objects.filter(gene__in=params["gene"])
+                if(params["action"] != 'setuser'):
                     return Response({'error': 'Bulk actions not supported for approve, reject or submit'}, status=status.HTTP_400_BAD_REQUEST)
-            elif(isinstance(gene_params, str)):
-                if(action == 'setuser'):
-                    status_obj = [GeneAnnotationStatus.objects.get(gene=gene_params)]
+            elif(isinstance(params["gene"], str)):
+                if(params["action"] == 'setuser'):
+                    status_obj = [GeneAnnotationStatus.objects.get(gene=params["gene"])]
                 else:
-                    status_obj = GeneAnnotationStatus.objects.get(gene=gene_params)
+                    status_obj = GeneAnnotationStatus.objects.get(gene=params["gene"])
                     
             else:
-                return Response({'error': f'Gene parameter cannot be of type {type(gene_params)}'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'error': f'Gene parameter cannot be of type {type(params["gene"])}'}, status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response({'error': 'A gene parameter must be provided'}, status=status.HTTP_400_BAD_REQUEST)
         
         if status_obj is None:
             return Response({'error': 'No status found'}, status=status.HTTP_404_NOT_FOUND)
-        
-        user = request.data.get('user',None)
-        user_instance = CustomUser.objects.get(username=user)
 
-        if action == 'approve':
-            if(user_instance.role == "VALIDATOR"):
-                if(status_obj.status == GeneAnnotationStatus.PENDING or status_obj.status == GeneAnnotationStatus.REJECTED):
-                    status_obj.approve()
-                    return Response({'status': f'{status_obj.gene} approved'})
-                else:
-                    return Response({'error': f'Annotation {status_obj.gene} with status {status_obj.status} cannot be approved'}, status=status.HTTP_400_BAD_REQUEST)
+        if params["action"] == 'approve':
+            if(status_obj.status == GeneAnnotationStatus.PENDING or status_obj.status == GeneAnnotationStatus.REJECTED):
+                return status_obj.approve(request)
             else:
-                return Response({'error': f'User with role {user_instance.role} cannot approve annotations'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'error': f'Annotation {status_obj.gene} with status {status_obj.status} cannot be approved'}, status=status.HTTP_400_BAD_REQUEST)
         
-        elif action == 'reject':
-            reason = request.data.get('reason')
-            if not reason:
-                return Response(
-                    {'error': 'Rejection reason required'}, 
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+        elif params["action"] == 'reject':
+            if(status_obj.status == GeneAnnotationStatus.PENDING or status_obj.status == GeneAnnotationStatus.APPROVED):
+                return status_obj.reject(request)
             else:
-                if(user_instance.role == "VALIDATOR"):
-                    if(status_obj.status == GeneAnnotationStatus.PENDING or status_obj.status == GeneAnnotationStatus.APPROVED):
-                        status_obj.reject(reason=reason)
-                        return Response({'status': f'{status_obj.gene} rejected'})
-                    else:
-                        return Response({'error': f'Annotation {status_obj.gene} with status {status_obj.status} cannot be rejected'}, status=status.HTTP_400_BAD_REQUEST)
-                else:
-                    return Response({'error': f'User with role {user_instance.role} cannot reject annotations'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'error': f'Annotation {status_obj.gene} with status {status_obj.status} cannot be rejected'}, status=status.HTTP_400_BAD_REQUEST)
+
                 
-        elif action == 'submit':
-            if((user_instance.role == "ANNOTATOR" or user_instance.role == "VALIDATOR")):
-                if(status_obj.status == GeneAnnotationStatus.ONGOING):
-                    status_obj.submit()
-                    return Response({'status': f' {status_obj.gene} submitted'})
-                else:
-                    return Response({'error': f'Annotation {status_obj.gene} with status {status_obj.status} cannot be submitted'}, status=status.HTTP_400_BAD_REQUEST)
+        elif params["action"] == 'submit':
+            if(status_obj.status == GeneAnnotationStatus.ONGOING):
+                return status_obj.submit()
             else:
-                return Response({'error': f'User with role {user_instance.role} cannot submit annotations'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'error': f'Annotation {status_obj.gene} with status {status_obj.status} cannot be submitted'}, status=status.HTTP_400_BAD_REQUEST)
+
         
-        elif action == "setuser":
+        elif params["action"] == "setuser":
+
             response = {'status': {},
                         'message': {}}
-            if user:
-                if(user_instance.role == "ANNOTATOR" or user_instance.role == "VALIDATOR"):
+            
+            if params["gene"] is not None:
+                user = CustomUser.objects.get(username=params["user"])
+                if(user.role == "ANNOTATOR" or user.role == "VALIDATOR"):
                     for obj in status_obj:
                         if(obj.status == GeneAnnotationStatus.RAW):
-                            obj.setuser(user_instance)
-                            response['status'][obj.gene.name] = True
-                            response['message'][obj.gene.name] = f'user {user} set for {obj.gene}'
+                            out = obj.setuser(request, user=user)
+                            response['status'][obj.gene.name] = True if out.status_code == 200 else False
+                            response['message'][obj.gene.name] = out.data['status'] if out.status_code == 200 else out.data['error']
                         else:
                             response['status'][obj.gene.name] = False
                             response['message'][obj.gene.name] = f'A user cannot be set for gene annotation with status {obj.status}'
                     return Response(response, status=status.HTTP_200_OK)
                 else:
-                    return Response({'error': f'User with role {user_instance.role} cannot be assigned to annotation'}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response({'error': f'User with role {user.role} cannot be assigned to annotation'}, status=status.HTTP_400_BAD_REQUEST)
             else:
                 return Response({'error': 'User not provided'}, status=status.HTTP_400_BAD_REQUEST)
         
@@ -339,15 +323,15 @@ class AnnotationStatusAPIView(APIView):
             status=status.HTTP_400_BAD_REQUEST
         )
     
-    def post(self, request):
+    def post(self, request) -> Response:
         return Response({"error": "POST request not supported."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
     
-    def delete(self, request):
+    def delete(self, request) -> Response:
         return Response({"error": "DELETE request not supported."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
         
 class StatsAPIView(APIView):
 
-    def get(self, request):
+    def get(self, request) -> Response:
         try:
             user = request.GET.get("user", None)
             if(user is not None):
@@ -387,13 +371,13 @@ class StatsAPIView(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
     
-    def post(self, request):
+    def post(self, request) -> Response:
         return Response({"error": "POST request not supported."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
     
-    def put(self, request):
+    def put(self, request) -> Response:
         return Response({"error": "PUT request not supported."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
     
-    def delete(self, request):
+    def delete(self, request) -> Response:
         return Response({"error": "DELETE request not supported."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
     
 class DownloadAPIView(APIView):
@@ -446,11 +430,11 @@ class DownloadAPIView(APIView):
         else:
             return Response({"error": "No database parameter provided."}, status=status.HTTP_400_BAD_REQUEST)
     
-    def post(self, request):
+    def post(self, request) -> Response:
         return Response({"error": "POST request not supported."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
     
-    def put(self, request):
+    def put(self, request) -> Response:
         return Response({"error": "PUT request not supported."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
     
-    def delete(self, request):
+    def delete(self, request) -> Response:
         return Response({"error": "DELETE request not supported."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
