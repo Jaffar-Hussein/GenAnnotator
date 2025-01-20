@@ -32,11 +32,11 @@ import {
   fetchRawGenes,
   fetchNextGenes,
   fetchUsers,
-  
   assignGeneToUser,
 } from "@/services/api";
 
 import AnnotatorStats from "@/components/annotator-stats";
+import { capitalizeWord } from "@/lib/utils";
 
 type AssignmentStatus = "PENDING" | "APPROVED" | "REJECTED" | "ONGOING" | "RAW";
 
@@ -89,6 +89,8 @@ const GeneAssignment = () => {
           name: user.username,
           email: user.email,
           role: user.role,
+          first_name: user.first_name,
+          last_name: user.last_name,
         }));
         setAnnotators(formattedUsers);
       } catch (error) {
@@ -348,7 +350,7 @@ const GeneAssignment = () => {
             <UserRound className="h-6 w-6 text-slate-400 dark:text-slate-500" />
           </div>
         </div>
-  
+
         {/* Title and description */}
         <h4 className="text-base font-medium text-slate-900 dark:text-white mb-1.5">
           Select an Annotator
@@ -356,24 +358,26 @@ const GeneAssignment = () => {
         <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
           View performance stats and activity
         </p>
-  
+
         {/* Stats preview */}
         <div className="w-full grid grid-cols-3 gap-2 mb-3">
           {[
             { icon: Clock, label: "Pending" },
             { icon: CheckCircle2, label: "Approved" },
-            { icon: XCircle, label: "Rejected" }
+            { icon: XCircle, label: "Rejected" },
           ].map((item, index) => (
-            <div 
-              key={index} 
+            <div
+              key={index}
               className="flex items-center gap-1.5 p-2 bg-white dark:bg-gray-800 rounded-md border border-slate-200/60 dark:border-gray-700/60"
             >
               <item.icon className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500" />
-              <span className="text-xs text-slate-500 dark:text-slate-400">{item.label}</span>
+              <span className="text-xs text-slate-500 dark:text-slate-400">
+                {item.label}
+              </span>
             </div>
           ))}
         </div>
-  
+
         {/* Selection hint */}
         <div className="flex items-center gap-1.5 text-xs text-slate-400 dark:text-slate-500">
           <ArrowUp className="h-3.5 w-3.5 animate-bounce" />
@@ -448,9 +452,18 @@ const GeneAssignment = () => {
                                     className="h-6 w-6 rounded-full bg-violet-100 dark:bg-violet-900/30 
                                   flex items-center justify-center text-xs text-violet-600 dark:text-violet-400"
                                   >
-                                    {annotator.name.charAt(0).toUpperCase()}
+                                    {annotator.first_name
+                                      .charAt(0)
+                                      .toUpperCase() +
+                                      annotator.last_name
+                                        .charAt(0)
+                                        .toUpperCase()}
                                   </div>
-                                  <span>{annotator.name}</span>
+                                  <span>
+                                    {capitalizeWord(annotator.first_name) +
+                                      " " +
+                                      capitalizeWord(annotator.last_name)}
+                                  </span>
                                 </div>
                               </SelectItem>
                             ))}
@@ -477,6 +490,18 @@ const GeneAssignment = () => {
                                     )?.name || ""
                                   }
                                   reloadTrigger={statsReloadTrigger}
+                                  first_name={
+                                    annotators.find(
+                                      (a) =>
+                                        a.id.toString() === selectedAnnotator
+                                    )?.first_name || ""
+                                  }
+                                  last_name={
+                                    annotators.find(
+                                      (a) =>
+                                        a.id.toString() === selectedAnnotator
+                                    )?.last_name || ""
+                                  }
                                 />
                               </div>
                             ) : (
@@ -548,44 +573,47 @@ const GeneAssignment = () => {
 
                       {/* Assignment Button */}
                       <div>
-                      <Button
-                        onClick={handleAssignment}
-                        disabled={
-                          !selectedAnnotator ||
-                          selectedGenes.length === 0 ||
-                          isAssigning
-                        }
-                        className={`w-full transition-all duration-200 ${
-                          !selectedAnnotator || selectedGenes.length === 0
-                            ? "bg-slate-100 dark:bg-gray-700 text-slate-400 dark:text-slate-500 cursor-not-allowed"
-                            : "bg-violet-500 hover:bg-violet-600 dark:bg-violet-600 dark:hover:bg-violet-500 text-white shadow-sm"
-                        }`}
-                      >
-                        {isAssigning ? (
-                          <span className="flex items-center justify-center">
-                            <Loader2 className="animate-spin mr-2 h-4 w-4" />
-                            Assigning...
-                          </span>
-                        ) : selectedAnnotator && selectedGenes.length > 0 ? (
-                          <span className="flex items-center justify-center">
-                            <Check className="mr-2 h-4 w-4" />
-                            Assign {selectedGenes.length} Gene
-                            {selectedGenes.length !== 1 ? "s" : ""}
-                          </span>
-                        ) : (
-                          <span>Select annotator and genes to continue</span>
+                        <Button
+                          onClick={handleAssignment}
+                          disabled={
+                            !selectedAnnotator ||
+                            selectedGenes.length === 0 ||
+                            isAssigning
+                          }
+                          className={`w-full transition-all duration-200 ${
+                            !selectedAnnotator || selectedGenes.length === 0
+                              ? "bg-slate-100 dark:bg-gray-700 text-slate-400 dark:text-slate-500 cursor-not-allowed"
+                              : "bg-violet-500 hover:bg-violet-600 dark:bg-violet-600 dark:hover:bg-violet-500 text-white shadow-sm"
+                          }`}
+                        >
+                          {isAssigning ? (
+                            <span className="flex items-center justify-center">
+                              <Loader2 className="animate-spin mr-2 h-4 w-4" />
+                              Assigning...
+                            </span>
+                          ) : selectedAnnotator && selectedGenes.length > 0 ? (
+                            <span className="flex items-center justify-center">
+                              <Check className="mr-2 h-4 w-4" />
+                              Assign {selectedGenes.length} Gene
+                              {selectedGenes.length !== 1 ? "s" : ""}
+                            </span>
+                          ) : (
+                            <span>Select annotator and genes to continue</span>
+                          )}
+                        </Button>
+                        {selectedGenes.length > 0 && (
+                          <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="flex items-center justify-center gap-2 text-xs text-slate-500 dark:text-slate-400 pt-2"
+                          >
+                            <Info className="h-3.5 w-3.5" />
+                            <span>
+                              Hover over selected genes to remove them from
+                              selection
+                            </span>
+                          </motion.div>
                         )}
-                      </Button>
-                      {selectedGenes.length > 0 && (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="flex items-center justify-center gap-2 text-xs text-slate-500 dark:text-slate-400 pt-2"
-    >
-      <Info className="h-3.5 w-3.5" />
-      <span>Hover over selected genes to remove them from selection</span>
-    </motion.div>
-  )}
                       </div>
                     </div>
                   </div>

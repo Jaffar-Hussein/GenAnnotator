@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Clock, CheckCircle2, XCircle, Activity, AlertCircle } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { fetchUsersStats } from "@/services/api";
+import { capitalizeWord } from "@/lib/utils";
 
 const StatCard = ({ icon: Icon, label, value, color, animate = true }) => (
   <div className="flex items-center gap-3 bg-white dark:bg-gray-800/50 p-3 rounded-lg border border-slate-200/60 dark:border-gray-700/60">
@@ -29,7 +30,7 @@ const StatCard = ({ icon: Icon, label, value, color, animate = true }) => (
   </div>
 );
 
-const AnnotatorStats = ({ username, reloadTrigger }) => {
+const AnnotatorStats = ({ username, reloadTrigger, first_name, last_name }) => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -112,7 +113,7 @@ const AnnotatorStats = ({ username, reloadTrigger }) => {
             Performance Overview
           </h4>
           <p className="text-sm text-slate-500 dark:text-slate-400">
-            Statistics for {stats.name}
+            Statistics for {capitalizeWord(first_name)} {capitalizeWord(last_name)}
           </p>
         </div>
         <div className="flex items-center gap-3 bg-white dark:bg-gray-800 p-2 px-4 rounded-lg border border-slate-200/60 dark:border-gray-700/60">

@@ -10,6 +10,8 @@ interface GeneResponse {
   error?: string;
 }
 interface User {
+  first_name: string;
+  last_name: string;
   username: string;
   email: string;
   role: string;
@@ -174,6 +176,8 @@ export async function fetchUsers({ role }: FetchUsersParams = {}): Promise<
 
     const processedData = data.results.map((item: User) => ({
       username: item.username,
+      first_name: item.first_name,
+      last_name: item.last_name,
       email: item.email,
       role: item.role,
     }));
