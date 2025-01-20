@@ -1,5 +1,6 @@
 from rest_framework.permissions import BasePermission, SAFE_METHODS
 from .models import CustomUser
+from GeneAtlas.models import GeneAnnotation, GeneAnnotationStatus
 
 # Custom permission classes
 
@@ -14,6 +15,19 @@ class IsAnnotatorUser(BasePermission):
         if isinstance(request.user, CustomUser):
             return request.user.role == CustomUser.annotator
         return False
+    
+    def has_object_permission(self, request, view, obj):
+        # Read-only is allowed
+        if request.method in SAFE_METHODS:
+            return True
+        # Staff can perform any action
+        if request.user.is_staff:
+            return True
+        # Check if the user is the owner of the object
+        if isinstance(obj,GeneAnnotation):
+            return obj.status.annotator == request.user
+        elif isinstance(obj,GeneAnnotationStatus):
+            return obj.annotator == request.user
         
 # Check if the user is a validator
 class IsValidatorUser(BasePermission):
@@ -32,3 +46,4 @@ class ReadOnly(BasePermission):
     def has_permission(self, request, view):
 
         return request.method in SAFE_METHODS
+        
