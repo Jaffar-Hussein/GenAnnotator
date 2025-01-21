@@ -190,7 +190,7 @@ const AnnotationDashboard = () => {
 
           <TabsContent value="pending">
             <Card className="border border-slate-200/60 dark:border-gray-700/60 shadow-sm">
-              <CardContent className="p-6  bg-white/80  dark:bg-gray-800/50">
+              <CardContent className="p-6  bg-white/80  dark:bg-gray-800/90">
                 <div className="mb-4 flex items-center justify-between">
                   <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
                     Sequences Awaiting Annotation
