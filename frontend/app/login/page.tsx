@@ -57,7 +57,11 @@ export default function Login() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.detail || "Invalid credentials");
+        console.log(errorData);
+        if (errorData.error === "Invalid credentials") {
+          throw new Error("Incorrect username or password. Please try again.");
+        }
+        throw new Error("Something went wrong. Please try again later.");
       }
 
       const authData = await response.json();
@@ -76,7 +80,7 @@ export default function Login() {
       router.push(redirectTo);
     } catch (err) {
       console.error(err);
-      setError(err instanceof Error ? err.message : "An error occurred");
+      setError(err instanceof Error ? err.message : "Something went wrong. Please try again later.");
     } finally {
       setLoading(false);
     }
@@ -190,10 +194,9 @@ export default function Login() {
                     </div>
                   </div>
                   {error && (
-                    <Alert variant="destructive">
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertTitle>Error</AlertTitle>
-                      <AlertDescription>{error}</AlertDescription>
+                    <Alert className="bg-red-50 dark:bg-red-950/50 border-red-200 dark:border-red-900 text-red-800 dark:text-red-200">
+                      <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+                      <AlertDescription className="font-medium">{error}</AlertDescription>
                     </Alert>
                   )}
                   <Button type="submit" className="w-full" disabled={loading}>
