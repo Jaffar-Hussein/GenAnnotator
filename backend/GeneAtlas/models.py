@@ -7,6 +7,8 @@ from zlib import compress, decompress
 from .decorators import validator_only
 from rest_framework.response import Response
 from rest_framework import status
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
 
 # Create your models here.
 
@@ -180,6 +182,41 @@ class GeneAnnotationStatus(models.Model):
             self.updated_at = datetime.now()
             self.save()
             return Response({'status': f'Annotation {self.gene} assigned to {user}'}, status=status.HTTP_200_OK)
+
+
+    def send_annotation_mail(self, mail_type):
+
+        if mail_type == "assigned":
+            template = "email_annotation_assigned"
+        elif mail_type == "update":
+            template = "email_annotation_update"
+
+        context = {"user" : self.annotator, 
+                   "anotation": self.gene,
+                   "status": self.status}
+
+        # Render the text content.
+        text_content = render_to_string(
+            template_name=f"emails/{template}.txt",
+            context=context,
+        )
+
+        # Render the HTML content.
+        html_content = render_to_string(
+            template_name=f"emails/{template}.html",
+            context=context,
+        )
+
+        # Create a multipart email instance.
+        msg = EmailMultiAlternatives(
+            subject="Annotation Update",
+            body=text_content,
+            to=[self.annotator.email],
+        )
+
+        # Attach the HTML content to the email instance and send.
+        msg.attach_alternative(html_content, "text/html")
+        msg.send()
 
     RAW = 'RAW'
     ONGOING = 'ONGOING'

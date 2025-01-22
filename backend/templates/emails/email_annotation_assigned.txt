@@ -1,0 +1,5 @@
+Hello {{ user.username }} from GenAnnotator!
+
+You're receiving this email because you have been assigned anotation {{ anotation }}.
+
+Thank you for using GenAnnotator! Happy annotating!

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="format-detection" content="telephone=no">
+    <title>Email Annotation Update</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f6f6f6; margin: 0; padding: 0; }
+        .container { width: 100%; max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 20px; }
+        .header { text-align: center; }
+        .header img { width: 120px; }
+        .content { text-align: center; }
+        .content h1 { font-size: 26px; color: #333333; }
+        .content p { font-size: 16px; color: #333333; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="#"><img src="https://www.svgrepo.com/show/451172/pen-mark.svg" alt="Logo"></a>
+        </div>
+        <div class="content">
+            <h1>Hello {{ user.username }} from GenAnnotator!</h1>
+            <p>You're receiving this email because you have been assigned anotation <strong>{{ anotation }}</strong>.</p>
+            <p>Thank you for using <strong>GenAnnotator</strong>! Happy annotating!</p>
+        </div>
+    </div>
+</body>
+</html>
