@@ -4,34 +4,47 @@
 {% block title %}API Home{% endblock %}
 
 {% block content %}
-<header>
-    <h1>GenAnnotator</h1>
-    <p>Welcome to GenAnnotator API!</p>
-</header>
-<main>
-    <h2>API Version: {{ api_version }}</h2>
-    <p><a id="API_documentation" href="https://genannotator.gitbook.io/genannotator-api">Documentation</a></p>
-    <h2>Available Endpoints</h2>
-    <ul>
-        {% for endpoint in endpoints %}
-        <li class="endpoint">
-            <strong>{{ endpoint.name }}</strong>: 
-            <code>{{ endpoint.url }}</code>
-        </li>
-        {% endfor %}
-    </ul>
-    <h2>Postman Example Requests</h2>
-    <ul>
-        {% for example in postman_examples %}
-        <li class="postman-example">
-            <strong>{{ example.name }}</strong>: 
-            <code>{{ example.request }}</code>
-            <p>{{ example.description }}</p>
-        </li>
-        {% endfor %}
-    </ul>
-</main>
-<footer>
-    <p>Powered by Django</p>
-</footer>
+    <div class="container">
+        <div class="hero">
+            <svg class="hero-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 17l6-6-6-6M12 19h8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            
+            <h1>GenAnnotator API</h1>
+            <p>A powerful biological annotation API built with Django</p>
+            
+            <a href="https://genannotator.gitbook.io/genannotator-api/" class="cta-button">
+                View Documentation
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </a>
+        </div>
+
+        <div class="features">
+            <div class="feature-card">
+                <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 17l6-6-6-6M12 19h8" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <h3>RESTful API</h3>
+                <p>Modern REST architecture with comprehensive endpoints</p>
+            </div>
+
+            <div class="feature-card">
+                <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 19.5A2.5 2.5 0 0 0 6.5 22H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <h3>Documentation</h3>
+                <p>Detailed API reference and getting started guides</p>
+            </div>
+
+            <div class="feature-card">
+                <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M16 18l6-6-6-6M8 6l-6 6 6 6" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <h3>Open Source</h3>
+                <p>Built with Django and available on GitHub</p>
+            </div>
+        </div>
+    </div>
 {% endblock %}
