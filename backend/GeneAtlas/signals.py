@@ -2,6 +2,7 @@ from django.db.models.signals import post_save, pre_save
 from django.db.models import Count
 from django.dispatch import receiver
 from .models import Genome, Gene, GeneAnnotationStatus, GeneAnnotation
+from .tasks import send_annotation_mail
 
 
 @receiver(post_save, sender=Gene)
@@ -21,10 +22,10 @@ def handle_status_change(sender, instance, **kwargs):
             
             if instance.status == GeneAnnotationStatus.REJECTED:
                 Gene.objects.filter(pk=instance.gene.pk).update(annotated=False)
-                instance.send_annotation_mail(mail_type='update')
+                send_annotation_mail(obj=instance, mail_type='update')
             elif instance.status == GeneAnnotationStatus.APPROVED:
                 Gene.objects.filter(pk=instance.gene.pk).update(annotated=True)
-                instance.send_annotation_mail(mail_type='update')   
+                send_annotation_mail(obj=instance, mail_type='update')   
     except GeneAnnotationStatus.DoesNotExist:
         pass
 
