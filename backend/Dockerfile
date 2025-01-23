@@ -6,6 +6,9 @@ WORKDIR /backend
 
 COPY . /backend/
 
+RUN apt-get update \
+&& apt-get install -y supervisor
+
 RUN pip install --upgrade pip  \
 && pip install --no-cache-dir -r /backend/requirements.txt \
 && cd /backend/ \
@@ -13,4 +16,4 @@ RUN pip install --upgrade pip  \
 && python3 manage.py simulateuser \
 && python3 manage.py load
 
-CMD ["python3", "manage.py", "runserver", "0.0.0.0:8000"]
+CMD ["supervisord", "-c", "/backend/supervisord.conf"]

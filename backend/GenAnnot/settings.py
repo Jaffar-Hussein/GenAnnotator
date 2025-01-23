@@ -250,6 +250,10 @@ HUEY = {
     'store_none': False,
     'immediate': DEBUG,
     'utc': True,
+    'connection': {
+        'host': 'redis',
+        'port': 6379,
+    },
     'consumer': {
         'workers': 1,
         'worker_type': 'thread',
