@@ -35,7 +35,7 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DJANGO_DEBUG')
 
-ALLOWED_HOSTS = [".vercel.app", ".now.sh","localhost","127.0.0.1"]
+ALLOWED_HOSTS = [".vercel.app", ".now.sh","localhost","127.0.0.1","0.0.0.0"]
 
 SITE_ID = 1
 
@@ -64,6 +64,7 @@ INSTALLED_APPS = [
     'dj_rest_auth.registration',
     "phonenumber_field",
     "django_extensions",
+    "huey.contrib.djhuey",
 ]
 
 MIDDLEWARE = [
@@ -239,3 +240,29 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# Huey settings
+
+HUEY = {
+    'huey_class': 'huey.RedisHuey',
+    'name': 'genannotator',
+    'results': True,
+    'store_none': False,
+    'immediate': DEBUG,
+    'utc': True,
+    'connection': {
+        'host': 'redis',
+        'port': 6379,
+    },
+    'consumer': {
+        'workers': 1,
+        'worker_type': 'thread',
+        'initial_delay': 0.1,
+        'backoff': 1.15,
+        'max_delay': 10.0,
+        'scheduler_interval': 1,
+        'periodic': True,
+        'check_worker_health': True,
+        'health_check_interval': 1,
+    },
+}
