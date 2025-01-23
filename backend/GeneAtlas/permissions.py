@@ -1,6 +1,6 @@
 from rest_framework.permissions import BasePermission, SAFE_METHODS
-from .models import CustomUser
-from GeneAtlas.models import GeneAnnotation, GeneAnnotationStatus
+from AccessControl.models import CustomUser
+from .models import GeneAnnotation, GeneAnnotationStatus
 
 # Custom permission classes
 

@@ -10,8 +10,6 @@ from rest_framework import status
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 
-# Create your models here.
-
 class Genome(models.Model):
     name = models.CharField(max_length=100, unique=True, primary_key=True)
     species = models.CharField(max_length=100)
@@ -167,9 +165,9 @@ class GeneAnnotationStatus(models.Model):
         self.rejection_reason = None
         self.updated_at = datetime.now()
         self.save()
-
+        
     @validator_only()
-    def setuser(self, request, *args, **kwargs) -> Response:
+    def setuser(manager, request, *args, **kwargs) -> Response:
         if kwargs.get('user') is None:
             return Response(
                 {'error': 'User required'}, 
@@ -177,12 +175,8 @@ class GeneAnnotationStatus(models.Model):
             )
         else:
             user = kwargs.get('user')
-            self.status = self.ONGOING
-            self.annotator = user
-            self.updated_at = datetime.now()
-            self.save()
-            return Response({'status': f'Annotation {self.gene} assigned to {user}'}, status=status.HTTP_200_OK)
-
+            success = manager.update(status=GeneAnnotationStatus.ONGOING, annotator=user, updated_at=datetime.now())
+            return Response({'status': f'{success} annotation(s) successfully assigned to {user}'}, status=status.HTTP_200_OK)
 
     def send_annotation_mail(self, mail_type):
 

@@ -24,8 +24,7 @@ def handle_status_change(sender, instance, **kwargs):
                 instance.send_annotation_mail(mail_type='update')
             elif instance.status == GeneAnnotationStatus.APPROVED:
                 Gene.objects.filter(pk=instance.gene.pk).update(annotated=True)
-                instance.send_annotation_mail(mail_type='update')
-                
+                instance.send_annotation_mail(mail_type='update')   
     except GeneAnnotationStatus.DoesNotExist:
         pass
 
@@ -34,23 +33,25 @@ def update_genome_status(sender, instance, created, **kwargs):
     """Check if genome is fully annotated"""
     try:
         if isinstance(instance, GeneAnnotationStatus):
-            genome = Genome.objects.get(pk=instance.gene.genome.pk)
-            if not created:
-                if instance.status == GeneAnnotationStatus.REJECTED or instance.status == GeneAnnotationStatus.APPROVED:
-                    status_counts = GeneAnnotationStatus.objects.values(
-                        'gene__genome', 
-                        'status'
-                    ).filter(gene__genome=genome).annotate(
-                        count=Count('status')
-                    )
-                    if len(status_counts) == 1 and status_counts[0]['status'] == GeneAnnotationStatus.APPROVED:
-                        genome.annotation = True
-                    else:
-                        genome.annotation = False
-            elif created:
-                genome.annotation = False
-            genome.sequence = genome.get_sequence().encode('utf-8')
-            genome.save()
+            manager = Genome.objects.filter(pk=instance.gene.genome.pk)
+            if(manager.count() == 1):
+                genome = manager.first()
+                if not created:
+                    if instance.status == GeneAnnotationStatus.REJECTED or instance.status == GeneAnnotationStatus.APPROVED:
+                        status_counts = GeneAnnotationStatus.objects.values(
+                            'gene__genome', 
+                            'status'
+                        ).filter(gene__genome=genome).annotate(
+                            count=Count('status')
+                        )
+                        if len(status_counts) == 1 and status_counts[0]['status'] == GeneAnnotationStatus.APPROVED:
+                            manager.update(annotation=True)
+                        else:
+                            manager.update(annotation=False)
+                elif created:
+                    manager.update(annotation=False)
+            else:
+                pass
     except Genome.DoesNotExist:
         pass
     

@@ -13,8 +13,6 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from .serializers import SignUpSerializer, LoginSerializer, UserSerializer
 from .models import CustomUser
-from GeneAtlas.models import GeneAnnotation
-from GeneAtlas.serializers import GeneAnnotationSerializer
 from allauth.account.utils import send_email_confirmation
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated, IsAdminUser

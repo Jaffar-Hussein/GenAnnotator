@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
-from AccessControl.permissions import IsAnnotatorUser, IsValidatorUser, ReadOnly
+from .permissions import IsAnnotatorUser, IsValidatorUser, ReadOnly
 from .models import Genome, Gene, Peptide, GeneAnnotation, PeptideAnnotation, GeneAnnotationStatus
 from django.db import transaction, models as db_models
 from django.http import HttpResponse
@@ -281,7 +281,7 @@ class AnnotationStatusAPIView(APIView):
             elif(isinstance(params["gene"], str)):
                 try:
                     if(params["action"] == 'setuser'):
-                        status_obj = [GeneAnnotationStatus.objects.get(gene=params["gene"])]
+                        status_obj = GeneAnnotationStatus.objects.filter(gene=params["gene"])
                     else:
                         status_obj = GeneAnnotationStatus.objects.get(gene=params["gene"])
                 except GeneAnnotationStatus.DoesNotExist:
@@ -295,7 +295,7 @@ class AnnotationStatusAPIView(APIView):
         if status_obj is None:
             return Response({'error': 'No status found'}, status=status.HTTP_404_NOT_FOUND)
 
-        if params["action"] == 'approve':
+        if params["action"].lower() == 'approve':
             if(status_obj.status == GeneAnnotationStatus.PENDING or status_obj.status == GeneAnnotationStatus.REJECTED):
                 if(request.user == status_obj.annotator):
                     return Response({'error': 'Annotator cannot approve their own annotation'}, status=status.HTTP_403_FORBIDDEN)
@@ -303,7 +303,7 @@ class AnnotationStatusAPIView(APIView):
             else:
                 return Response({'error': f'Annotation {status_obj.gene} with status {status_obj.status} cannot be approved'}, status=status.HTTP_400_BAD_REQUEST)
         
-        elif params["action"] == 'reject':
+        elif params["action"].lower() == 'reject':
             if(status_obj.status == GeneAnnotationStatus.PENDING or status_obj.status == GeneAnnotationStatus.APPROVED):
                 if(request.user == status_obj.annotator):
                     return Response({'error': 'Annotator cannot reject their own annotation'}, status=status.HTTP_403_FORBIDDEN)
@@ -312,7 +312,7 @@ class AnnotationStatusAPIView(APIView):
                 return Response({'error': f'Annotation {status_obj.gene} with status {status_obj.status} cannot be rejected'}, status=status.HTTP_400_BAD_REQUEST)
 
                 
-        elif params["action"] == 'submit':
+        elif params["action"].lower() == 'submit':
             if(status_obj.status == GeneAnnotationStatus.ONGOING):
                 try:
                     self.check_object_permissions(request, status_obj)
@@ -323,10 +323,7 @@ class AnnotationStatusAPIView(APIView):
                 return Response({'error': f'Annotation {status_obj.gene} with status {status_obj.status} cannot be submitted'}, status=status.HTTP_400_BAD_REQUEST)
 
         
-        elif params["action"] == "setuser":
-
-            response = {'status': {},
-                        'message': {}}
+        elif params["action"].lower() == "setuser":
             
             if params["gene"] is not None:
                 try:
@@ -334,15 +331,11 @@ class AnnotationStatusAPIView(APIView):
                 except CustomUser.DoesNotExist:
                     return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
                 if(user.role == "ANNOTATOR" or user.role == "VALIDATOR"):
-                    for obj in status_obj:
-                        if(obj.status == GeneAnnotationStatus.RAW):
-                            out = obj.setuser(request, user=user)
-                            response['status'][obj.gene.name] = True if out.status_code == 200 else False
-                            response['message'][obj.gene.name] = out.data['status'] if out.status_code == 200 else out.data['error']
-                        else:
-                            response['status'][obj.gene.name] = False
-                            response['message'][obj.gene.name] = f'A user cannot be set for gene annotation with status {obj.status}'
-                    return Response(response, status=status.HTTP_200_OK)
+                    # Ensure that the user is not assigned to an annotation that is not in the RAW status
+                    raw_obj = status_obj.filter(status=GeneAnnotationStatus.RAW)
+                    if(raw_obj.count() != status_obj.count()):
+                        return Response({'error': 'User cannot be assigned to annotations that are not in the RAW status'}, status=status.HTTP_400_BAD_REQUEST)
+                    return GeneAnnotationStatus.setuser(raw_obj, request, user=user)
                 else:
                     return Response({'error': f'User with role {user.role} cannot be assigned to annotation'}, status=status.HTTP_400_BAD_REQUEST)
             else:
