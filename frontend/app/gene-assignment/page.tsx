@@ -37,7 +37,7 @@ import {
 
 import AnnotatorStats from "@/components/annotator-stats";
 import { capitalizeWord } from "@/lib/utils";
-
+import Toast from "@/components/toast-component";
 type AssignmentStatus = "PENDING" | "APPROVED" | "REJECTED" | "ONGOING" | "RAW";
 
 interface Assignment {
@@ -77,7 +77,16 @@ const GeneAssignment = () => {
   const [error, setError] = useState<Error | null>(null);
   const [nextPage, setNextPage] = useState<string | null>(null);
   const [totalGenes, setTotal] = useState<number>(0);
-  const [annotators, setAnnotators] = useState([]);
+  interface Annotator {
+    id: number;
+    name: string;
+    email: string;
+    role: string;
+    first_name: string;
+    last_name: string;
+  }
+
+  const [annotators, setAnnotators] = useState<Annotator[]>([]);
 
   // Effects and handlers remain the same
   useEffect(() => {
@@ -222,39 +231,37 @@ const GeneAssignment = () => {
         user: selectedUser.name,
         genes: selectedGenes,
       });
+      console.log(result);
 
-      // Process results
-      const successfulGenes = selectedGenes.filter(
-        (gene) => result.status[gene]
-      );
-      const failedGenes = selectedGenes.filter((gene) => !result.status[gene]);
-
-      // Update assignments with successful genes
-      if (successfulGenes.length > 0) {
+      setAssignmentResults(result);
+      setShowResults(true);
+      setStatsReloadTrigger((prev) => prev + 1);
+      if (!result.error) {
+        // Update assignments with the successfully assigned genes
         setAssignments((prev) => [
           ...prev,
           {
             annotatorId: selectedAnnotator,
-            annotatorName: selectedUser.name,
-            genes: successfulGenes,
+            annotatorName:
+              capitalizeWord(selectedUser.first_name) +
+              " " +
+              capitalizeWord(selectedUser.last_name),
+            genes: selectedGenes,
             timestamp: new Date().toISOString(),
             status: "PENDING",
           },
         ]);
-      }
+        console.log(assignments);
 
-      // Store results for display
-      setAssignmentResults(result);
-      setShowResults(true);
-      setStatsReloadTrigger((prev) => prev + 1);
-      // Clear selection only for successful assignments
-      setSelectedGenes(failedGenes);
+        // Clear selected genes after successful assignment
+        setSelectedGenes([]);
+      }
     } catch (error) {
       setAssignmentResults({
-        status: {},
-        message: { error: "Failed to assign genes. Please try again." },
+        error: error.message || "Failed to assign genes. Please try again.",
       });
       setShowResults(true);
+      console.log(error.message);
     } finally {
       setIsAssigning(false);
     }
@@ -266,72 +273,60 @@ const GeneAssignment = () => {
     }
   };
 
-  const AssignmentResults = ({ results }) => {
-    if (!results) return null;
+  const renderAssignmentResults = (assignments) => {
+    const latestAssignment = assignments[assignments.length - 1];
 
-    useEffect(() => {
-      const timer = setTimeout(() => {
-        setShowResults(false);
-      }, 5000);
-
-      return () => clearTimeout(timer);
-    }, []);
-
-    const successCount = Object.values(results.status).filter(
-      (status) => status
-    ).length;
-    const failureCount = Object.values(results.status).filter(
-      (status) => !status
-    ).length;
+    if (!latestAssignment) return null;
 
     return (
-      <motion.div
-        initial={{ opacity: 0, y: 50 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: 50 }}
-        className="fixed bottom-4 right-4 max-w-md w-full bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden"
-      >
-        <div className="p-4 border-l-4 border-indigo-500">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-              Assignment Results
-            </h3>
-            <button
-              onClick={() => setShowResults(false)}
-              className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
-            >
-              ×
-            </button>
+      <div className="">
+        <div className="space-y-3">
+          {/* Assignment metadata */}
+          <div className="text-sm space-y-1">
+            <div className="text-slate-600 dark:text-slate-300">
+              <span className="font-semibold">Assigned to:</span>{" "}
+              {latestAssignment.annotatorName}
+            </div>
+            <div className="text-slate-600 dark:text-slate-300">
+              <span className="font-semibold">Last updated:</span>{" "}
+              {new Date(latestAssignment.timestamp).toLocaleDateString(
+                "en-US",
+                {
+                  year: "numeric",
+                  month: "short",
+                  day: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                }
+              )}
+            </div>
+            <div className="text-green-600 dark:text-green-400">
+              <span className="font-semibold">
+                {latestAssignment.genes.length === 1 ? "Gene" : "Genes"} in
+                scope:
+              </span>{" "}
+              {latestAssignment.genes.length}
+            </div>
           </div>
-          <div className="space-y-2">
-            {successCount > 0 && (
-              <p className="text-sm text-green-600 dark:text-green-400">
-                ✓ {successCount} gene(s) assigned successfully
-              </p>
-            )}
-            {failureCount > 0 && (
-              <p className="text-sm text-red-600 dark:text-red-400">
-                ✗ {failureCount} gene(s) failed to assign
-              </p>
-            )}
-            <div className="text-xs text-gray-600 dark:text-gray-300 mt-2 space-y-1">
-              {Object.entries(results.message).map(([gene, message]) => (
+
+          {/* Genes list */}
+          <div className="text-xs space-y-1">
+            <div className="font-medium text-slate-700 dark:text-slate-200 mb-1">
+              Assigned {latestAssignment.genes.length === 1 ? "Gene" : "Genes"}:
+            </div>
+            <div className="grid grid-cols-2 gap-1">
+              {latestAssignment.genes.map((gene) => (
                 <div
                   key={gene}
-                  className={`flex items-start gap-2 ${
-                    results.status[gene]
-                      ? "text-green-600 dark:text-green-400"
-                      : "text-red-600 dark:text-red-400"
-                  }`}
+                  className="font-mono text-green-600 dark:text-green-400"
                 >
-                  <span className="font-mono">{gene}:</span>
-                  <span>{message}</span>
+                  {gene}
                 </div>
               ))}
             </div>
           </div>
         </div>
-      </motion.div>
+      </div>
     );
   };
 
@@ -795,11 +790,23 @@ const GeneAssignment = () => {
         </AnimatePresence>
 
         {/* Assignment Results Toast */}
-        <AnimatePresence>
-          {showResults && assignmentResults && (
-            <AssignmentResults results={assignmentResults} />
-          )}
-        </AnimatePresence>
+
+        <Toast
+          show={showResults && assignmentResults !== null}
+          type={assignmentResults?.error ? "error" : "success"}
+          title="Assignment Status"
+          content={
+            !assignmentResults?.error ? (
+              renderAssignmentResults(assignments)
+            ) : (
+              <div className="p-4 border-l-4 border-red-500">
+                <p className="text-sm text-red-600 dark:text-red-400">
+                  {assignmentResults.error}
+                </p>
+              </div>
+            )
+          }
+        />
       </div>
     </div>
   );
