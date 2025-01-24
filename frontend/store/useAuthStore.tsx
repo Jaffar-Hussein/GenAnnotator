@@ -1,8 +1,6 @@
-// store/useAuthStore.ts
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 
-// Types
 export interface User {
   username: string;
   email: string;
@@ -22,7 +20,7 @@ export interface SignupData {
   username: string;
   email: string;
   password: string;
-  password_confirmation: string;
+  phone_number?: string;
   first_name?: string;
   last_name?: string;
 }
@@ -97,35 +95,41 @@ export const useAuthStore = create<AuthState>()(
 
         signup: async (data: SignupData) => {
           set({ isLoading: true, error: null });
+          console.log('🚀 Signup data:', data);
+        
           try {
             const response = await fetch('/api/auth/signup', {
               method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
+              headers: { 'Content-Type': 'application/json' },
               credentials: 'include',
               body: JSON.stringify(data),
             });
-
+        
+            const responseData = await response.json();
+        
             if (!response.ok) {
-              const error = await response.json();
-              throw new Error(error.error || 'Signup failed');
+              if (typeof responseData.error === 'string') {
+                throw new Error(responseData.error);
+              }
+              // Handle validation errors
+              throw { 
+                fieldErrors: responseData,
+                message: 'Validation failed'
+              };
             }
-
-            const responseData: AuthResponse = await response.json();
+        
             const { access, refresh, ...userData } = responseData;
-
+        
             set({
               user: userData,
               isAuthenticated: true,
               isLoading: false,
             });
-
-            // Setup refresh timer
+        
             setupRefreshTimer();
-          } catch (error) {
+          } catch (error: any) {
             set({
-              error: error instanceof Error ? error.message : 'Signup failed',
+              error: error.fieldErrors ? 'Validation failed' : error.message || 'Signup failed',
               isLoading: false,
             });
             throw error;
