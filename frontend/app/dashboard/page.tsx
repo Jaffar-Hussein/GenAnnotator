@@ -34,6 +34,7 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEffect, useState } from "react";
 import { RoleBasedContent } from "@/components/role-based-dashboard";
+import { useUser } from "@/store/useAuthStore";
 import {
   Tooltip,
   TooltipContent,
@@ -296,11 +297,12 @@ const ProgressSection = ({ title, value, total, percentage }) => (
 );
 
 export default function Dashboard() {
-  const user = useAuthStore((state) => state.user);
+  const user = useUser().user;
   const [stats, setStats] = useState<GenomeStats>();
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+  
 
   useEffect(() => {
     // Fetch stats
@@ -308,6 +310,7 @@ export default function Dashboard() {
       try {
         const response = await fetch(`${backendUrl}/data/api/stats/`);
         const data = await response.json();
+        console.log("Stats data:", data);
         setStats(data);
       } catch (error) {
         console.error("Failed to fetch stats:", error);

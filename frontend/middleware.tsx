@@ -1,17 +1,17 @@
+// middleware.ts
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtDecode } from 'jwt-decode';
 
-// Define which roles can access which paths
+// Define role permissions mapping
 const ROLE_PERMISSIONS = {
-  '/admin': ['ADMIN', 'ANNOTATOR', 'READER','VALIDATOR'],
-  '/dashboard': ['ADMIN', 'ANNOTATOR', 'READER','VALIDATOR'],
-  '/editor': ['ADMIN', 'WRITER'],
-  '/profile': ['ADMIN', 'ANNOTATOR', 'READER','VALIDATOR'],
-  '/gene-assignment': ['ADMIN','VALIDATOR'],
+  '/admin': ['ADMIN'],
+  '/dashboard': ['ADMIN', 'VALIDATOR', 'ANNOTATOR', 'READER'],
+  '/profile': ['ADMIN', 'VALIDATOR', 'ANNOTATOR', 'READER'],
+  '/assignments': ['ADMIN', 'VALIDATOR'],
+  '/genes': ['ADMIN', 'VALIDATOR', 'ANNOTATOR'],
 } as const;
 
-// Add paths that don't require authentication
 const PUBLIC_PATHS = [
   '/login',
   '/signup',
@@ -19,73 +19,64 @@ const PUBLIC_PATHS = [
   '/about',
   '/api/auth/login',
   '/api/auth/refresh',
-  '/documentation',
-  
+  '/api/auth/signup',
+  '/manifest.json',
+  '/favicon.ico',
 ];
+
+// Updated token interface to match your JWT structure
+interface DecodedToken {
+  token_type: string;
+  exp: number;
+  iat: number;
+  jti: string;
+  user_id: number;
+}
+
+function isPublicPath(pathname: string): boolean {
+  return PUBLIC_PATHS.includes(pathname) ||
+         pathname.startsWith('/api/auth/') ||
+         pathname.startsWith('/_next/') ||
+         pathname === '/';
+}
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  console.log('Middleware running for', pathname);
+  console.log('🚀 Middleware running for path:', pathname);
 
-  // Check if path is public - exact match or API route
-  const isPublicPath = PUBLIC_PATHS.includes(pathname) || 
-                      pathname.startsWith('/api/auth/') ||
-                      pathname === '/';
-                      
-  if (isPublicPath) {
-    console.log('Public path accessed:', pathname);
+  // Check if it's a public path first
+  if (isPublicPath(pathname)) {
+    console.log('✅ Allowing access to public path:', pathname);
     return NextResponse.next();
   }
 
-  console.log('Protected path accessed:', pathname);
-
   try {
-    // Get access token from cookies
+    // Get access token and user role from cookies
     const accessToken = request.cookies.get('accessToken')?.value;
-    console.log('Access token present:', !!accessToken);
+    const userRole = request.cookies.get('userRole')?.value; // Add this cookie in your login handler
     
-    if (!accessToken) {
-      console.log('No access token, redirecting to login');
+    console.log('🔑 Access Token present:', !!accessToken);
+    console.log('👑 User Role from cookie:', userRole);
+
+    if (!accessToken || !userRole) {
+      console.log('❌ Missing token or role, redirecting to login');
       return redirectToLogin(request);
     }
 
-    // Decode token and check expiration
-    const decoded = jwtDecode<{ exp: number; user_id: number }>(accessToken);
+    // Decode token for expiration check
+    const decoded = jwtDecode<DecodedToken>(accessToken);
+    console.log('👤 Decoded token:', {
+      userId: decoded.user_id,
+      role: userRole,
+      expiration: new Date(decoded.exp * 1000).toISOString()
+    });
+
+    // Check token expiration
     const isExpired = decoded.exp * 1000 < Date.now();
-    console.log('Token expiration status:', { isExpired, exp: decoded.exp });
-    
+    console.log('⌛ Token expired:', isExpired);
+
     if (isExpired) {
-      console.log('Token expired, redirecting to login');
-      return redirectToLogin(request);
-    }
-
-    // Get user data from auth-storage cookie
-    const authStorageCookie = request.cookies.get('auth-storage')?.value;
-    console.log('Auth storage present:', !!authStorageCookie);
-    
-    if (!authStorageCookie) {
-      console.log('No auth storage, redirecting to login');
-      return redirectToLogin(request);
-    }
-
-    let userData;
-    try {
-      userData = JSON.parse(decodeURIComponent(authStorageCookie));
-      console.log('User data parsed:', {
-        hasState: !!userData?.state,
-        hasUser: !!userData?.state?.user,
-        role: userData?.state?.user?.role
-      });
-    } catch (e) {
-      console.log('Failed to parse auth storage:', e);
-      return redirectToLogin(request);
-    }
-
-    const userRole = userData?.state?.user?.role;
-    console.log('User role:', userRole);
-
-    if (!userRole) {
-      console.log('No user role found, redirecting to login');
+      console.log('⌛ Token expired, attempting refresh');
       return redirectToLogin(request);
     }
 
@@ -93,26 +84,34 @@ export async function middleware(request: NextRequest) {
     const pathToCheck = Object.keys(ROLE_PERMISSIONS).find(
       path => pathname.startsWith(path)
     );
-    
+
     if (pathToCheck) {
       const requiredRoles = ROLE_PERMISSIONS[pathToCheck as keyof typeof ROLE_PERMISSIONS];
-      console.log('Role check:', {
-        pathToCheck,
-        requiredRoles,
-        userRole,
-        hasAccess: requiredRoles.includes(userRole)
-      });
+      console.log('🎭 Required roles:', requiredRoles);
+      console.log('👑 User role:', userRole);
 
-      if (!requiredRoles.includes(userRole)) {
-        console.log('Access denied, redirecting to 403');
+      if (!requiredRoles.includes(userRole as any)) {
+        console.log('🚫 Access denied for path:', pathname);
+        console.log('🚫 User role:', userRole);
+        console.log('🚫 Required roles:', requiredRoles);
         return NextResponse.redirect(new URL('/403', request.url));
       }
     }
 
-    console.log('Access granted for path:', pathname);
-    return NextResponse.next();
+    // Add security headers
+    const response = NextResponse.next();
+    response.headers.set('X-Frame-Options', 'DENY');
+    response.headers.set('X-Content-Type-Options', 'nosniff');
+    response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+    response.headers.set(
+      'Content-Security-Policy',
+      "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline';"
+    );
+
+    return response;
+
   } catch (error) {
-    console.log('Middleware error:', error);
+    console.error('💥 Middleware error:', error);
     return redirectToLogin(request);
   }
 }
@@ -120,18 +119,12 @@ export async function middleware(request: NextRequest) {
 function redirectToLogin(request: NextRequest) {
   const loginUrl = new URL('/login', request.url);
   loginUrl.searchParams.set('from', request.nextUrl.pathname);
+  console.log('↩️ Redirecting to:', loginUrl.toString());
   return NextResponse.redirect(loginUrl);
 }
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder
-     */
-    '/((?!_next/static|_next/image|favicon.ico|public/).*)',
+    '/((?!_next/static|_next/image|favicon.ico).*)',
   ],
 };

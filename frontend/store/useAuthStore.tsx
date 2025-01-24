@@ -1,236 +1,268 @@
+// store/useAuthStore.ts
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import { jwtDecode } from 'jwt-decode';
+import { devtools, persist } from 'zustand/middleware';
 
-
-interface SignupResponse {
-  message: string;
-  status: string;
-}
-interface User {
+// Types
+export interface User {
   username: string;
   email: string;
   first_name: string;
   last_name: string;
-  phone_number: string;
   role: string;
-  user_id: number;
+  is_superuser: boolean;
+  is_staff: boolean;
 }
 
-interface SignupData {
+export interface LoginCredentials {
+  username: string;
+  password: string;
+}
+
+export interface SignupData {
   username: string;
   email: string;
   password: string;
-  first_name: string;
-  last_name: string;
-  phone_number: string;
+  password_confirmation: string;
+  first_name?: string;
+  last_name?: string;
+}
+
+export interface AuthResponse extends User {
+  access: string;
+  refresh: string;
 }
 
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
-  accessToken: string | null;
-  refreshToken: string | null;
   isLoading: boolean;
   error: string | null;
+  
   // Actions
-  setAuth: (authData: {
-    username: string;
-    email: string;
-    first_name: string;
-    last_name: string;
-    phone_number: string;
-    role: string;
-    access: string;
-    refresh: string;
-  }) => void;
-  signup: (signupData: SignupData) => Promise<void>;
-  logout: () => void;
-  getUser: () => User | null;
+  login: (credentials: LoginCredentials) => Promise<void>;
+  signup: (data: SignupData) => Promise<void>;
+  logout: () => Promise<void>;
+  refreshToken: () => Promise<boolean>;
   clearError: () => void;
 }
 
-const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+// Create the store
 export const useAuthStore = create<AuthState>()(
-  persist(
-    (set, get) => ({
-      user: null,
-      isAuthenticated: false,
-      accessToken: null,
-      refreshToken: null,
-      isLoading: false,
-      error: null,
+  devtools(
+    persist(
+      (set) => ({
+        user: null,
+        isAuthenticated: false,
+        isLoading: false,
+        error: null,
 
-      signup: async (signupData: SignupData) => {
-        set({ isLoading: true, error: null });
-        try {
-          const response = await fetch(`${backendUrl}/access/api/new/`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(signupData),
-          });
-      
-          const data: SignupResponse = await response.json();
-      
-          if (!response.ok) {
-            throw new Error(data.message || 'Signup failed');
-          }
-      
-          // Just clear any errors and return - no token handling
-          set({
-            isLoading: false,
-            error: null
-          });
-      
-        } catch (error) {
-          set({ 
-            error: error instanceof Error ? error.message : 'An error occurred during signup',
-            isLoading: false 
-          });
-          throw error;
-        }
-      },
+        login: async (credentials: LoginCredentials) => {
+          set({ isLoading: true, error: null });
+          try {
+            const response = await fetch('/api/auth/login', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              credentials: 'include',
+              body: JSON.stringify(credentials),
+            });
 
-      setAuth: (authData) => {
-        try {
-          const decoded = jwtDecode<{ user_id: number }>(authData.access);
-          const user: User = {
-            username: authData.username,
-            email: authData.email,
-            first_name: authData.first_name,
-            last_name: authData.last_name,
-            phone_number: authData.phone_number,
-            role: authData.role,
-            user_id: decoded.user_id,
-          };
-
-          document.cookie = `accessToken=${authData.access}; path=/; secure; samesite=lax; max-age=3600`;
-          const authStorage = JSON.stringify({
-            state: {
-              user,
-              isAuthenticated: true,
-              accessToken: authData.access,
-              refreshToken: authData.refresh
+            if (!response.ok) {
+              const error = await response.json();
+              throw new Error(error.error || 'Login failed');
             }
-          });
-          document.cookie = `auth-storage=${encodeURIComponent(authStorage)}; path=/; secure; samesite=lax; max-age=86400`;
 
-          set({
-            accessToken: authData.access,
-            refreshToken: authData.refresh,
-            user,
-            isAuthenticated: true,
-            error: null,
-          });
-        } catch (error) {
-          console.error('Failed to set auth data:', error);
-          set({ error: 'Failed to set authentication data' });
-        }
-      },
+            const data: AuthResponse = await response.json();
 
-      logout: () => {
-        document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-        document.cookie = 'auth-storage=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-        
-        set({
-          user: null,
-          isAuthenticated: false,
-          accessToken: null,
-          refreshToken: null,
-          error: null,
-        });
-      },
+            // Extract user data from response
+            const { access, refresh, ...userData } = data;
 
-      getUser: () => {
-        const state = get();
-        if (!state.accessToken || !state.user) return null;
-        try {
-          const decoded = jwtDecode<{ exp: number }>(state.accessToken);
-          if (decoded.exp * 1000 < Date.now()) {
-            set({ user: null, isAuthenticated: false });
-            return null;
+            set({
+              user: userData,
+              isAuthenticated: true,
+              isLoading: false,
+            });
+
+            // Setup refresh timer
+            setupRefreshTimer();
+          } catch (error) {
+            set({
+              error: error instanceof Error ? error.message : 'Login failed',
+              isLoading: false,
+            });
+            throw error;
           }
-          return state.user;
-        } catch {
-          return null;
-        }
-      },
+        },
 
-      clearError: () => set({ error: null }),
-    }),
-    {
-      name: 'auth-storage',
-      storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({
-        accessToken: state.accessToken,
-        refreshToken: state.refreshToken,
-        user: state.user,
-        isAuthenticated: state.isAuthenticated,
+        signup: async (data: SignupData) => {
+          set({ isLoading: true, error: null });
+          try {
+            const response = await fetch('/api/auth/signup', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              credentials: 'include',
+              body: JSON.stringify(data),
+            });
+
+            if (!response.ok) {
+              const error = await response.json();
+              throw new Error(error.error || 'Signup failed');
+            }
+
+            const responseData: AuthResponse = await response.json();
+            const { access, refresh, ...userData } = responseData;
+
+            set({
+              user: userData,
+              isAuthenticated: true,
+              isLoading: false,
+            });
+
+            // Setup refresh timer
+            setupRefreshTimer();
+          } catch (error) {
+            set({
+              error: error instanceof Error ? error.message : 'Signup failed',
+              isLoading: false,
+            });
+            throw error;
+          }
+        },
+
+        logout: async () => {
+          set({ isLoading: true });
+          try {
+            const response = await fetch('/api/auth/logout', {
+              method: 'POST',
+              credentials: 'include',
+            });
+
+            if (!response.ok) {
+              throw new Error('Logout failed');
+            }
+
+            // Clear refresh timer
+            clearRefreshTimer();
+            
+            set({
+              user: null,
+              isAuthenticated: false,
+              isLoading: false,
+              error: null,
+            });
+          } catch (error) {
+            set({
+              error: error instanceof Error ? error.message : 'Logout failed',
+              isLoading: false,
+            });
+            throw error;
+          }
+        },
+
+        refreshToken: async () => {
+          try {
+            const response = await fetch('/api/auth/refresh', {
+              method: 'POST',
+              credentials: 'include',
+            });
+
+            if (!response.ok) {
+              throw new Error('Token refresh failed');
+            }
+
+            // Reset the refresh timer
+            setupRefreshTimer();
+            return true;
+          } catch (error) {
+            // If refresh fails, log out the user
+            set({
+              user: null,
+              isAuthenticated: false,
+              error: 'Session expired',
+            });
+            clearRefreshTimer();
+            return false;
+          }
+        },
+
+        clearError: () => {
+          set({ error: null });
+        },
       }),
-    }
+      {
+        name: 'auth-storage',
+        // Only persist these fields
+        partialize: (state) => ({
+          user: state.user,
+          isAuthenticated: state.isAuthenticated,
+        }),
+      }
+    )
   )
 );
 
+// Refresh token timer
+let refreshTimeout: NodeJS.Timeout;
 
+// Setup refresh timer (refresh 5 minutes before expiration)
+export const setupRefreshTimer = () => {
+  if (refreshTimeout) {
+    clearTimeout(refreshTimeout);
+  }
 
-// signup: async (signupData: SignupData) => {
-//   set({ isLoading: true, error: null });
-//   try {
-//     const response = await fetch('/api/auth/signup', {
-//       method: 'POST',
-//       headers: {
-//         'Content-Type': 'application/json',
-//       },
-//       body: JSON.stringify(signupData),
-//     });
+  refreshTimeout = setTimeout(async () => {
+    const { refreshToken } = useAuthStore.getState();
+    const success = await refreshToken();
+    if (success) {
+      setupRefreshTimer();
+    }
+  }, (55 * 60 * 1000)); // 55 minutes
+};
 
-//     if (!response.ok) {
-//       const errorData = await response.json();
-//       throw new Error(errorData.message || 'Signup failed');
-//     }
+// Clear refresh timer
+export const clearRefreshTimer = () => {
+  if (refreshTimeout) {
+    clearTimeout(refreshTimeout);
+  }
+};
 
-//     const data = await response.json();
-    
-//     // If your API returns tokens immediately after signup
-//     if (data.access && data.refresh) {
-//       const decoded = jwtDecode<{ user_id: number }>(data.access);
-//       const user: User = {
-//         username: signupData.username,
-//         email: signupData.email,
-//         first_name: signupData.first_name,
-//         last_name: signupData.last_name,
-//         phone_number: signupData.phone_number,
-//         role: 'user', // Default role for new signups
-//         user_id: decoded.user_id,
-//       };
+// Hook for complete auth state
+export function useAuth() {
+  const state = useAuthStore();
+  return {
+    user: state.user,
+    isAuthenticated: state.isAuthenticated,
+    isLoading: state.isLoading,
+    error: state.error,
+    login: state.login,
+    signup: state.signup,
+    logout: state.logout,
+    refreshToken: state.refreshToken,
+    clearError: state.clearError,
+  };
+}
 
-//       // Set cookies
-//       document.cookie = `accessToken=${data.access}; path=/; secure; samesite=lax; max-age=3600`;
-//       const authStorage = JSON.stringify({
-//         state: {
-//           user,
-//           isAuthenticated: true,
-//           accessToken: data.access,
-//           refreshToken: data.refresh
-//         }
-//       });
-//       document.cookie = `auth-storage=${encodeURIComponent(authStorage)}; path=/; secure; samesite=lax; max-age=86400`;
+// Hook for authentication status
+export function useIsAuthenticated() {
+  return useAuthStore((state) => state.isAuthenticated);
+}
 
-//       set({
-//         user,
-//         isAuthenticated: true,
-//         accessToken: data.access,
-//         refreshToken: data.refresh,
-//         isLoading: false,
-//       });
-//     }
-//   } catch (error) {
-//     set({ 
-//       error: error instanceof Error ? error.message : 'An error occurred during signup',
-//       isLoading: false 
-//     });
-//     throw error;
-//   }
-// },
+// Hook for current user
+export function useUser() {
+  return useAuthStore((state) => state.user);
+}
+
+// Hook for loading state
+export function useAuthLoading() {
+  return useAuthStore((state) => state.isLoading);
+}
+
+// Hook for error state
+export function useAuthError() {
+  const error = useAuthStore((state) => state.error);
+  const clearError = useAuthStore((state) => state.clearError);
+  return { error, clearError };
+}
