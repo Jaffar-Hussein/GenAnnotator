@@ -1,10 +1,9 @@
-// app/api/auth/[...route]/route.ts
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
-const SESSION_DURATION = 60 * 60; // 1 hour in seconds
-const REFRESH_DURATION = 7 * 24 * 60 * 60; // 7 days in seconds
+const SESSION_DURATION = 60 * 60; 
+const REFRESH_DURATION = 7 * 24 * 60 * 60; 
 
 const COOKIE_OPTIONS = {
   httpOnly: true,
@@ -24,7 +23,7 @@ export async function POST(
   request: NextRequest,
   { params }: { params: { route: string[] } }
 ) {
-  const route = params.route[0];
+    const route = (await params).route[0];
   console.log('🚀 Auth route handler:', route);
 
   try {
@@ -53,31 +52,50 @@ export async function POST(
 }
 
 async function handleSignup(request: NextRequest) {
-  console.log('👤 Handle Signup Started');
+    try {
+      const body = await request.json();
+      
+      const signupResponse = await fetch(`${BACKEND_URL}/access/api/new/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      
+      const signupData = await signupResponse.json();
+      
+      if (!signupResponse.ok) {
+        return handleSignupError(signupData, signupResponse.status);
+      }
   
-  try {
-    const body = await request.json();
-    console.log('📝 Signup attempt for username:', body.username);
-
-    const response = await fetch(`${BACKEND_URL}/access/api/register/`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(body),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      console.error('❌ Signup failed:', data.error);
+      // Login to get tokens
+      const loginResponse = await fetch(`${BACKEND_URL}/access/api/login/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: body.username,
+          password: body.password
+        }),
+      });
+  
+      const loginData = await loginResponse.json();
+  
+      if (!loginResponse.ok) {
+        return NextResponse.json(
+          { error: 'Account created but login failed' },
+          { status: loginResponse.status }
+        );
+      }
+  
+      return createAuthResponse(loginData);
+    } catch (error) {
       return NextResponse.json(
-        { error: data.error || ERROR_MESSAGES.INVALID_SIGNUP },
-        { status: response.status }
+        { error: ERROR_MESSAGES.SERVER_ERROR },
+        { status: 500 }
       );
     }
-
-    // Create API response
+  }
+  
+  function createAuthResponse(data: any) {
     const apiResponse = NextResponse.json({
       user: {
         username: data.username,
@@ -87,29 +105,33 @@ async function handleSignup(request: NextRequest) {
         role: data.role,
       }
     });
-
-    // Set cookies
+  
     apiResponse.cookies.set('accessToken', data.access, {
       ...COOKIE_OPTIONS,
       maxAge: SESSION_DURATION,
     });
-
     apiResponse.cookies.set('refreshToken', data.refresh, {
       ...COOKIE_OPTIONS,
       maxAge: REFRESH_DURATION,
     });
-
-    console.log('✅ Signup successful, cookies set');
+    apiResponse.cookies.set('userRole', data.role, {
+      ...COOKIE_OPTIONS,
+      maxAge: SESSION_DURATION,
+    });
+  
     return apiResponse;
-
-  } catch (error) {
-    console.error('💥 Signup error:', error);
-    return NextResponse.json(
-      { error: ERROR_MESSAGES.SERVER_ERROR },
-      { status: 500 }
-    );
   }
-}
+  
+  function handleSignupError(data: any, status: number) {
+    let errorMessage = 'Registration failed';
+    if (data.username || data.email || data.password) {
+      errorMessage = Object.entries(data)
+        .filter(([_, value]) => Array.isArray(value))
+        .map(([field, errors]) => `${field}: ${errors[0]}`)
+        .join(', ');
+    }
+    return NextResponse.json({ error: errorMessage }, { status });
+  }
 
 async function handleRefresh(request: NextRequest) {
   console.log('🔄 Handle Refresh Started');
@@ -154,6 +176,19 @@ async function handleRefresh(request: NextRequest) {
       maxAge: SESSION_DURATION,
     });
 
+  
+      apiResponse.cookies.set('refreshToken', data.refresh, {
+        ...COOKIE_OPTIONS,
+        maxAge: REFRESH_DURATION,
+      });
+  
+      apiResponse.cookies.set('userRole', data.role, {  
+        ...COOKIE_OPTIONS,
+        maxAge: SESSION_DURATION,
+      });
+
+
+
     console.log('✅ Token refresh successful');
     return apiResponse;
 
@@ -166,7 +201,7 @@ async function handleRefresh(request: NextRequest) {
   }
 }
 
-// ... (keep existing handleLogin and handleLogout functions)
+
 async function handleLogin(request: NextRequest) {
     console.log('🔐 Handle Login Started');
     
