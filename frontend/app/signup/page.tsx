@@ -1,4 +1,3 @@
-// app/signup/page.tsx
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -59,9 +58,11 @@ interface FormData {
   first_name: string;
   last_name: string;
   password: string;
+  phone_number: string;
+}
+interface FormState extends FormData {
   password_confirmation: string;
 }
-
 interface StepConfig {
   title: string;
   description: string;
@@ -70,6 +71,9 @@ interface StepConfig {
   validation: () => string | null;
 }
 
+interface ValidationErrors {
+  [key: string]: string[];
+}
 export default function SignupPage() {
   const router = useRouter();
   const signup = useAuthStore((state) => state.signup);
@@ -78,17 +82,18 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [usernameSuggestions, setUsernameSuggestions] = useState<string[]>([]);
+  const [fieldErrors, setFieldErrors] = useState<ValidationErrors>({});
 
-  const [formData, setFormData] = useState<FormData>({
+  const [formData, setFormData] = useState<FormState>({
     username: "",
     email: "",
     first_name: "",
     last_name: "",
     password: "",
+    phone_number: "",
     password_confirmation: "",
   });
 
-  // Updated steps configuration
   const steps: StepConfig[] = [
     {
       title: "Personal Info",
@@ -106,7 +111,7 @@ export default function SignupPage() {
       description: (
         <div className="space-y-1">
           <p>Choose your username and email</p>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-muted dark:text-gray-400">
             Sample usernames: john.doe, j_doe23, johndoe_2024
           </p>
         </div>
@@ -138,25 +143,25 @@ export default function SignupPage() {
 
   const passwordConditions = [
     {
-      id: 'length',
-      label: 'At least 8 characters',
-      validator: (password: string) => password.length >= 8
+      id: "length",
+      label: "At least 8 characters",
+      validator: (password: string) => password.length >= 8,
     },
     {
-      id: 'lowercase',
-      label: 'One lowercase letter',
-      validator: (password: string) => /[a-z]/.test(password)
+      id: "lowercase",
+      label: "One lowercase letter",
+      validator: (password: string) => /[a-z]/.test(password),
     },
     {
-      id: 'uppercase',
-      label: 'One uppercase letter',
-      validator: (password: string) => /[A-Z]/.test(password)
+      id: "uppercase",
+      label: "One uppercase letter",
+      validator: (password: string) => /[A-Z]/.test(password),
     },
     {
-      id: 'number',
-      label: 'One number',
-      validator: (password: string) => /\d/.test(password)
-    }
+      id: "number",
+      label: "One number",
+      validator: (password: string) => /\d/.test(password),
+    },
   ];
 
   function generateUsernameSuggestions(
@@ -213,18 +218,21 @@ export default function SignupPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const validationError = steps[currentStep].validation();
-    if (validationError) {
-      setError(validationError);
-      return;
-    }
+    setError(null);
+    setFieldErrors({});
 
+    const { password_confirmation, ...submitData } = formData;
     setLoading(true);
+
     try {
-      await signup(formData);
+      await signup(submitData);
       router.push("/dashboard");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Signup failed");
+    } catch (err: any) {
+      if (err.fieldErrors) {
+        setFieldErrors(err.fieldErrors);
+      } else {
+        setError(err.message || "Signup failed");
+      }
     } finally {
       setLoading(false);
     }
@@ -438,32 +446,38 @@ export default function SignupPage() {
                                   )}
                                 </Button>
                               </div>
-                              
+
                               {field === "password" && (
                                 <div className="grid grid-cols-2 gap-2 mt-2">
                                   {passwordConditions.map((condition) => {
-                                    const isMet = condition.validator(formData.password);
+                                    const isMet = condition.validator(
+                                      formData.password
+                                    );
                                     return (
                                       <div
                                         key={condition.id}
                                         className="flex items-center space-x-2"
                                       >
-                                        <div className={`flex-shrink-0 w-4 h-4 rounded-full border-2 
+                                        <div
+                                          className={`flex-shrink-0 w-4 h-4 rounded-full border-2 
                                           transition-colors duration-200 flex items-center justify-center
-                                          ${isMet 
-                                            ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30' 
-                                            : 'border-gray-300 dark:border-gray-600'
+                                          ${
+                                            isMet
+                                              ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30"
+                                              : "border-gray-300 dark:border-gray-600"
                                           }`}
                                         >
                                           {isMet && (
                                             <Check className="h-3 w-3 text-indigo-500 dark:text-indigo-400" />
                                           )}
                                         </div>
-                                        <span className={`text-xs ${
-                                          isMet 
-                                            ? 'text-indigo-600 dark:text-indigo-400' 
-                                            : 'text-gray-500 dark:text-gray-400'
-                                        }`}>
+                                        <span
+                                          className={`text-xs ${
+                                            isMet
+                                              ? "text-indigo-600 dark:text-indigo-400"
+                                              : "text-gray-500 dark:text-gray-400"
+                                          }`}
+                                        >
                                           {condition.label}
                                         </span>
                                       </div>
@@ -471,31 +485,40 @@ export default function SignupPage() {
                                   })}
                                 </div>
                               )}
-                              
-                              {field === "password_confirmation" && formData.password && formData.password_confirmation && (
-                                <div className="flex items-center space-x-2 mt-2">
-                                  <div className={`flex-shrink-0 w-4 h-4 rounded-full border-2 
+
+                              {field === "password_confirmation" &&
+                                formData.password &&
+                                formData.password_confirmation && (
+                                  <div className="flex items-center space-x-2 mt-2">
+                                    <div
+                                      className={`flex-shrink-0 w-4 h-4 rounded-full border-2 
                                     transition-colors duration-200 flex items-center justify-center
-                                    ${formData.password === formData.password_confirmation
-                                      ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30'
-                                      : 'border-gray-300 dark:border-gray-600'
+                                    ${
+                                      formData.password ===
+                                      formData.password_confirmation
+                                        ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30"
+                                        : "border-gray-300 dark:border-gray-600"
                                     }`}
-                                  >
-                                    {formData.password === formData.password_confirmation && (
-                                      <Check className="h-3 w-3 text-indigo-500 dark:text-indigo-400" />
-                                    )}
+                                    >
+                                      {formData.password ===
+                                        formData.password_confirmation && (
+                                        <Check className="h-3 w-3 text-indigo-500 dark:text-indigo-400" />
+                                      )}
+                                    </div>
+                                    <span
+                                      className={`text-xs ${
+                                        formData.password ===
+                                        formData.password_confirmation
+                                          ? "text-indigo-600 dark:text-indigo-400"
+                                          : "text-gray-500 dark:text-gray-400"
+                                      }`}
+                                    >
+                                      Passwords match
+                                    </span>
                                   </div>
-                                  <span className={`text-xs ${
-                                    formData.password === formData.password_confirmation
-                                      ? 'text-indigo-600 dark:text-indigo-400'
-                                      : 'text-gray-500 dark:text-gray-400'
-                                  }`}>
-                                    Passwords match
-                                  </span>
-                                </div>
-                              )}
+                                )}
                             </div>
-                          ): (
+                          ) : (
                             <Input
                               id={field}
                               name={field}
@@ -519,19 +542,25 @@ export default function SignupPage() {
                   </AnimatePresence>
 
                   {error && (
-                    <Alert
-                      className="border border-red-200 dark:border-red-900/50 
-      bg-red-50/50 dark:bg-red-900/20 
-      text-red-800 dark:text-red-200"
-                    >
+                    <Alert className="border border-red-200 dark:border-red-900/50 bg-red-50/50 dark:bg-red-900/20 text-red-800 dark:text-red-200">
                       <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
                       <AlertDescription className="font-medium">
                         {error}
                       </AlertDescription>
                     </Alert>
                   )}
-
-                 
+                  {Object.keys(fieldErrors).length > 0 && (
+                    <Alert className="border border-red-200 dark:border-red-900/50 bg-red-50/50 dark:bg-red-900/20 text-red-800 dark:text-red-200">
+                      <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+                      <AlertDescription className="space-y-1">
+                        {Object.entries(fieldErrors).map(([field, errors]) => (
+                          <p key={field} className="font-medium">
+                            {field}: {errors[0]}
+                          </p>
+                        ))}
+                      </AlertDescription>
+                    </Alert>
+                  )}
                 </form>
               </CardContent>
 
