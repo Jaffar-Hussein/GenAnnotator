@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from AccessControl.models import CustomUser
-from .models import Genome, Gene, Peptide, GeneAnnotation, PeptideAnnotation, GeneAnnotationStatus
+from .models import Genome, Gene, Peptide, GeneAnnotation, PeptideAnnotation, GeneAnnotationStatus, AsyncTasksCache
 
 class GenomeSerializer(serializers.ModelSerializer):
     sequence = serializers.CharField(write_only=True)
@@ -63,4 +63,15 @@ class PeptideAnnotationSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
+        return representation
+    
+class TaskSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AsyncTasksCache
+        fields = ["key", "task", "user", "state", "error_message", "created_at", "updated_at"]
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        if instance.user:
+            representation["user"] = instance.user.username
         return representation

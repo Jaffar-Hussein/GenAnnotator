@@ -2,19 +2,24 @@ from django.shortcuts import render
 from django.urls import reverse
 from GeneAtlas import urls
 from django.views.generic import CreateView
-from .serializers import GenomeSerializer, GeneSerializer, PeptideSerializer, GeneAnnotationSerializer, PeptideAnnotationSerializer, GeneAnnotationStatusSerializer
+from .serializers import GenomeSerializer, GeneSerializer, PeptideSerializer, GeneAnnotationSerializer, PeptideAnnotationSerializer, GeneAnnotationStatusSerializer, TaskSerializer
 from rest_framework import status, request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from .permissions import IsAnnotatorUser, IsValidatorUser, ReadOnly
-from .models import Genome, Gene, Peptide, GeneAnnotation, PeptideAnnotation, GeneAnnotationStatus
+from .models import Genome, Gene, Peptide, GeneAnnotation, PeptideAnnotation, GeneAnnotationStatus, AsyncTasksCache
 from django.db import transaction, models as db_models
 from django.http import HttpResponse
 from AccessControl.models import CustomUser
 import csv
 import requests
+from .tasks import run_blast
+from huey.contrib.djhuey import HUEY
+from django.utils import timezone
+from datetime import timedelta
+import uuid
 
 # Create your views here.
 
@@ -459,6 +464,116 @@ class DownloadAPIView(APIView):
     def post(self, request) -> Response:
         return Response({"error": "POST request not supported."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
     
+    def put(self, request) -> Response:
+        return Response({"error": "PUT request not supported."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    
+    def delete(self, request) -> Response:
+        return Response({"error": "DELETE request not supported."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    
+class TaskAPIView(APIView):
+
+    def get(self, request) -> Response:
+
+        params = {"key": request.GET.get('key', None), # Key of the task
+                "state": request.GET.get('state', None), # Status of the task
+                "user": request.GET.get('user', None), # User who created the task
+                "task": request.GET.get('task', None)} # Kind of task
+        
+        query_result = AsyncTasksCache.objects.filter(**{k: v for k, v in params.items() if v is not None})
+        if query_result.count() == 0:
+            return Response({"error": "No task found."}, status=status.HTTP_404_NOT_FOUND)
+        serializer = TaskSerializer(query_result, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    def post(self, request) -> Response:
+        return Response({"error": "POST request not supported."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    
+    def put(self, request) -> Response:
+        return Response({"error": "PUT request not supported."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    
+    def delete(self, request) -> Response:
+        return Response({"error": "DELETE request not supported."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    
+class BlastAPIView(APIView):
+
+    permission_classes = [IsAuthenticated&(IsAnnotatorUser|IsValidatorUser)]
+
+    def get(self, request) -> Response:
+        task = request.GET.get('key', None)
+        if task:
+            try:
+                task_obj = AsyncTasksCache.objects.get(key=task)
+                if task_obj.task == "BLAST":
+                    return Response({"task": task_obj.key, "state": task_obj.state, "user": task_obj.user.username, 
+                                     "params": task_obj.params, 
+                                     "result": HUEY.result(task_obj.storage, preserve=True)} if task_obj.state == AsyncTasksCache.completed 
+                                     else "Task is not completed.",
+                                     status=status.HTTP_200_OK)
+                else:
+                    return Response({"error": "Task is not a BLAST task."}, status=status.HTTP_404_NOT_FOUND)
+            except AsyncTasksCache.DoesNotExist:
+                return Response({"error": "Task not found."}, status=status.HTTP_404_NOT_FOUND)
+    
+    def post(self, request) -> Response:
+        # Gene name to be blasted
+        gene = request.data.get('gene', None)
+        if gene:
+            try:
+                # Parameters for the BLAST task
+                blast_params = {"sequence": Gene.objects.get(name=gene).sequence, # Sequence to be blasted
+                        "program": request.data.get('program', "blastn"), # BLAST program to be used
+                        "database": request.data.get('database', "nt"), # BLAST database to be used
+                        "evalue": request.data.get('evalue', 0.001)} # E-value threshold
+            except Gene.DoesNotExist:
+                return Response({"error": "Gene not found."}, status=status.HTTP_404_NOT_FOUND)
+            # Check if same task already in the cache
+            AsyncTasksCache.clean_cache()
+            query_result = AsyncTasksCache.query_cache(params=blast_params)
+            # If there is a cached result found
+            if query_result.count() > 0:
+                cached_obj = query_result.first()
+                # If the task is completed and still within the cache period, check if the result is found
+                if(cached_obj.state == AsyncTasksCache.completed and cached_obj.updated_at > timezone.now() - timedelta(days=1)):
+                    # Get the Redis key of the result
+                    result_key = cached_obj.storage
+                    # Get the result from the Redis cache
+                    cached_result = HUEY.result(result_key, preserve=True)
+                    # If the result is found, return it
+                    if(cached_result is not None):
+                        return Response(cached_result, status=status.HTTP_200_OK)
+                    # Delete the task if the state is completed but the result is not found meaning the cache is corrupted
+                    else:
+                        cached_obj.delete()
+                        # Follow with the BLAST task submission
+                # If the task is pending or in progress, return the task key
+                elif(cached_obj.state == AsyncTasksCache.pending or cached_obj.state == AsyncTasksCache.in_progress):
+                    return Response({"message": f"BLAST job {cached_obj.key} already submitted."}, status=status.HTTP_200_OK)
+                # Delete the task if it is not in a valid state (not pending, in progress or completed)
+                else:
+                    cached_obj.delete()
+                    # Follow with the BLAST task submission
+            try:
+                # Create a new task in the cache
+                with transaction.atomic():
+                    key = uuid.uuid4()
+                    cached_obj: AsyncTasksCache = AsyncTasksCache.cache_task(key=key, task="BLAST", user=request.user, params=blast_params)
+                    # Enqueue the BLAST task
+                    def _enqueue_blast():
+                        
+                        task = run_blast(blast_params["sequence"], blast_params["program"], blast_params["database"], blast_params["evalue"])
+                        cached_obj.storage = task.id
+                        cached_obj.save(update_fields=["storage"])
+                    # Enqueue the task on commit
+                    transaction.on_commit(_enqueue_blast)
+                    return Response({"message": f"BLAST job {key} submitted."}, status=status.HTTP_202_ACCEPTED)
+
+                return Response({"error": "BLAST job failed to submit."}, status=status.HTTP_400_BAD_REQUEST)
+            except Exception as e:
+                return Response({"error": "BLAST job failed to submit.", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({"error": "Gene parameter not provided."}, status=status.HTTP_400_BAD_REQUEST)
+
     def put(self, request) -> Response:
         return Response({"error": "PUT request not supported."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
     
