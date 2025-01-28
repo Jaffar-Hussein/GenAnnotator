@@ -443,7 +443,7 @@ export default function AnnotationForm({ params }: { params: Params }) {
         <nav className="flex items-center justify-between mb-12">
           <Button
             variant="ghost"
-            onClick={() => router.push("/annotations")}
+            onClick={() => router.push("/my-annotations")}
             className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors text-sm"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
