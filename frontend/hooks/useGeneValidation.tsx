@@ -106,7 +106,7 @@ export const useGeneValidation = (): UseGeneValidationReturn => {
   };
 
   useEffect(() => {
-    fetchAnnotations(`${API_URL}/data/api/status/?limit=10&status=RAW`);
+    fetchAnnotations(`${API_URL}/data/api/status/?limit=10&status=PENDING`);
   }, []);
 
   const approveGene = async (gene: string) => {
@@ -137,7 +137,7 @@ export const useGeneValidation = (): UseGeneValidationReturn => {
 
       setSuccess(`Successfully approved gene ${gene}`);
       // Refresh the list
-      fetchAnnotations(`${API_URL}/data/api/status/?limit=10&status=RAW`);
+      fetchAnnotations(`${API_URL}/data/api/status/?limit=10&status=PENDING`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to approve gene');
     } finally {
