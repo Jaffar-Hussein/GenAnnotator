@@ -7,8 +7,9 @@ const ROLE_PERMISSIONS = {
   '/admin': ['ADMIN'],
   '/dashboard': ['ADMIN', 'VALIDATOR', 'ANNOTATOR', 'READER'],
   '/profile': ['ADMIN', 'VALIDATOR', 'ANNOTATOR', 'READER'],
-  '/assignments': ['ADMIN', 'VALIDATOR'],
-  '/genes': ['ADMIN', 'VALIDATOR', 'ANNOTATOR'],
+  '/gene-assignment': ['ADMIN', 'VALIDATOR'],
+  '/my-annotations': ['ADMIN', 'VALIDATOR', 'ANNOTATOR'],
+  '/gene-validation': ['ADMIN', 'VALIDATOR'],
 } as const;
 
 const PUBLIC_PATHS = [
