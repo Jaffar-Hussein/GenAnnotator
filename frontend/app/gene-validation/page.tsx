@@ -1,24 +1,24 @@
-'use client';
+"use client";
 
-import { useState, useRef, SetStateAction } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
-import { 
-  CheckCircle, 
-  XCircle, 
-  Loader2, 
+import { useState, useRef, SetStateAction } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import {
+  CheckCircle,
+  XCircle,
+  Loader2,
   AlertCircle,
   Dna,
   ChevronDown,
   Info,
-  FileText
-} from 'lucide-react';
-import { useGeneValidation } from '@/hooks/useGeneValidation';
-import { GeneDetails } from '@/components/gene-annot-details';
+  FileText,
+} from "lucide-react";
+import { useGeneValidation } from "@/hooks/useGeneValidation";
+import { GeneDetails } from "@/components/gene-annot-details";
 
 declare global {
   interface Window {
@@ -37,14 +37,22 @@ export default function GeneValidationPage() {
     selectedAnnotation,
     approveGene,
     rejectGene,
-    fetchGeneDetails
+    fetchGeneDetails,
   } = useGeneValidation();
 
   const [expandedGene, setExpandedGene] = useState<string | null>(null);
   const [rejectingGene, setRejectingGene] = useState<string | null>(null);
-  const [rejectionReason, setRejectionReason] = useState('');
+  const [rejectionReason, setRejectionReason] = useState("");
 
-  const AlertMessage = ({ type, message, icon: Icon }: { type: string, message: string, icon: React.ComponentType<{ className?: string }> }) => (
+  const AlertMessage = ({
+    type,
+    message,
+    icon: Icon,
+  }: {
+    type: string;
+    message: string;
+    icon: React.ComponentType<{ className?: string }>;
+  }) => (
     <motion.div
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -54,26 +62,36 @@ export default function GeneValidationPage() {
       <Alert
         className={`
           mb-4 shadow-sm border 
-          ${type === 'success' 
-            ? 'bg-white dark:bg-slate-900 border-emerald-200 dark:border-emerald-800' 
-            : 'bg-white dark:bg-slate-900 border-rose-200 dark:border-rose-800'}
+          ${
+            type === "success"
+              ? "bg-white dark:bg-slate-900 border-emerald-200 dark:border-emerald-800"
+              : "bg-white dark:bg-slate-900 border-rose-200 dark:border-rose-800"
+          }
         `}
       >
         <div className="flex gap-3 items-start">
-          <div className={`
+          <div
+            className={`
             shrink-0 mt-0.5
-            ${type === 'success' 
-              ? 'text-emerald-600 dark:text-emerald-400' 
-              : 'text-rose-600 dark:text-rose-400'}
-          `}>
+            ${
+              type === "success"
+                ? "text-emerald-600 dark:text-emerald-400"
+                : "text-rose-600 dark:text-rose-400"
+            }
+          `}
+          >
             <Icon className="h-5 w-5" />
           </div>
-          <AlertDescription className={`
+          <AlertDescription
+            className={`
             py-0.5 flex-1
-            ${type === 'success' 
-              ? 'text-emerald-950 dark:text-emerald-200' 
-              : 'text-rose-950 dark:text-rose-200'}
-          `}>
+            ${
+              type === "success"
+                ? "text-emerald-950 dark:text-emerald-200"
+                : "text-rose-950 dark:text-rose-200"
+            }
+          `}
+          >
             {message}
           </AlertDescription>
         </div>
@@ -93,21 +111,21 @@ export default function GeneValidationPage() {
   const handleApprove = async (gene: string) => {
     await approveGene(gene);
     setExpandedGene(null);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleReject = async (gene: string) => {
     if (rejectionReason) {
       await rejectGene(gene, rejectionReason);
       setRejectingGene(null);
-      setRejectionReason('');
+      setRejectionReason("");
       setExpandedGene(null);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
 
-  return(
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-950">
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-5 dark:from-gray-800 dark:to-gray-900">
       <div className="container mx-auto py-6 px-4 max-w-5xl">
         {/* Header Section */}
         <div className="mb-8">
@@ -128,16 +146,12 @@ export default function GeneValidationPage() {
           {/* Status Messages */}
           <AnimatePresence mode="sync">
             {error && (
-              <AlertMessage 
-                type="error" 
-                message={error} 
-                icon={AlertCircle}
-              />
+              <AlertMessage type="error" message={error} icon={AlertCircle} />
             )}
             {success && (
-              <AlertMessage 
-                type="success" 
-                message={success} 
+              <AlertMessage
+                type="success"
+                message={success}
                 icon={CheckCircle}
               />
             )}
@@ -157,39 +171,48 @@ export default function GeneValidationPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
               >
-                <Card className={`border transition-colors duration-200 dark:bg-slate-900 ${
-                  expandedGene === status.gene 
-                    ? 'border-indigo-500/50 dark:border-indigo-400/30' 
-                    : 'border-slate-200/60 dark:border-slate-800'
-                }`}>
-                  <CardContent className="p-0">
-                    <button
-                      onClick={() => handleExpand(status.gene)}
-                      className="w-full px-6 py-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
-                    >
+                <Card
+                  onClick={() => handleExpand(status.gene)}
+                  className={`border transition-all duration-200 cursor-pointer dark:bg-gray-800
+                    hover:border-indigo-500/50 hover:shadow-md dark:hover:border-indigo-400/30
+                    ${
+                      expandedGene === status.gene
+                        ? "border-indigo-500/50 dark:border-indigo-400/30"
+                        : "border-slate-200/60 dark:border-slate-700/60"
+                    }
+                  `}
+                >
+                  <CardContent className="p-6">
+                    <div className="px-6 py-4 flex items-center justify-between">
                       <div className="flex items-center space-x-4">
                         <div className="flex flex-col items-start">
                           <div className="flex items-center space-x-3">
                             <span className="text-lg font-semibold text-slate-900 dark:text-slate-50">
                               {status.gene}
                             </span>
-                            <Badge variant="secondary" className="dark:bg-indigo-900/30 dark:text-slate-200">
+                            <Badge
+                              variant="secondary"
+                              className="dark:bg-indigo-900/30 dark:text-slate-200"
+                            >
                               Pending Review
                             </Badge>
                           </div>
                           <div className="mt-1 flex items-center text-sm text-slate-500 dark:text-slate-400">
                             <FileText className="h-4 w-4 mr-2" />
-                            Created: {new Date(status.created_at).toLocaleDateString()}
+                            Created:{" "}
+                            {new Date(status.created_at).toLocaleDateString()}
                           </div>
                         </div>
                       </div>
                       <motion.div
-                        animate={{ rotate: expandedGene === status.gene ? 180 : 0 }}
+                        animate={{
+                          rotate: expandedGene === status.gene ? 180 : 0,
+                        }}
                         transition={{ duration: 0.2 }}
                       >
                         <ChevronDown className="h-5 w-5 text-slate-400" />
                       </motion.div>
-                    </button>
+                    </div>
 
                     <AnimatePresence>
                       {expandedGene === status.gene && (
@@ -200,18 +223,19 @@ export default function GeneValidationPage() {
                             }
                           }}
                           initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: 'auto', opacity: 1 }}
+                          animate={{ height: "auto", opacity: 1 }}
                           exit={{ height: 0, opacity: 0 }}
                           transition={{ duration: 0.2 }}
                           onAnimationComplete={() => {
                             if (window._expandedCardRef) {
                               window._expandedCardRef.scrollIntoView({
-                                behavior: 'smooth',
-                                block: 'nearest'
+                                behavior: "smooth",
+                                block: "nearest",
                               });
                             }
                           }}
                           className="border-t border-slate-100 dark:border-slate-800"
+                          onClick={(e) => e.stopPropagation()} // Prevent collapse when interacting with content
                         >
                           <div className="px-6 py-4">
                             {loading ? (
@@ -220,11 +244,11 @@ export default function GeneValidationPage() {
                               </div>
                             ) : selectedAnnotation ? (
                               <>
-                                <GeneDetails 
+                                <GeneDetails
                                   annotation={selectedAnnotation}
                                   className="mb-6"
                                 />
-                                
+
                                 <AnimatePresence mode="wait">
                                   {rejectingGene === status.gene ? (
                                     <motion.div
@@ -239,8 +263,8 @@ export default function GeneValidationPage() {
                                       onAnimationComplete={() => {
                                         if (window._rejectFormRef) {
                                           window._rejectFormRef.scrollIntoView({
-                                            behavior: 'smooth',
-                                            block: 'nearest'
+                                            behavior: "smooth",
+                                            block: "nearest",
                                           });
                                         }
                                       }}
@@ -258,9 +282,14 @@ export default function GeneValidationPage() {
                                           }}
                                           placeholder="Please provide a detailed explanation for rejecting this gene annotation..."
                                           value={rejectionReason}
-                                          onChange={(e) => setRejectionReason(e.target.value)}
+                                          onChange={(e) =>
+                                            setRejectionReason(e.target.value)
+                                          }
                                           onKeyDown={(e) => {
-                                            if (e.key === 'Enter' && !e.shiftKey) {
+                                            if (
+                                              e.key === "Enter" &&
+                                              !e.shiftKey
+                                            ) {
                                               e.preventDefault();
                                               if (rejectionReason) {
                                                 handleReject(status.gene);
@@ -274,7 +303,7 @@ export default function GeneValidationPage() {
                                             variant="outline"
                                             onClick={() => {
                                               setRejectingGene(null);
-                                              setRejectionReason('');
+                                              setRejectionReason("");
                                             }}
                                             className="dark:bg-slate-900 dark:hover:bg-slate-800 dark:text-slate-200"
                                           >
@@ -282,7 +311,9 @@ export default function GeneValidationPage() {
                                           </Button>
                                           <Button
                                             variant="destructive"
-                                            onClick={() => handleReject(status.gene)}
+                                            onClick={() =>
+                                              handleReject(status.gene)
+                                            }
                                             disabled={!rejectionReason}
                                             className="dark:bg-red-900 dark:hover:bg-red-800"
                                           >
@@ -300,14 +331,18 @@ export default function GeneValidationPage() {
                                     >
                                       <Button
                                         variant="destructive"
-                                        onClick={() => setRejectingGene(status.gene)}
+                                        onClick={() =>
+                                          setRejectingGene(status.gene)
+                                        }
                                         className="min-w-[120px] dark:bg-red-900 dark:hover:bg-red-800"
                                       >
                                         <XCircle className="h-4 w-4 mr-2" />
                                         Reject
                                       </Button>
                                       <Button
-                                        onClick={() => handleApprove(status.gene)}
+                                        onClick={() =>
+                                          handleApprove(status.gene)
+                                        }
                                         className="min-w-[120px] bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700"
                                       >
                                         <CheckCircle className="h-4 w-4 mr-2" />
