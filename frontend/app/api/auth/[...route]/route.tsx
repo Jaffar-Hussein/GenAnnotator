@@ -293,6 +293,10 @@ function clearAuthCookies(response: NextResponse) {
     ...COOKIE_OPTIONS,
     maxAge: 0,
   });
+  response.cookies.set('userRole', '', {
+    ...COOKIE_OPTIONS,
+    maxAge: 0,
+  });
 }
 
 export async function OPTIONS(request: NextRequest) {
