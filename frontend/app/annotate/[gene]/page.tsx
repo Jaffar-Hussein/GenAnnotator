@@ -43,7 +43,7 @@ const FormField = ({ label, name, tooltip, children, error = null }) => (
       </Label>
       {tooltip && (
         <div className="group relative">
-          <HelpCircle className="h-4 w-4 text-slate-400 hover:text-violet-500 transition-colors dark:text-slate-500" />
+          <HelpCircle className="h-4 w-4 text-slate-400 hover:text-indigo-500 transition-colors dark:text-slate-500" />
           <span className="absolute bottom-full left-1/2 mb-2 hidden -translate-x-1/2 rounded-lg bg-slate-800 px-3 py-2 text-sm text-white shadow-lg group-hover:block w-48 z-50">
             {tooltip}
           </span>
@@ -266,8 +266,8 @@ export default function AnnotationForm({ params }: { params: Params }) {
   const renderGeneDetails = () => (
     <div className="space-y-6 rounded-xl bg-white dark:bg-gray-800/80 p-8 border border-slate-200/60 dark:border-gray-700/60 shadow-lg">
       <div className="flex items-center gap-4 mb-6">
-        <div className="p-3 rounded-lg bg-violet-100 dark:bg-violet-900/30">
-          <Dna className="h-6 w-6 text-violet-600 dark:text-violet-400" />
+        <div className="p-3 rounded-lg bg-indigo-100 dark:bg-indigo-900/30">
+          <Dna className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
         </div>
         <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
           Gene Details
@@ -284,7 +284,7 @@ export default function AnnotationForm({ params }: { params: Params }) {
             name="gene_instance"
             value={formData.gene_instance}
             onChange={handleInputChange}
-            className="border-slate-200 dark:border-gray-700 focus:ring-2 focus:ring-violet-500 transition-all"
+            className="border-slate-200 dark:border-gray-700 focus:ring-2 focus:ring-indigo-500 transition-all"
             placeholder="e.g., ABG68774"
           />
         </FormField>
@@ -294,7 +294,7 @@ export default function AnnotationForm({ params }: { params: Params }) {
             name="gene"
             value={formData.gene}
             onChange={handleInputChange}
-            className="border-slate-200 dark:border-gray-700 focus:ring-2 focus:ring-violet-500 transition-all"
+            className="border-slate-200 dark:border-gray-700 focus:ring-2 focus:ring-indigo-500 transition-all"
             placeholder="Enter gene identifier"
           />
         </FormField>
@@ -308,7 +308,7 @@ export default function AnnotationForm({ params }: { params: Params }) {
             name="gene_symbol"
             value={formData.gene_symbol}
             onChange={handleInputChange}
-            className="border-slate-200 dark:border-gray-700 focus:ring-2 focus:ring-violet-500 transition-all"
+            className="border-slate-200 dark:border-gray-700 focus:ring-2 focus:ring-indigo-500 transition-all"
             placeholder="Enter gene symbol"
           />
         </FormField>
@@ -322,7 +322,7 @@ export default function AnnotationForm({ params }: { params: Params }) {
             name="description"
             value={formData.description}
             onChange={handleInputChange}
-            className="border-slate-200 dark:border-gray-700 focus:ring-2 focus:ring-violet-500 transition-all"
+            className="border-slate-200 dark:border-gray-700 focus:ring-2 focus:ring-indigo-500 transition-all"
             placeholder="Enter gene description"
           />
         </FormField>
@@ -350,7 +350,7 @@ export default function AnnotationForm({ params }: { params: Params }) {
             value={formData.gene_biotype}
             onValueChange={handleBiotypeChange}
           >
-            <SelectTrigger className="border-slate-200 dark:border-gray-700 focus:ring-2 focus:ring-violet-500 transition-all">
+            <SelectTrigger className="border-slate-200 dark:border-gray-700 focus:ring-2 focus:ring-indigo-500 transition-all">
               <SelectValue placeholder="Select gene biotype" />
             </SelectTrigger>
             <SelectContent>
@@ -375,7 +375,7 @@ export default function AnnotationForm({ params }: { params: Params }) {
               })
             }
           >
-            <SelectTrigger className="border-slate-200 dark:border-gray-700 focus:ring-2 focus:ring-violet-500 transition-all">
+            <SelectTrigger className="border-slate-200 dark:border-gray-700 focus:ring-2 focus:ring-indigo-500 transition-all">
               <SelectValue placeholder="Select transcript biotype" />
             </SelectTrigger>
             <SelectContent>
@@ -403,7 +403,7 @@ export default function AnnotationForm({ params }: { params: Params }) {
               })
             }
           >
-            <SelectTrigger className="border-slate-200 dark:border-gray-700 focus:ring-2 focus:ring-violet-500 transition-all">
+            <SelectTrigger className="border-slate-200 dark:border-gray-700 focus:ring-2 focus:ring-indigo-500 transition-all">
               <SelectValue placeholder="Select strand" />
             </SelectTrigger>
             <SelectContent>
@@ -422,7 +422,7 @@ export default function AnnotationForm({ params }: { params: Params }) {
             name="status"
             value={formData.status}
             onChange={handleInputChange}
-            className="border-slate-200 dark:border-gray-700 focus:ring-2 focus:ring-violet-500 transition-all"
+            className="border-slate-200 dark:border-gray-700 focus:ring-2 focus:ring-indigo-500 transition-all"
             placeholder="Enter status"
           />
         </FormField>
@@ -431,7 +431,7 @@ export default function AnnotationForm({ params }: { params: Params }) {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       <Toast
         show={toast.show}
         type={toast.type as keyof typeof toastTypes}
@@ -444,7 +444,7 @@ export default function AnnotationForm({ params }: { params: Params }) {
           <Button
             variant="ghost"
             onClick={() => router.push("/annotations")}
-            className="hover:text-violet-600 dark:hover:text-violet-400 transition-colors text-sm"
+            className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors text-sm"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Annotations
@@ -485,7 +485,7 @@ export default function AnnotationForm({ params }: { params: Params }) {
           <CardContent className="p-8">
             {isLoading ? (
               <div className="flex items-center justify-center p-12">
-                <Loader2 className="h-8 w-8 animate-spin text-violet-500" />
+                <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
               </div>
             ) : (
               <div className="space-y-8">
@@ -510,7 +510,7 @@ export default function AnnotationForm({ params }: { params: Params }) {
                   <Button
                     onClick={handleSubmitValidation}
                     type="button"
-                    className="bg-violet-500 hover:bg-violet-600 dark:bg-violet-600 dark:hover:bg-violet-500 text-white px-8 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all"
+                    className="bg-indigo-500 hover:bg-indigo-600 dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white px-8 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all"
                     disabled={isLoading}
                   >
                     {isLoading ? (
