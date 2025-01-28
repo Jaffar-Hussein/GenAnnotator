@@ -7,6 +7,13 @@ from zlib import compress, decompress
 from .decorators import validator_only
 from rest_framework.response import Response
 from rest_framework import status
+from hashlib import sha256
+from json import dumps
+from datetime import timedelta
+from django.utils import timezone
+from django.db import transaction
+from GenAnnot import settings
+
 
 class Genome(models.Model):
     name = models.CharField(max_length=100, unique=True, primary_key=True)
@@ -211,3 +218,74 @@ class PeptideAnnotation(models.Model):
 
     def __str__(self):
         return f"{str(self.peptide)}"
+    
+class AsyncTasksCache(models.Model):
+
+    # States of the async cached task
+    pending = "PENDING"
+    in_progress = "IN_PROGRESS"
+    completed = "COMPLETED"
+    rejected = "REJECTED"
+
+    STATUS_CHOICES = [
+        (pending, 'Pending'),
+        (in_progress, 'In Progress'),
+        (completed, 'Completed'),
+        (rejected, 'Rejected'),
+    ]
+
+    # Used to hash the parameters
+    def hash_params(params: dict) -> str:
+        return sha256(dumps(obj=params, ensure_ascii=True, default=str, sort_keys=True).encode()).hexdigest()
+    
+    # Used to cache the task
+    def cache_task(key: str, task: str, user: CustomUser, params: dict):
+        params_hash = AsyncTasksCache.hash_params(params)
+        return AsyncTasksCache.objects.create(key=key, task=task, user=user, params_hash=params_hash, params=params, 
+                                              state=AsyncTasksCache.completed if settings.HUEY["immediate"] else AsyncTasksCache.pending)
+    
+    # Used to query the cache
+    def query_cache(key: str = None, user: str = None, params: dict = None) -> object:
+        params_hash = AsyncTasksCache.hash_params(params)
+        query_params = {
+            "key": key,
+            "user": user,
+            "params_hash": params_hash,
+        }
+        return AsyncTasksCache.objects.filter(**{k: v for k, v in query_params.items() if v is not None})
+    
+    # Used to clean the cache by deleting old tasks
+    def clean_cache():
+        AsyncTasksCache.objects.filter(updated_at__lt=timezone.now() - timedelta(hours=24)).delete()
+    
+    key = models.CharField(max_length=100, primary_key=True)
+
+    # The storage field is used to store the Huey task id
+    storage = models.CharField(max_length=100, unique=True, null=True, blank=True)
+
+    # The task field is used to store the task name
+    task = models.CharField(max_length=100)
+
+    # The params_hash field is used to store the hash of the params field
+    params_hash = models.CharField(max_length=100, db_index=True)
+
+    # The params field is used to store the task parameters
+    params = models.JSONField(null=True, blank=True)
+
+    # The user field is used to store the user that requested the task
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+
+    # The state field is used to store the task state
+    state = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
+
+    # The error_message field is used to store the error message if the task fails
+    error_message = models.TextField(null=True, blank=True)
+
+    # The created_at field is used to store the task creation date
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    # The updated_at field is used to store the task last update date
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.key} - {self.state} - {self.user}"

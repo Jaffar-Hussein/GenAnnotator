@@ -1,6 +1,6 @@
 from django.urls import path
 from django.views.generic.base import TemplateView
-from .views import GenomeAPIView, GeneAPIView, PeptideAPIView, AnnotationAPIView, StatsAPIView, DownloadAPIView, HomeView, AnnotationStatusAPIView
+from .views import GenomeAPIView, GeneAPIView, PeptideAPIView, AnnotationAPIView, StatsAPIView, DownloadAPIView, HomeView, AnnotationStatusAPIView, TaskAPIView, BlastAPIView
 
 urlpatterns = [
     path("", HomeView.home_rendering, name="home"),
@@ -12,4 +12,6 @@ urlpatterns = [
     path("api/stats/", StatsAPIView.as_view(), name="stats_api"),
     path("api/download/", DownloadAPIView.as_view(), name="download_api"),
     path("api/status/", AnnotationStatusAPIView.as_view(), name="status_api"),
+    path("api/tasks/", TaskAPIView.as_view(), name="task_api"),
+    path("api/blast/", BlastAPIView.as_view(), name="blast_api"),
 ]

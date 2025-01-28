@@ -244,14 +244,14 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # Huey settings
 
 HUEY = {
-    'huey_class': 'huey.RedisHuey',
+    'huey_class': 'huey.RedisExpireHuey',
     'name': 'genannotator',
     'results': True,
     'store_none': False,
     'immediate': DEBUG,
     'utc': True,
     'connection': {
-        'host': 'redis',
+        'host': 'localhost' if DEBUG else 'redis',
         'port': 6379,
     },
     'consumer': {
@@ -265,4 +265,5 @@ HUEY = {
         'check_worker_health': True,
         'health_check_interval': 1,
     },
+    "expire_time": 86400,
 }
