@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, SetStateAction } from "react";
+import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,12 +19,19 @@ import {
 } from "lucide-react";
 import { useGeneValidation } from "@/hooks/useGeneValidation";
 import { GeneDetails } from "@/components/gene-annot-details";
-
+import Toast from "@/components/toast-component";
 declare global {
   interface Window {
     _expandedCardRef?: HTMLElement;
     _rejectFormRef?: HTMLElement;
   }
+}
+
+interface ToastState {
+  show: boolean;
+  type: "success" | "error" | "info" | "warning";
+  title: string;
+  message: string;
 }
 
 export default function GeneValidationPage() {
@@ -43,15 +50,25 @@ export default function GeneValidationPage() {
   const [expandedGene, setExpandedGene] = useState<string | null>(null);
   const [rejectingGene, setRejectingGene] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
+  const [processingGenes, setProcessingGenes] = useState<Set<string>>(new Set());
+  const [cardAlerts, setCardAlerts] = useState<Map<string, { type: string; message: string }>>(new Map());
+  const [toast, setToast] = useState<ToastState>({
+    show: false,
+    type: "info",
+    title: "",
+    message: ""
+  });
 
   const AlertMessage = ({
     type,
     message,
     icon: Icon,
+    className = "mb-4",
   }: {
     type: string;
     message: string;
     icon: React.ComponentType<{ className?: string }>;
+    className?: string;
   }) => (
     <motion.div
       initial={{ opacity: 0, y: -20 }}
@@ -61,7 +78,7 @@ export default function GeneValidationPage() {
     >
       <Alert
         className={`
-          mb-4 shadow-sm border 
+          ${className} shadow-sm border 
           ${
             type === "success"
               ? "bg-white dark:bg-slate-900 border-emerald-200 dark:border-emerald-800"
@@ -109,23 +126,76 @@ export default function GeneValidationPage() {
   };
 
   const handleApprove = async (gene: string) => {
-    await approveGene(gene);
-    setExpandedGene(null);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    try {
+      setProcessingGenes(prev => new Set([...prev, gene]));
+      await approveGene(gene);
+      setToast({
+        show: true,
+        type: "success",
+        title: "Gene Approved",
+        message: `Gene ${gene} has been approved successfully.`
+      });
+      setExpandedGene(null);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'An error occurred';
+      setToast({
+        show: true,
+        type: "error",
+        title: "Approval Failed",
+        message: errorMessage
+      });
+    } finally {
+      setProcessingGenes(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(gene);
+        return newSet;
+      });
+    }
   };
 
   const handleReject = async (gene: string) => {
     if (rejectionReason) {
-      await rejectGene(gene, rejectionReason);
-      setRejectingGene(null);
-      setRejectionReason("");
-      setExpandedGene(null);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      try {
+        setProcessingGenes(prev => new Set([...prev, gene]));
+        await rejectGene(gene, rejectionReason);
+        setToast({
+          show: true,
+          type: "success",
+          title: "Gene Rejected",
+          message: `Gene ${gene} has been rejected successfully.`
+        });
+        setRejectingGene(null);
+        setRejectionReason("");
+        setExpandedGene(null);
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'An error occurred';
+        setToast({
+          show: true,
+          type: "error",
+          title: "Rejection Failed",
+          message: errorMessage
+        });
+      } finally {
+        setProcessingGenes(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(gene);
+          return newSet;
+        });
+      }
     }
   };
-
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-5 dark:from-gray-800 dark:to-gray-900">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-900">
+      {/* Toast Component */}
+      <Toast
+        show={toast.show}
+        type={toast.type}
+        title={toast.title}
+        message={toast.message}
+        onClose={() => setToast(prev => ({ ...prev, show: false }))}
+        duration={5000}
+      />
+  
       <div className="container mx-auto py-6 px-4 max-w-5xl">
         {/* Header Section */}
         <div className="mb-8">
@@ -142,26 +212,24 @@ export default function GeneValidationPage() {
               </p>
             </div>
           </div>
-
-          {/* Status Messages */}
-          <AnimatePresence mode="sync">
-            {error && (
-              <AlertMessage type="error" message={error} icon={AlertCircle} />
-            )}
-            {success && (
-              <AlertMessage
-                type="success"
-                message={success}
-                icon={CheckCircle}
-              />
-            )}
-          </AnimatePresence>
         </div>
-
-        {/* Gene List */}
+  
+        {/* Content Section */}
         {loading && pendingAnnotations.length === 0 ? (
           <div className="flex justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
+          </div>
+        ) : pendingAnnotations.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12">
+            <div className="bg-slate-50 dark:bg-slate-800/50 rounded-full p-6 mb-4">
+              <CheckCircle className="h-12 w-12 text-slate-400 dark:text-slate-500" />
+            </div>
+            <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-2">
+              All Caught Up!
+            </h3>
+            <p className="text-slate-500 dark:text-slate-400 text-center max-w-sm">
+              There are no gene annotations pending review at the moment. Check back later for new submissions.
+            </p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -183,6 +251,7 @@ export default function GeneValidationPage() {
                   `}
                 >
                   <CardContent className="p-6">
+                    {/* Card Header */}
                     <div className="px-6 py-4 flex items-center justify-between">
                       <div className="flex items-center space-x-4">
                         <div className="flex flex-col items-start">
@@ -194,13 +263,12 @@ export default function GeneValidationPage() {
                               variant="secondary"
                               className="dark:bg-indigo-900/30 dark:text-slate-200"
                             >
-                              Pending Review
+                              {processingGenes.has(status.gene) ? "Processing..." : "Pending Review"}
                             </Badge>
                           </div>
                           <div className="mt-1 flex items-center text-sm text-slate-500 dark:text-slate-400">
                             <FileText className="h-4 w-4 mr-2" />
-                            Created:{" "}
-                            {new Date(status.created_at).toLocaleDateString()}
+                            Created: {new Date(status.created_at).toLocaleDateString()}
                           </div>
                         </div>
                       </div>
@@ -213,7 +281,8 @@ export default function GeneValidationPage() {
                         <ChevronDown className="h-5 w-5 text-slate-400" />
                       </motion.div>
                     </div>
-
+  
+                    {/* Expanded Content */}
                     <AnimatePresence>
                       {expandedGene === status.gene && (
                         <motion.div
@@ -226,19 +295,15 @@ export default function GeneValidationPage() {
                           animate={{ height: "auto", opacity: 1 }}
                           exit={{ height: 0, opacity: 0 }}
                           transition={{ duration: 0.2 }}
-                          onAnimationComplete={() => {
-                            if (window._expandedCardRef) {
-                              window._expandedCardRef.scrollIntoView({
-                                behavior: "smooth",
-                                block: "nearest",
-                              });
-                            }
-                          }}
                           className="border-t border-slate-100 dark:border-slate-800"
-                          onClick={(e) => e.stopPropagation()} // Prevent collapse when interacting with content
+                          onClick={(e) => e.stopPropagation()}
                         >
                           <div className="px-6 py-4">
-                            {loading ? (
+                            {processingGenes.has(status.gene) ? (
+                              <div className="flex justify-center py-8">
+                                <Loader2 className="h-6 w-6 animate-spin text-indigo-500" />
+                              </div>
+                            ) : loading ? (
                               <div className="flex justify-center py-8">
                                 <Loader2 className="h-6 w-6 animate-spin text-indigo-500" />
                               </div>
@@ -248,7 +313,7 @@ export default function GeneValidationPage() {
                                   annotation={selectedAnnotation}
                                   className="mb-6"
                                 />
-
+  
                                 <AnimatePresence mode="wait">
                                   {rejectingGene === status.gene ? (
                                     <motion.div
@@ -260,14 +325,6 @@ export default function GeneValidationPage() {
                                       initial={{ opacity: 0, y: -10 }}
                                       animate={{ opacity: 1, y: 0 }}
                                       exit={{ opacity: 0, y: -10 }}
-                                      onAnimationComplete={() => {
-                                        if (window._rejectFormRef) {
-                                          window._rejectFormRef.scrollIntoView({
-                                            behavior: "smooth",
-                                            block: "nearest",
-                                          });
-                                        }
-                                      }}
                                       className="space-y-4"
                                     >
                                       <div className="bg-white dark:bg-slate-800 rounded-lg p-4">
@@ -286,10 +343,7 @@ export default function GeneValidationPage() {
                                             setRejectionReason(e.target.value)
                                           }
                                           onKeyDown={(e) => {
-                                            if (
-                                              e.key === "Enter" &&
-                                              !e.shiftKey
-                                            ) {
+                                            if (e.key === "Enter" && !e.shiftKey) {
                                               e.preventDefault();
                                               if (rejectionReason) {
                                                 handleReject(status.gene);
@@ -311,9 +365,7 @@ export default function GeneValidationPage() {
                                           </Button>
                                           <Button
                                             variant="destructive"
-                                            onClick={() =>
-                                              handleReject(status.gene)
-                                            }
+                                            onClick={() => handleReject(status.gene)}
                                             disabled={!rejectionReason}
                                             className="dark:bg-red-900 dark:hover:bg-red-800"
                                           >
@@ -331,18 +383,16 @@ export default function GeneValidationPage() {
                                     >
                                       <Button
                                         variant="destructive"
-                                        onClick={() =>
-                                          setRejectingGene(status.gene)
-                                        }
+                                        onClick={() => setRejectingGene(status.gene)}
+                                        disabled={processingGenes.has(status.gene)}
                                         className="min-w-[120px] dark:bg-red-900 dark:hover:bg-red-800"
                                       >
                                         <XCircle className="h-4 w-4 mr-2" />
                                         Reject
                                       </Button>
                                       <Button
-                                        onClick={() =>
-                                          handleApprove(status.gene)
-                                        }
+                                        onClick={() => handleApprove(status.gene)}
+                                        disabled={processingGenes.has(status.gene)}
                                         className="min-w-[120px] bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700"
                                       >
                                         <CheckCircle className="h-4 w-4 mr-2" />
