@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import Toast from "@/components/toast-component";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   HelpCircle,
@@ -24,6 +25,12 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { useAuth } from "@/store/useAuthStore";
+
+const toastTypes = {
+  info: "info",
+  success: "success",
+  error: "error",
+};
 
 const FormField = ({ label, name, tooltip, children, error = null }) => (
   <div className="space-y-2">
@@ -62,6 +69,12 @@ export default function AnnotationForm({ params }: { params: Params }) {
   const { gene } = use(params);
   const [isLoading, setIsLoading] = useState(false);
   const [activeSection, setActiveSection] = useState("details");
+  const [toast, setToast] = useState({
+    show: false,
+    type: "info",
+    title: "",
+    message: "",
+  });
   const [formData, setFormData] = useState({
     gene_instance: "",
     strand: 1,
@@ -168,10 +181,19 @@ export default function AnnotationForm({ params }: { params: Params }) {
         throw new Error("Failed to save draft");
       }
 
-      setSuccessMessage("Draft saved successfully!");
-      setTimeout(() => setSuccessMessage(null), 3000);
+      setToast({
+        show: true,
+        type: "success",
+        title: "Draft Saved",
+        message: "Your changes have been saved successfully",
+      });
     } catch (err) {
-      setError("Failed to save draft. Please try again.");
+      setToast({
+        show: true,
+        type: "error",
+        title: "Error",
+        message: "Failed to save draft. Please try again.",
+      });
       console.error("Error saving draft:", err);
     } finally {
       setIsLoading(false);
@@ -183,7 +205,6 @@ export default function AnnotationForm({ params }: { params: Params }) {
       setIsLoading(true);
       setError(null);
 
-      // First save the current form data
       const saveResponse = await fetch(
         `http://127.0.0.1:8000/data/api/annotation/${gene}`,
         {
@@ -200,7 +221,6 @@ export default function AnnotationForm({ params }: { params: Params }) {
         throw new Error("Failed to save form data");
       }
 
-      // Then submit for validation
       const statusResponse = await fetch(
         "http://127.0.0.1:8000/data/api/status/",
         {
@@ -220,13 +240,23 @@ export default function AnnotationForm({ params }: { params: Params }) {
         throw new Error("Failed to submit for validation");
       }
 
-      setSuccessMessage("Successfully submitted for validation!");
+      setToast({
+        show: true,
+        type: "success",
+        title: "Submitted",
+        message: "Successfully submitted for validation",
+      });
+
       setTimeout(() => {
-        setSuccessMessage(null);
         router.push("/my-annotations");
       }, 2000);
     } catch (err) {
-      setError("Failed to submit for validation. Please try again.");
+      setToast({
+        show: true,
+        type: "error",
+        title: "Error",
+        message: "Failed to submit for validation. Please try again.",
+      });
       console.error("Error submitting for validation:", err);
     } finally {
       setIsLoading(false);
@@ -402,9 +432,16 @@ export default function AnnotationForm({ params }: { params: Params }) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      <Toast
+        show={toast.show}
+        type={toast.type as keyof typeof toastTypes}
+        title={toast.title}
+        message={toast.message}
+        onClose={() => setToast((prev) => ({ ...prev, show: false }))}
+      />
       <div className="container mx-auto px-4 py-12 max-w-5xl">
         <nav className="flex items-center justify-between mb-12">
-          <Button 
+          <Button
             variant="ghost"
             onClick={() => router.push("/annotations")}
             className="hover:text-violet-600 dark:hover:text-violet-400 transition-colors text-sm"
@@ -419,7 +456,7 @@ export default function AnnotationForm({ params }: { params: Params }) {
             </code>
           </div>
         </nav>
-  
+
         <header className="text-center mb-12">
           <h1 className="text-4xl font-bold text-slate-900 dark:text-white mb-4">
             Gene Annotation
@@ -428,8 +465,8 @@ export default function AnnotationForm({ params }: { params: Params }) {
             Add or modify gene annotations
           </p>
         </header>
-  
-        {error && (
+
+        {/* {error && (
           <Alert className="mb-6 border-red-200 bg-red-50 dark:border-red-900/50 dark:bg-red-900/20">
             <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
             <AlertTitle>Error</AlertTitle>
@@ -442,8 +479,8 @@ export default function AnnotationForm({ params }: { params: Params }) {
             <AlertCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
             <AlertDescription>{successMessage}</AlertDescription>
           </Alert>
-        )}
-  
+        )} */}
+
         <Card className="border-0 shadow-2xl bg-white/80 dark:bg-gray-800/50 backdrop-blur-sm">
           <CardContent className="p-8">
             {isLoading ? (
@@ -454,7 +491,7 @@ export default function AnnotationForm({ params }: { params: Params }) {
               <div className="space-y-8">
                 {renderGeneDetails()}
                 {renderTypeInformation()}
-  
+
                 <div className="flex justify-between items-center pt-8 border-t border-slate-200 dark:border-gray-700">
                   <Button
                     variant="outline"
