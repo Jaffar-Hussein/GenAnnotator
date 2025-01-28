@@ -80,7 +80,7 @@ const AnnotationCard = ({ assignment, formatDate, getStatusColor, showActionButt
         {showActionButton && (
           <Link
             href={`/annotate/${assignment.gene}`}
-            className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-md text-white bg-violet-500 hover:bg-violet-600 dark:bg-violet-600 dark:hover:bg-violet-500 transition-colors"
+            className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-md text-white bg-indigo-500 hover:bg-indigo-600 dark:bg-indigo-600 dark:hover:bg-indigo-500 transition-colors"
           >
             <ClipboardCheck className="h-4 w-4 mr-2" />
             Start Annotation
@@ -117,8 +117,8 @@ console.log('Dashboard Auth State:', {
 
   const getStatusColor = (status) => {
     const colors = {
-      ONGOING: "bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-300",
-      SUBMITTED: "bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-300",
+      ONGOING: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300",
+      SUBMITTED: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300",
       VALIDATED: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300",
       REJECTED: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
     };
@@ -155,9 +155,9 @@ console.log('Dashboard Auth State:', {
             <motion.div 
               whileHover={{ rotate: 360 }}
               transition={{ duration: 0.5 }}
-              className="h-8 w-8 rounded-lg bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center"
+              className="h-8 w-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center"
             >
-              <Dna className="h-5 w-5 text-violet-500 dark:text-violet-400" />
+              <Dna className="h-5 w-5 text-indigo-500 dark:text-indigo-400" />
             </motion.div>
             <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">
               My Annotations Dashboard
@@ -170,25 +170,25 @@ console.log('Dashboard Auth State:', {
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="bg-white dark:bg-gray-800 border border-slate-200/60 dark:border-gray-700/60">
-            <TabsTrigger value="pending" className="data-[state=active]:bg-violet-100/50 dark:data-[state=active]:bg-violet-900/30">
+            <TabsTrigger value="pending" className="data-[state=active]:bg-indigo-100/50 dark:data-[state=active]:bg-indigo-900/30">
               Pending Assignments
               {pendingAssignments.length > 0 && (
                 <motion.span
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
-                  className="ml-2 px-2 py-0.5 text-xs rounded-full bg-violet-100 dark:bg-violet-900/30 text-violet-800 dark:text-violet-300"
+                  className="ml-2 px-2 py-0.5 text-xs rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-300"
                 >
                   {pendingAssignments.length}
                 </motion.span>
               )}
             </TabsTrigger>
-            <TabsTrigger value="submitted" className="data-[state=active]:bg-violet-100/50 dark:data-[state=active]:bg-violet-900/30">
+            <TabsTrigger value="submitted" className="data-[state=active]:bg-indigo-100/50 dark:data-[state=active]:bg-indigo-900/30">
               Submitted for Validation
               {submittedAssignments.length > 0 && (
                 <motion.span
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
-                  className="ml-2 px-2 py-0.5 text-xs rounded-full bg-violet-100 dark:bg-violet-900/30 text-violet-800 dark:text-violet-300"
+                  className="ml-2 px-2 py-0.5 text-xs rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-300"
                 >
                   {submittedAssignments.length}
                 </motion.span>
@@ -216,7 +216,7 @@ console.log('Dashboard Auth State:', {
                     animate={{ opacity: 1 }}
                     className="flex justify-center py-8"
                   >
-                    <Loader2 className="h-8 w-8 animate-spin text-violet-500 dark:text-violet-400" />
+                    <Loader2 className="h-8 w-8 animate-spin text-indigo-500 dark:text-indigo-400" />
                   </motion.div>
                 ) : !hasAssignments ? (
                   <EmptyState 
@@ -266,7 +266,7 @@ console.log('Dashboard Auth State:', {
                     animate={{ opacity: 1 }}
                     className="flex justify-center py-8"
                   >
-                    <Loader2 className="h-8 w-8 animate-spin text-violet-500 dark:text-violet-400" />
+                    <Loader2 className="h-8 w-8 animate-spin text-indigo-500 dark:text-indigo-400" />
                   </motion.div>
                 ) : !hasAssignments ? (
                   <EmptyState 
