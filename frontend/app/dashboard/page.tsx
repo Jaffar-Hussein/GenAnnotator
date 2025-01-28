@@ -297,7 +297,8 @@ const ProgressSection = ({ title, value, total, percentage }) => (
 );
 
 export default function Dashboard() {
-  const user = useUser().user;
+  const user = useUser();
+  console.log("User:", user);
   const [stats, setStats] = useState<GenomeStats>();
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");

@@ -51,7 +51,6 @@ interface Assignment {
 const MAX_SELECTED_GENES = 10;
 
 const GeneAssignment = () => {
-  // State declarations and hooks remain the same
   const [availableGenes, setAvailableGenes] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);

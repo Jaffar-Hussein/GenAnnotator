@@ -96,6 +96,7 @@ async function handleSignup(request: NextRequest) {
   }
   
   function createAuthResponse(data: any) {
+    
     const apiResponse = NextResponse.json({
       user: {
         username: data.username,
@@ -103,7 +104,11 @@ async function handleSignup(request: NextRequest) {
         first_name: data.first_name,
         last_name: data.last_name,
         role: data.role,
-      }
+        is_superuser: data.is_superuser,
+        is_staff: data.is_staff,
+      },
+      access: data.access,
+      refresh: data.refresh
     });
   
     apiResponse.cookies.set('accessToken', data.access, {
@@ -133,73 +138,63 @@ async function handleSignup(request: NextRequest) {
     return NextResponse.json({ error: errorMessage }, { status });
   }
 
-async function handleRefresh(request: NextRequest) {
-  console.log('🔄 Handle Refresh Started');
-
-  try {
-    const refreshToken = request.cookies.get('refreshToken')?.value;
-
-    if (!refreshToken) {
-      console.error('❌ No refresh token found');
-      return NextResponse.json(
-        { error: ERROR_MESSAGES.MISSING_REFRESH_TOKEN },
-        { status: 401 }
-      );
-    }
-
-    const response = await fetch(`${BACKEND_URL}/access/api/refresh/`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ refresh: refreshToken }),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      console.error('❌ Token refresh failed');
-      // Clear cookies on refresh failure
-      const failureResponse = NextResponse.json(
-        { error: 'Token refresh failed' },
-        { status: 401 }
-      );
-      clearAuthCookies(failureResponse);
-      return failureResponse;
-    }
-
-    const apiResponse = NextResponse.json({ success: true });
-
-    // Set new access token
-    apiResponse.cookies.set('accessToken', data.access, {
-      ...COOKIE_OPTIONS,
-      maxAge: SESSION_DURATION,
-    });
-
+  async function handleRefresh(request: NextRequest) {
+    console.log('🔄 Handle Refresh Started');
   
-      apiResponse.cookies.set('refreshToken', data.refresh, {
-        ...COOKIE_OPTIONS,
-        maxAge: REFRESH_DURATION,
+    try {
+      const refreshToken = request.cookies.get('refreshToken')?.value;
+  
+      if (!refreshToken) {
+        console.error('❌ No refresh token found');
+        return NextResponse.json(
+          { error: ERROR_MESSAGES.MISSING_REFRESH_TOKEN },
+          { status: 401 }
+        );
+      }
+  
+      const response = await fetch(`${BACKEND_URL}/access/api/auth/token/refresh/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ refresh: refreshToken }),
       });
   
-      apiResponse.cookies.set('userRole', data.role, {  
+      const data = await response.json();
+      console.log('🔄 Refresh response received', data);
+      
+      if (!response.ok) {
+        console.error('❌ Token refresh failed');
+        const failureResponse = NextResponse.json(
+          { error: 'Token refresh failed' },
+          { status: 401 }
+        );
+        clearAuthCookies(failureResponse);
+        return failureResponse;
+      }
+  
+      const apiResponse = NextResponse.json({ 
+        success: true,
+        access: data.access  // Only new access token
+      });
+  
+      // Only update access token cookie
+      apiResponse.cookies.set('accessToken', data.access, {
         ...COOKIE_OPTIONS,
         maxAge: SESSION_DURATION,
       });
-
-
-
-    console.log('✅ Token refresh successful');
-    return apiResponse;
-
-  } catch (error) {
-    console.error('💥 Refresh error:', error);
-    return NextResponse.json(
-      { error: ERROR_MESSAGES.SERVER_ERROR },
-      { status: 500 }
-    );
+  
+      console.log('✅ Token refresh successful');
+      return apiResponse;
+  
+    } catch (error) {
+      console.error('💥 Refresh error:', error);
+      return NextResponse.json(
+        { error: ERROR_MESSAGES.SERVER_ERROR },
+        { status: 500 }
+      );
+    }
   }
-}
 
 
 async function handleLogin(request: NextRequest) {
@@ -237,7 +232,11 @@ async function handleLogin(request: NextRequest) {
           first_name: data.first_name,
           last_name: data.last_name,
           role: data.role,
-        }
+          is_superuser: data.is_superuser,
+          is_staff: data.is_staff,
+        },
+        access: data.access,
+        refresh: data.refresh
       });
   
       // Set cookies

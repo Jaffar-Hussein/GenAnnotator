@@ -7,7 +7,7 @@ import { Loader2, Clock, ClipboardCheck, AlertCircle, RefreshCcw, Inbox, Dna } f
 import Link from "next/link";
 import { useAssignments } from "@/hooks/useAnnotations";
 import { motion } from "framer-motion";
-
+import { useAuthStore } from "@/store/useAuthStore";
 const EmptyState = ({ message, icon: Icon }) => (
   <motion.div 
     initial={{ opacity: 0, y: 20 }}
@@ -92,6 +92,14 @@ const AnnotationCard = ({ assignment, formatDate, getStatusColor, showActionButt
 );
 
 const AnnotationDashboard = () => {
+
+  // At the top of your AnnotationDashboard component
+const store = useAuthStore.getState();
+console.log('Dashboard Auth State:', {
+  isAuthenticated: store.isAuthenticated,
+  hasUser: !!store.user,
+  hasToken: !!store.accessToken
+});
   const [activeTab, setActiveTab] = useState("pending");
   
   const { 

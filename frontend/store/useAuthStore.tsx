@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
-
+const REFRESH_INTERVAL = 50 * 60 * 1000; // 50 minutes
 export interface User {
   username: string;
   email: string;
@@ -25,13 +25,23 @@ export interface SignupData {
   last_name?: string;
 }
 
-export interface AuthResponse extends User {
+export interface AuthResponse {
+  user: {
+    username: string;
+    email: string;
+    first_name: string;
+    last_name: string;
+    role: string;
+    is_superuser: boolean;
+    is_staff: boolean;
+  };
   access: string;
   refresh: string;
 }
 
 interface AuthState {
   user: User | null;
+  accessToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
@@ -44,12 +54,12 @@ interface AuthState {
   clearError: () => void;
 }
 
-// Create the store
 export const useAuthStore = create<AuthState>()(
   devtools(
     persist(
       (set) => ({
         user: null,
+        accessToken: null,
         isAuthenticated: false,
         isLoading: false,
         error: null,
@@ -62,7 +72,6 @@ export const useAuthStore = create<AuthState>()(
               headers: {
                 'Content-Type': 'application/json',
               },
-              credentials: 'include',
               body: JSON.stringify(credentials),
             });
 
@@ -72,17 +81,22 @@ export const useAuthStore = create<AuthState>()(
             }
 
             const data: AuthResponse = await response.json();
-
-            // Extract user data from response
-            const { access, refresh, ...userData } = data;
-
+            console.log('🚀 Login data:', data);
             set({
-              user: userData,
+              user: {
+                username: data.user.username,
+                email: data.user.email,
+                first_name: data.user.first_name,
+                last_name: data.user.last_name,
+                role: data.user.role,
+                is_superuser: data.user.is_superuser,
+                is_staff: data.user.is_staff,
+              },
+              accessToken: data.access,
               isAuthenticated: true,
               isLoading: false,
             });
-
-            // Setup refresh timer
+            console.log('🚀 Login state:', useAuthStore.getState());
             setupRefreshTimer();
           } catch (error) {
             set({
@@ -101,7 +115,6 @@ export const useAuthStore = create<AuthState>()(
             const response = await fetch('/api/auth/signup', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              credentials: 'include',
               body: JSON.stringify(data),
             });
         
@@ -111,20 +124,30 @@ export const useAuthStore = create<AuthState>()(
               if (typeof responseData.error === 'string') {
                 throw new Error(responseData.error);
               }
-              // Handle validation errors
               throw { 
                 fieldErrors: responseData,
                 message: 'Validation failed'
               };
             }
-        
-            const { access, refresh, ...userData } = responseData;
+
+            console.log('🚀 Signup response:', responseData);
         
             set({
-              user: userData,
+              user: {
+                username: responseData.user.username,
+                email: responseData.user.email,
+                first_name: responseData.user.first_name,
+                last_name: responseData.user.last_name,
+                role: responseData.user.role,
+                is_superuser: responseData.user.is_superuser,
+                is_staff: responseData.user.is_staff,
+              },
+              accessToken: responseData.access,
               isAuthenticated: true,
               isLoading: false,
             });
+
+            console.log('🚀 Signup state:', useAuthStore.getState());
         
             setupRefreshTimer();
           } catch (error: any) {
@@ -141,18 +164,17 @@ export const useAuthStore = create<AuthState>()(
           try {
             const response = await fetch('/api/auth/logout', {
               method: 'POST',
-              credentials: 'include',
             });
 
             if (!response.ok) {
               throw new Error('Logout failed');
             }
 
-            // Clear refresh timer
             clearRefreshTimer();
             
             set({
               user: null,
+              accessToken: null,
               isAuthenticated: false,
               isLoading: false,
               error: null,
@@ -166,24 +188,38 @@ export const useAuthStore = create<AuthState>()(
           }
         },
 
+       
+
         refreshToken: async () => {
           try {
+            console.log('Starting token refresh in store');
             const response = await fetch('/api/auth/refresh', {
               method: 'POST',
-              credentials: 'include',
+              credentials: 'include', // Important for cookies
             });
-
+        
             if (!response.ok) {
+              console.error('Refresh request failed:', response.status);
               throw new Error('Token refresh failed');
             }
-
-            // Reset the refresh timer
-            setupRefreshTimer();
+        
+            const data = await response.json();
+            console.log('Refresh response data:', data);
+        
+            // Only update access token
+            set((state) => ({
+              ...state,
+              accessToken: data.access,
+              isAuthenticated: true
+            }));
+        
+            console.log('Store state updated with new access token');
             return true;
           } catch (error) {
-            // If refresh fails, log out the user
+            console.error('Token refresh failed:', error);
             set({
               user: null,
+              accessToken: null,
               isAuthenticated: false,
               error: 'Session expired',
             });
@@ -198,9 +234,9 @@ export const useAuthStore = create<AuthState>()(
       }),
       {
         name: 'auth-storage',
-        // Only persist these fields
         partialize: (state) => ({
           user: state.user,
+          accessToken: state.accessToken,
           isAuthenticated: state.isAuthenticated,
         }),
       }
@@ -208,36 +244,32 @@ export const useAuthStore = create<AuthState>()(
   )
 );
 
-// Refresh token timer
 let refreshTimeout: NodeJS.Timeout;
-
-// Setup refresh timer (refresh 5 minutes before expiration)
 export const setupRefreshTimer = () => {
   if (refreshTimeout) {
     clearTimeout(refreshTimeout);
   }
 
   refreshTimeout = setTimeout(async () => {
-    const { refreshToken } = useAuthStore.getState();
-    const success = await refreshToken();
+    console.log('Attempting token refresh');
+    const success = await useAuthStore.getState().refreshToken();
     if (success) {
-      setupRefreshTimer();
+      setupRefreshTimer(); // Set up next refresh only if successful
     }
-  }, (55 * 60 * 1000)); // 55 minutes
+  }, REFRESH_INTERVAL);
 };
 
-// Clear refresh timer
 export const clearRefreshTimer = () => {
   if (refreshTimeout) {
     clearTimeout(refreshTimeout);
   }
 };
 
-// Hook for complete auth state
 export function useAuth() {
   const state = useAuthStore();
   return {
     user: state.user,
+    accessToken: state.accessToken,
     isAuthenticated: state.isAuthenticated,
     isLoading: state.isLoading,
     error: state.error,
@@ -249,22 +281,20 @@ export function useAuth() {
   };
 }
 
-// Hook for authentication status
 export function useIsAuthenticated() {
   return useAuthStore((state) => state.isAuthenticated);
 }
 
-// Hook for current user
 export function useUser() {
   return useAuthStore((state) => state.user);
 }
 
-// Hook for loading state
+
+
 export function useAuthLoading() {
   return useAuthStore((state) => state.isLoading);
 }
 
-// Hook for error state
 export function useAuthError() {
   const error = useAuthStore((state) => state.error);
   const clearError = useAuthStore((state) => state.clearError);
