@@ -169,6 +169,7 @@ const GeneDetails = ({
           <SequenceTrackViewer
             sequence={selectedGene.sequence}
             title={selectedGene.name}
+            startPosition={selectedGene.start}
           />
         </div>
       </div>
