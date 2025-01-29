@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.urls import reverse
 from GeneAtlas import urls
 from django.views.generic import CreateView
-from .serializers import GenomeSerializer, GeneSerializer, PeptideSerializer, GeneAnnotationSerializer, PeptideAnnotationSerializer, GeneAnnotationStatusSerializer, TaskSerializer
+from .serializers import GenomeSerializer, GeneSerializer, PeptideSerializer, GeneAnnotationSerializer, PeptideAnnotationSerializer, GeneAnnotationStatusSerializer, TaskSerializer, TaskInputSerializer, BlastQueryInputSerializer, StatsInputSerializer
 from rest_framework import status, request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -44,8 +44,7 @@ class GenomeAPIView(APIView):
             query_results = inf
         else:
             params = {"name": request.GET.get('name', None), # Name of the genome
-                    "species": request.GET.get('species', None), 
-                    "description": request.GET.get('description', None), 
+                    "species": request.GET.get('species', None),  
                     "length": request.GET.get('length', None),
                     "motif": request.GET.get('motif', None),
                     "gc_content": request.GET.get('gc_content', None), 
@@ -80,8 +79,7 @@ class GeneAPIView(APIView):
         inf = Gene.objects.all()
         motif = request.GET.get('motif', None)
         params = {"name": request.GET.get('name', None), # Name of the gene
-                "genome": request.GET.get('genome', None), # Genome to which the gene belongs
-                "description": request.GET.get('description', None), 
+                "genome": request.GET.get('genome', None), # Genome to which the gene belongs 
                 "length": request.GET.get('length', None),
                 "gc_content": request.GET.get('gc_content', None), 
                 "annotated": request.GET.get('annotated', None), # Annotated status of the gene
@@ -258,18 +256,15 @@ class AnnotationStatusAPIView(APIView):
         params = {"gene": request.GET.get('gene', None),  # Gene(s) for which the status is to be retrieved
                 "status": request.GET.get('status', None), # Status of the gene annotation
                 "annotator": request.GET.get('annotator', None)} # Annotator assigned to the gene annotation
-        if(all(v is None for v in params.values())):
-            return Response({"error": "No query parameters provided."}, status=status.HTTP_400_BAD_REQUEST)
-        else:
-            query_results = inf.filter(**{k: v for k, v in params.items() if v is not None})
-            if(request.GET.get("limit",None)):
-                paginator = LimitOffsetPagination()
-                query_results = paginator.paginate_queryset(query_results, request)
-                serializer = GeneAnnotationStatusSerializer(query_results, many=True)
-                return paginator.get_paginated_response(serializer.data)
-            else:    
-                serializer = GeneAnnotationStatusSerializer(query_results, many=True)
-                return Response(serializer.data)
+        query_results = inf.filter(**{k: v for k, v in params.items() if v is not None})
+        if(request.GET.get("limit",None)):
+            paginator = LimitOffsetPagination()
+            query_results = paginator.paginate_queryset(query_results, request)
+            serializer = GeneAnnotationStatusSerializer(query_results, many=True)
+            return paginator.get_paginated_response(serializer.data)
+        else:    
+            serializer = GeneAnnotationStatusSerializer(query_results, many=True)
+            return Response(serializer.data)
 
     def put(self, request) -> Response:
 
@@ -363,24 +358,27 @@ class StatsAPIView(APIView):
         try:
             user = request.GET.get("user", None)
             if(user is not None):
-                try:
-                    user_pk = CustomUser.objects.get(username=user).id
-                except CustomUser.DoesNotExist:
-                    return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
-                annotations = GeneAnnotationStatus.objects.filter(annotator=user_pk)
-                annotations_ongoing = annotations.filter(status=GeneAnnotationStatus.ONGOING)
-                annotations_pending = annotations.filter(status=GeneAnnotationStatus.PENDING)
-                annotations_approved = annotations.filter(status=GeneAnnotationStatus.APPROVED)
-                annotations_rejected = annotations.filter(status=GeneAnnotationStatus.REJECTED)
-                return Response({"annotations": annotations.count(),
-                                "ongoing": {"count": annotations_ongoing.count(), 
-                                             "annotation": annotations_ongoing.values_list('gene', flat=True)},
-                                "pending": {"count": annotations_pending.count(), 
-                                            "annotation": annotations_pending.values_list('gene', flat=True)},
-                                "approved": {"count": annotations_approved.count(), 
-                                             "annotation": annotations_approved.values_list('gene', flat=True)},
-                                "rejected": {"count": annotations_rejected.count(), 
-                                             "annotation": annotations_rejected.values_list('gene', flat=True)}})
+                if StatsInputSerializer(data={"user": user}).is_valid(raise_exception=False):
+                    try:
+                        user_pk = CustomUser.objects.get(username=user).id
+                    except CustomUser.DoesNotExist:
+                        return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+                    annotations = GeneAnnotationStatus.objects.filter(annotator=user_pk)
+                    annotations_ongoing = annotations.filter(status=GeneAnnotationStatus.ONGOING)
+                    annotations_pending = annotations.filter(status=GeneAnnotationStatus.PENDING)
+                    annotations_approved = annotations.filter(status=GeneAnnotationStatus.APPROVED)
+                    annotations_rejected = annotations.filter(status=GeneAnnotationStatus.REJECTED)
+                    return Response({"annotations": annotations.count(),
+                                    "ongoing": {"count": annotations_ongoing.count(), 
+                                                "annotation": annotations_ongoing.values_list('gene', flat=True)},
+                                    "pending": {"count": annotations_pending.count(), 
+                                                "annotation": annotations_pending.values_list('gene', flat=True)},
+                                    "approved": {"count": annotations_approved.count(), 
+                                                "annotation": annotations_approved.values_list('gene', flat=True)},
+                                    "rejected": {"count": annotations_rejected.count(), 
+                                                "annotation": annotations_rejected.values_list('gene', flat=True)}})
+                else:
+                    return Response({"error": "Invalid user parameter."}, status=status.HTTP_400_BAD_REQUEST)
             else:
                 genome_count = Genome.objects.count()
                 stats_by_genome = Gene.objects.values('genome').annotate(total=db_models.Count('genome'), annotated=db_models.Sum('annotated', output_field=db_models.IntegerField()))
@@ -479,6 +477,16 @@ class TaskAPIView(APIView):
                 "user": request.GET.get('user', None), # User who created the task
                 "task": request.GET.get('task', None)} # Kind of task
         
+        try:
+            TaskInputSerializer(data=params).is_valid(raise_exception=True)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            params["user"] = CustomUser.objects.get(username=params["user"]) if params["user"] is not None else None
+        except CustomUser.DoesNotExist:
+            return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+        
         query_result = AsyncTasksCache.objects.filter(**{k: v for k, v in params.items() if v is not None})
         if query_result.count() == 0:
             return Response({"error": "No task found."}, status=status.HTTP_404_NOT_FOUND)
@@ -501,15 +509,23 @@ class BlastAPIView(APIView):
 
     def get(self, request) -> Response:
         task = request.GET.get('key', None)
+        try:
+            BlastQueryInputSerializer(data={"key": task}).is_valid(raise_exception=True)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         if task:
             try:
                 task_obj = AsyncTasksCache.objects.get(key=task)
                 if task_obj.task == "BLAST":
-                    return Response({"task": task_obj.key, "state": task_obj.state, "user": task_obj.user.username, 
-                                     "params": task_obj.params, 
-                                     "result": HUEY.result(task_obj.storage, preserve=True)} if task_obj.state == AsyncTasksCache.completed 
-                                     else "Task is not completed.",
-                                     status=status.HTTP_200_OK)
+                    if(task_obj.state == AsyncTasksCache.completed):
+                        return Response({"task": task_obj.key, "state": task_obj.state, "user": task_obj.user.username, 
+                                        "params": task_obj.params, 
+                                        "result": HUEY.result(task_obj.storage, preserve=True)},
+                                        status=status.HTTP_200_OK)
+                    elif(task_obj.state == AsyncTasksCache.pending or task_obj.state == AsyncTasksCache.in_progress):
+                        return Response({"state": task_obj.state, "message": "Task is still in progress."}, status=status.HTTP_202_ACCEPTED)
+                    else:
+                        return Response({"error": "Task failed."}, status=status.HTTP_400_BAD_REQUEST)
                 else:
                     return Response({"error": "Task is not a BLAST task."}, status=status.HTTP_404_NOT_FOUND)
             except AsyncTasksCache.DoesNotExist:
