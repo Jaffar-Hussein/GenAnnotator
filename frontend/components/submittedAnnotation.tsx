@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useSubmittedAnnotations } from '@/hooks/useSubmittedAnnotations';
 import { motion, AnimatePresence } from "framer-motion";
-import { AlertCircle, Clock, Loader2, CheckCircle2, XCircle, Clock4 } from "lucide-react";
+import { AlertCircle, Clock, Loader2, CheckCircle2, XCircle, Clock4, FileText } from "lucide-react";
 
 const listVariants = {
   hidden: { opacity: 0 },
@@ -82,7 +82,7 @@ const SubmittedAnnotationCard = ({ assignment, formatDate, getStatusColor }) => 
           <div>
             <h3 className="text-lg font-medium text-slate-900 dark:text-white flex items-center gap-2">
               Gene: {assignment.gene}
-              {assignment.status === 'VALIDATED' && (
+              {assignment.status === 'APPROVED' && (
                 <CheckCircle2 className="h-5 w-5 text-emerald-500" />
               )}
             </h3>
@@ -90,14 +90,14 @@ const SubmittedAnnotationCard = ({ assignment, formatDate, getStatusColor }) => 
               <Clock className="h-4 w-4" />
               {assignment.status === 'PENDING' ? 
                 `Submitted: ${formatDate(assignment.updated_at)}` :
-                assignment.status === 'VALIDATED' ? 
+                assignment.status === 'APPROVED' ? 
                   `Validated: ${formatDate(assignment.validated_at)}` :
                   `Rejected: ${formatDate(assignment.updated_at)}`
               }
             </div>
           </div>
           <span className={`px-3 py-1.5 rounded-full text-sm font-medium ${getStatusColor(assignment.status)}`}>
-            {assignment.status}
+            {assignment.status || 'PENDING'}
           </span>
         </div>
         
@@ -125,7 +125,7 @@ const SubmittedAnnotationCard = ({ assignment, formatDate, getStatusColor }) => 
 };
 
 const SubmittedTab = () => {
-  const [statusFilter, setStatusFilter] = useState('PENDING');
+  const [statusFilter, setStatusFilter] = useState('ALL');
   const { 
     annotations, 
     loading, 
@@ -139,14 +139,21 @@ const SubmittedTab = () => {
 
   const getStatusColor = (status) => {
     const colors = {
+      ALL: "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300",
       PENDING: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300",
-      VALIDATED: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300",
+      APPROVED: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300",
       REJECTED: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
     };
-    return colors[status] || "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300";
+    return colors[status || 'PENDING'] || colors['ALL'];
   };
 
   const filters = [
+    {
+      id: 'ALL',
+      label: 'All Annotations',
+      icon: FileText,
+      color: 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300'
+    },
     {
       id: 'PENDING',
       label: 'Pending Review',
@@ -154,7 +161,7 @@ const SubmittedTab = () => {
       color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'
     },
     {
-      id: 'VALIDATED',
+      id: 'APPROVED',
       label: 'Validated',
       icon: CheckCircle2,
       color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300'
@@ -172,11 +179,11 @@ const SubmittedTab = () => {
       <motion.div 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
+        transition={{ duration: 0.2 }}
         className="space-y-4"
       >
         <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
-          {filters.find(f => f.id === statusFilter)?.label} Annotations
+          {filters.find(f => f.id === statusFilter)?.label}
         </h2>
         
         <div className="flex flex-wrap gap-2">
@@ -223,12 +230,13 @@ const SubmittedTab = () => {
             className="text-center py-12"
           >
             <div className="flex justify-center mb-4">
+              {statusFilter === 'ALL' && <FileText className="h-12 w-12 text-slate-400" />}
               {statusFilter === 'PENDING' && <Clock4 className="h-12 w-12 text-yellow-500/70" />}
-              {statusFilter === 'VALIDATED' && <CheckCircle2 className="h-12 w-12 text-emerald-500/70" />}
+              {statusFilter === 'APPROVED' && <CheckCircle2 className="h-12 w-12 text-emerald-500/70" />}
               {statusFilter === 'REJECTED' && <XCircle className="h-12 w-12 text-red-500/70" />}
             </div>
             <p className="text-slate-500 dark:text-slate-400">
-              No {filters.find(f => f.id === statusFilter)?.label.toLowerCase()} annotations found
+              No {filters.find(f => f.id === statusFilter)?.label.toLowerCase()} found
             </p>
           </motion.div>
         ) : (
@@ -242,7 +250,7 @@ const SubmittedTab = () => {
             <AnimatePresence mode="wait">
               {annotations.map((annotation) => (
                 <SubmittedAnnotationCard
-                  key={`${annotation.gene}-${annotation.status}`}
+                  key={`${annotation.gene}-${annotation.status || 'PENDING'}`}
                   assignment={annotation}
                   formatDate={formatDate}
                   getStatusColor={getStatusColor}
