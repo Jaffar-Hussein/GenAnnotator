@@ -240,18 +240,18 @@ const GenomeProgressCard = ({ genomeStats = defaultStats }) => (
 const StatsCard = ({ item }) => (
   <Link href={item.href}>
     <Card className="hover:shadow-lg transition-all duration-200 group bg-white dark:bg-gray-800 border dark:border-gray-700">
-      <CardContent className="p-6">
-        <div className="flex items-center gap-4">
+      <CardContent className="p-4">
+        <div className="flex items-start gap-3">
           <div
-            className={`rounded-full p-3 ${item.color} transition-all group-hover:scale-110`}
+            className={`rounded-full p-2.5 ${item.color} transition-all group-hover:scale-110 flex-shrink-0`}
           >
-            <item.icon className="h-6 w-6" />
+            <item.icon className="h-5 w-5" />
           </div>
-          <div className="space-y-1">
+          <div className="min-w-0 flex-1">
             <p className="text-sm font-medium text-gray-500 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-100">
               {item.name}
             </p>
-            <div className="flex items-baseline gap-2">
+            <div className="flex items-baseline gap-1.5">
               <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
                 {item.stat}
               </h3>
