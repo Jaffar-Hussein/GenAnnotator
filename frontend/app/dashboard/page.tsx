@@ -33,7 +33,7 @@ import { Progress } from "@/components/ui/progress";
 import { useAuthStore } from "@/store/useAuthStore";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEffect, useState } from "react";
-import { RoleBasedContent } from "@/components/role-based-dashboard";
+import  RoleBasedContent  from "@/components/role-based-dashboard";
 import { useUser } from "@/store/useAuthStore";
 import {
   Tooltip,
@@ -407,7 +407,7 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
-
+                
           {/* Enhanced Stats Grid */}
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
             {isLoading
@@ -421,9 +421,9 @@ export default function Dashboard() {
 
           {/* Enhanced Role Content Sections */}
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {/* <div className="lg:col-span-3">
+            <div className="lg:col-span-3">
               {user && <RoleBasedContent role={user?.role} />}
-            </div> */}
+            </div>
 
             {/* Enhanced Progress Cards */}
             <Card className="lg:col-span-2 shadow-sm hover:shadow-md transition-all bg-white dark:bg-gray-800">
