@@ -115,7 +115,7 @@ const AnnotationCard = ({ assignment, formatDate, getStatusColor, showActionButt
     <motion.div
       key={cardKey}
       variants={itemVariants}
-      className="rounded-lg border border-slate-200/60 dark:border-gray-700/60 bg-white dark:bg-gray-800 p-6 shadow-sm hover:shadow-md transition-all duration-200"
+      className="max-w-7xl rounded-lg border border-slate-200/60 dark:border-gray-700/60 bg-white dark:bg-gray-800 p-6 shadow-sm hover:shadow-md transition-all duration-200"
     >
       <div className="flex justify-between items-start">
         <div className="space-y-3">

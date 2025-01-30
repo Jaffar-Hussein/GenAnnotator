@@ -3,8 +3,11 @@ import { useAuthStore } from "@/store/useAuthStore";
 
 const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
-export const useSubmittedAnnotations = (statusFilter = 'PENDING') => {
-  const [annotations, setAnnotations] = useState([]);
+const VALID_STATUSES = ['PENDING', 'APPROVED', 'REJECTED'] as const;
+type ValidStatus = typeof VALID_STATUSES[number];
+
+export const useSubmittedAnnotations = (statusFilter = 'ALL') => {
+  const [allAnnotations, setAllAnnotations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [networkError, setNetworkError] = useState(false);
@@ -24,9 +27,9 @@ export const useSubmittedAnnotations = (statusFilter = 'PENDING') => {
       setLoading(true);
       setError(null);
       setNetworkError(false);
-
       
-      const url = `${API_URL}/data/api/status/?limit=100&status=${statusFilter}`;
+      // Fetch all annotations without status filter
+      const url = `${API_URL}/data/api/status/?limit=100`;
 
       const response = await fetch(url, {
         headers: {
@@ -51,12 +54,14 @@ export const useSubmittedAnnotations = (statusFilter = 'PENDING') => {
         throw new Error("Invalid data format received");
       }
 
-      const userAnnotations = data.results.filter(
-        annotation => annotation.annotator === currentUserId
+      // Filter for current user's annotations and normalize status
+      const userAnnotations = data.results
+      .filter(annotation => 
+        annotation.annotator === currentUserId && 
+        VALID_STATUSES.includes(annotation.status as ValidStatus)
       );
 
-      setAnnotations(userAnnotations);
-
+      setAllAnnotations(userAnnotations);
     } catch (err) {
       console.error('Fetch error:', err);
       setError(err.message);
@@ -75,7 +80,15 @@ export const useSubmittedAnnotations = (statusFilter = 'PENDING') => {
       setLoading(false);
       setError("Please log in to view annotations");
     }
-  }, [accessToken, currentUserId, statusFilter]);
+  }, [accessToken, currentUserId]); 
+
+  console.log(statusFilter)
+  const annotations = statusFilter === 'ALL' 
+    ? allAnnotations 
+    : allAnnotations.filter(annotation => annotation.status === statusFilter);
+
+  console.log('Annotations:', annotations);
+  
 
   return {
     annotations,

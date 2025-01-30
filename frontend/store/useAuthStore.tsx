@@ -265,7 +265,7 @@ export const clearRefreshTimer = () => {
   }
 };
 
-export function useAuth() {
+export function useAuth(p0: (state: any) => any) {
   const state = useAuthStore();
   return {
     user: state.user,

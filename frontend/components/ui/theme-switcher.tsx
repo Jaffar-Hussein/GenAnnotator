@@ -6,10 +6,22 @@ import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
 
 export function ThemeSwitcher() {
-  const { setTheme, theme } = useTheme()
+  const { setTheme, theme, systemTheme } = useTheme()
+  const [mounted, setMounted] = React.useState(false)
+  
+
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted) {
+    return <div className="w-8 h-8" /> 
+  }
+
+  const currentTheme = theme === 'system' ? systemTheme : theme
   
   const toggleTheme = () => {
-    setTheme(theme === 'dark' ? 'light' : 'dark')
+    setTheme(currentTheme === 'dark' ? 'light' : 'dark')
   }
 
   return (
@@ -39,7 +51,7 @@ export function ThemeSwitcher() {
         )}
       />
       <span className="sr-only">
-        Switch to {theme === 'dark' ? 'light' : 'dark'} mode
+        Switch to {currentTheme === 'dark' ? 'light' : 'dark'} mode
       </span>
     </button>
   )
