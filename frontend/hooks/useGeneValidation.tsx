@@ -94,8 +94,10 @@ export const useGeneValidation = (): UseGeneValidationReturn => {
       }
       
       const data: PaginatedResponse = await response.json();
+      // remove my own annotations
+      data.results = data.results.filter((annotation) => annotation.annotator !== user);
       setPendingAnnotations(data.results);
-      setTotalCount(data.count);
+      setTotalCount(data.results.length);
       setNextPageUrl(data.next);
       setPreviousPageUrl(data.previous);
     } catch (err) {

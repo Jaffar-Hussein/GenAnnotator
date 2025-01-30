@@ -19,7 +19,9 @@ import {
   ArrowRight,
   FileCheck,
   Database,
+  FileCheckIcon,
   Dna,
+  FileCheck2Icon,
 } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { format } from "path";
@@ -261,6 +263,7 @@ const ValidatorDashboard = () => {
   const [ongoingAnnotations, setOngoingAnnotations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const token = useAuthStore((state) => state.accessToken);
+  const user = useAuthStore((state) => state.user?.username);
 
   useEffect(() => {
     const fetchAnnotations = async () => {
@@ -287,7 +290,10 @@ const ValidatorDashboard = () => {
 
         const pendingData = await pendingResponse.json();
         const ongoingData = await ongoingResponse.json();
-
+        // removing my own annotations
+        pendingData.results = pendingData.results.filter(
+          (annotation) => annotation.annotator !== user
+        );
         setPendingAnnotations(pendingData.results);
         setOngoingAnnotations(ongoingData.results);
       } catch (error) {
@@ -413,8 +419,17 @@ const ValidatorDashboard = () => {
                     </div>
                   ))
                 ) : (
-                  <div className="text-center py-6 text-gray-500 dark:text-gray-400">
-                    No pending annotations to review
+                  <div className="text-center py-8 px-4">
+                    <div className="rounded-full bg-gray-100 dark:bg-gray-800 p-3 w-12 h-12 mx-auto mb-4 flex items-center justify-center">
+                      <FileCheck2Icon className="h-6 w-6 text-gray-500 dark:text-gray-400" />
+                    </div>
+                    <div className="text-gray-900 dark:text-gray-100 font-medium mb-1">
+                      All caught up!
+                    </div>
+                    <div className="text-gray-500 dark:text-gray-400 text-sm">
+                      There are no annotations waiting for review. Check back
+                      later or help assign new genes.
+                    </div>
                   </div>
                 )}
               </div>
@@ -487,8 +502,17 @@ const ValidatorDashboard = () => {
                     </div>
                   ))
                 ) : (
-                  <div className="text-center py-6 text-gray-500 dark:text-gray-400">
-                    You don't have any annotations in progress
+                  <div className="text-center py-8 px-4">
+                    <div className="rounded-full bg-gray-100 dark:bg-gray-800 p-3 w-12 h-12 mx-auto mb-4 flex items-center justify-center">
+                      <Database className="h-6 w-6 text-gray-500 dark:text-gray-400" />
+                    </div>
+                    <div className="text-gray-900 dark:text-gray-100 font-medium mb-1">
+                      No annotations in progress
+                    </div>
+                    <div className="text-gray-500 dark:text-gray-400 text-sm">
+                      Ready to contribute? Start annotating genes by picking one
+                      from the available pool.
+                    </div>
                   </div>
                 )}
               </div>
