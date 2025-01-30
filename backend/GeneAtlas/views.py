@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.urls import reverse
 from GeneAtlas import urls
 from django.views.generic import CreateView
-from .serializers import GenomeSerializer, GeneSerializer, PeptideSerializer, GeneAnnotationSerializer, PeptideAnnotationSerializer, GeneAnnotationStatusSerializer, TaskSerializer, TaskInputSerializer, BlastQueryInputSerializer, StatsInputSerializer
+from .serializers import GenomeSerializer, GeneSerializer, PeptideSerializer, GeneAnnotationSerializer, PeptideAnnotationSerializer, GeneAnnotationStatusSerializer, TaskSerializer, TaskInputSerializer, BlastQueryInputSerializer, StatsInputSerializer, PFAMRunInputSerializer
 from rest_framework import status, request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -15,27 +15,16 @@ from django.http import HttpResponse
 from AccessControl.models import CustomUser
 import csv
 import requests
-from .tasks import run_blast
+from .tasks import run_blast, pfamscan
 from huey.contrib.djhuey import HUEY
 from django.utils import timezone
 from datetime import timedelta
 import uuid
 
-# Create your views here.
-
 class HomeView(CreateView):
 
-    def home_rendering(request):
-        endpoints = []
-        print('List of URL patterns:')
-        for pattern in urls.urlpatterns:
-            if(hasattr(pattern, 'name') and hasattr(pattern, 'pattern') and pattern.name != 'home'):
-                endpoints.append({"name": pattern.name.removesuffix("_api"), "url": pattern.pattern})
-        postman_examples = [
-            {"name": "Get All Genomes", "request": "GET /data/api/genome/?all=true"},
-            {"name": "Genome Query", "request": "GET /data/api/genome/?name=Escherichia_coli_cft073"},
-        ]
-        return render(request, "home.html", {"endpoints": endpoints, "postman_examples": postman_examples,"api_version": "v1.0"})
+    def get(self, request):
+        return render(request, "home.html")
 
 class GenomeAPIView(APIView):
     def get(self, request) -> Response:
@@ -595,3 +584,48 @@ class BlastAPIView(APIView):
     
     def delete(self, request) -> Response:
         return Response({"error": "DELETE request not supported."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    
+class PFAMAPIView(APIView):
+
+    permission_classes = [IsAuthenticated&(IsAnnotatorUser|IsValidatorUser)]
+
+    def get(self, request) -> Response:
+        # Get the key of the task
+        key = request.GET.get('key', None)
+        # Validate the query parameters
+        try:
+            TaskInputSerializer(data={"key": key}).is_valid(raise_exception=True)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        # From this point on, the parameters are assumed to be valid
+        if key:
+            # Retrieve the task from the cache
+            return AsyncTasksCache.retrieve_task(key=key, task_type="PFAMScan", user=request.user)
+    
+    def post(self, request) -> Response:
+
+        # Make paramaters for the PFAM task
+        try:
+            sequence = Peptide.objects.get(name=request.data.get('peptide', None)).sequence
+            pfam_params = {"sequence": sequence, # Sequence to be scanned against the PFAM database
+                        "evalue": request.data.get('evalue', 0.001), # E-value threshold
+                        "asp": request.data.get('asp', True), # Active site prediction method
+                        "user": request.user.id, # User who submitted the task
+            }
+        except Peptide.DoesNotExist:
+            return Response({"error": "Peptide not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Validate the parameters
+        try:
+            PFAMRunInputSerializer(data=pfam_params).is_valid(raise_exception=True)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # From this point on, the parameters are assumed to be valid
+        return AsyncTasksCache.get_or_create_task(task_type="PFAMScan", task_params=pfam_params, task_funct=pfamscan, user=request.user)
+
+    def put(self, request) -> Response:
+        pass
+    
+    def delete(self, request) -> Response:
+        pass
