@@ -336,8 +336,8 @@ const GeneAssignment = () => {
         <div className="relative mb-4">
           <div className="absolute -top-1 -right-1">
             <span className="flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-violet-500"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-indigo-500"></span>
             </span>
           </div>
           <div className="h-12 w-12 rounded-lg bg-white dark:bg-gray-800 border border-slate-200/60 dark:border-gray-700/60 flex items-center justify-center">
@@ -398,8 +398,8 @@ const GeneAssignment = () => {
                 {/* Header with improved visual hierarchy */}
                 <div className="p-8 bg-gradient-to-r from-slate-50/50 to-white dark:from-gray-800 dark:to-gray-800/50 border-b border-slate-200/60 dark:border-gray-700/60">
                   <div className="flex items-center space-x-3 mb-2">
-                    <div className="h-8 w-8 rounded-lg bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
-                      <Dna className="h-5 w-5 text-violet-500 dark:text-violet-400" />
+                    <div className="h-8 w-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
+                      <Dna className="h-5 w-5 text-indigo-500 dark:text-indigo-400" />
                     </div>
                     <h2 className="text-2xl font-semibold text-slate-900 dark:text-white">
                       New Assignment
@@ -416,8 +416,8 @@ const GeneAssignment = () => {
                     <div className="md:col-span-2 space-y-6">
                       <div className="space-y-4">
                         <label className="inline-flex items-center text-sm font-medium text-slate-700 dark:text-slate-300">
-                          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-violet-100 dark:bg-violet-900/30 mr-2">
-                            <span className="text-violet-600 dark:text-violet-400 text-xs">
+                          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900/30 mr-2">
+                            <span className="text-indigo-600 dark:text-indigo-400 text-xs">
                               1
                             </span>
                           </span>
@@ -430,7 +430,7 @@ const GeneAssignment = () => {
                         >
                           <SelectTrigger
                             className="w-full border-slate-200 dark:border-gray-600 dark:bg-gray-800/50 
-                         hover:border-violet-200 dark:hover:border-violet-800/50 transition-colors"
+                         hover:border-indigo-200 dark:hover:border-indigo-800/50 transition-colors"
                           >
                             <SelectValue placeholder="Choose annotator..." />
                           </SelectTrigger>
@@ -443,8 +443,8 @@ const GeneAssignment = () => {
                               >
                                 <div className="flex items-center space-x-2">
                                   <div
-                                    className="h-6 w-6 rounded-full bg-violet-100 dark:bg-violet-900/30 
-                                  flex items-center justify-center text-xs text-violet-600 dark:text-violet-400"
+                                    className="h-6 w-6 rounded-full bg-indigo-100 dark:bg-indigo-900/30 
+                                  flex items-center justify-center text-xs text-indigo-600 dark:text-indigo-400"
                                   >
                                     {annotator.first_name
                                       .charAt(0)
@@ -510,8 +510,8 @@ const GeneAssignment = () => {
                     <div className="space-y-6">
                       <div>
                         <label className="inline-flex items-center text-sm font-medium text-slate-700 dark:text-slate-300">
-                          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-violet-100 dark:bg-violet-900/30 mr-2">
-                            <span className="text-violet-600 dark:text-violet-400 text-xs">
+                          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900/30 mr-2">
+                            <span className="text-indigo-600 dark:text-indigo-400 text-xs">
                               2
                             </span>
                           </span>
@@ -531,8 +531,8 @@ const GeneAssignment = () => {
                                   key={gene}
                                   variant="secondary"
                                   className="group bg-white dark:bg-gray-800 text-slate-700 dark:text-slate-200 
-                             border border-slate-200 dark:border-gray-700 hover:border-violet-200 
-                             dark:hover:border-violet-800/50 transition-all duration-200"
+                             border border-slate-200 dark:border-gray-700 hover:border-indigo-200 
+                             dark:hover:border-indigo-800/50 transition-all duration-200"
                                 >
                                   <span className="font-mono">{gene}</span>
                                   <button
@@ -577,7 +577,7 @@ const GeneAssignment = () => {
                           className={`w-full transition-all duration-200 ${
                             !selectedAnnotator || selectedGenes.length === 0
                               ? "bg-slate-100 dark:bg-gray-700 text-slate-400 dark:text-slate-500 cursor-not-allowed"
-                              : "bg-violet-500 hover:bg-violet-600 dark:bg-violet-600 dark:hover:bg-violet-500 text-white shadow-sm"
+                              : "bg-indigo-500 hover:bg-indigo-600 dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white shadow-sm"
                           }`}
                         >
                           {isAssigning ? (
@@ -620,8 +620,8 @@ const GeneAssignment = () => {
                 <div className="p-6 border-b border-slate-200/60 dark:border-gray-700/60 bg-gradient-to-r from-slate-50 to-white dark:from-gray-800 dark:to-gray-800/50">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="flex items-start space-x-3">
-                      <div className="h-10 w-10 rounded-lg bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
-                        <Dna className="h-5 w-5 text-violet-500 dark:text-violet-400" />
+                      <div className="h-10 w-10 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
+                        <Dna className="h-5 w-5 text-indigo-500 dark:text-indigo-400" />
                       </div>
                       <div>
                         <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
@@ -636,7 +636,7 @@ const GeneAssignment = () => {
                     {/* Search and Quick Select */}
                     <div className="flex items-center gap-3">
                       <div className="relative group flex-1 md:flex-none">
-                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 transition-transform group-focus-within:text-violet-500">
+                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 transition-transform group-focus-within:text-indigo-500">
                           <Search className="h-4 w-4" />
                         </div>
                         <Input
@@ -647,8 +647,8 @@ const GeneAssignment = () => {
                           className="w-full md:w-64 pl-9 border-slate-200 dark:border-slate-700 
                      bg-white dark:bg-gray-800 text-slate-900 dark:text-slate-200 
                      placeholder:text-slate-400 dark:placeholder:text-slate-500
-                     focus:border-violet-300 dark:focus:border-violet-700
-                     focus:ring-violet-300/20 dark:focus:ring-violet-700/20"
+                     focus:border-indigo-300 dark:focus:border-indigo-700
+                     focus:ring-indigo-300/20 dark:focus:ring-indigo-700/20"
                         />
                       </div>
                       <motion.div
@@ -662,8 +662,8 @@ const GeneAssignment = () => {
                           className="whitespace-nowrap bg-white dark:bg-gray-800 border-slate-200 
                      dark:border-slate-700 text-slate-700 dark:text-slate-300 
                      hover:bg-slate-50 dark:hover:bg-slate-700/50 
-                     hover:text-violet-600 dark:hover:text-violet-400
-                     hover:border-violet-300 dark:hover:border-violet-700"
+                     hover:text-indigo-600 dark:hover:text-indigo-400
+                     hover:border-indigo-300 dark:hover:border-indigo-700"
                         >
                           Quick Select (10)
                         </Button>
@@ -689,8 +689,8 @@ const GeneAssignment = () => {
                             className={`group relative px-3 py-2.5 border rounded-lg font-mono text-sm 
                          transition-all duration-200 hover:shadow-sm ${
                            selectedGenes.includes(gene)
-                             ? "bg-violet-50 dark:bg-violet-900/30 border-violet-200 dark:border-violet-800 text-violet-700 dark:text-violet-300"
-                             : "bg-white dark:bg-gray-800 border-slate-200 dark:border-slate-700 hover:border-violet-300 dark:hover:border-violet-700 text-slate-700 dark:text-slate-300"
+                             ? "bg-indigo-50 dark:bg-indigo-900/30 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300"
+                             : "bg-white dark:bg-gray-800 border-slate-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-700 text-slate-700 dark:text-slate-300"
                          }`}
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
@@ -701,15 +701,15 @@ const GeneAssignment = () => {
                               <Dna
                                 className={`h-4 w-4 ${
                                   selectedGenes.includes(gene)
-                                    ? "text-violet-500 dark:text-violet-400"
-                                    : "text-slate-400 dark:text-slate-500 group-hover:text-violet-500 dark:group-hover:text-violet-400"
+                                    ? "text-indigo-500 dark:text-indigo-400"
+                                    : "text-slate-400 dark:text-slate-500 group-hover:text-indigo-500 dark:group-hover:text-indigo-400"
                                 }`}
                               />
                               <span>{gene}</span>
                               <span
                                 className={`absolute right-2 opacity-0 group-hover:opacity-100 transition-opacity ${
                                   selectedGenes.includes(gene)
-                                    ? "text-violet-500 dark:text-violet-400"
+                                    ? "text-indigo-500 dark:text-indigo-400"
                                     : "text-slate-400 dark:text-slate-500"
                                 }`}
                               >
@@ -737,14 +737,14 @@ const GeneAssignment = () => {
                               className="group px-6 py-2 bg-white dark:bg-gray-800 border-slate-200 
                          dark:border-slate-700 text-slate-600 dark:text-slate-400
                          hover:bg-slate-50 dark:hover:bg-slate-700/50
-                         hover:border-violet-300 dark:hover:border-violet-700"
+                         hover:border-indigo-300 dark:hover:border-indigo-700"
                             >
                               {isLoading ? (
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin text-violet-500" />
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin text-indigo-500" />
                               ) : (
                                 <ChevronDown
-                                  className="mr-2 h-4 w-4 text-slate-400 group-hover:text-violet-500 
-                                      dark:text-slate-500 dark:group-hover:text-violet-400 
+                                  className="mr-2 h-4 w-4 text-slate-400 group-hover:text-indigo-500 
+                                      dark:text-slate-500 dark:group-hover:text-indigo-400 
                                       group-hover:animate-bounce"
                                 />
                               )}
