@@ -23,7 +23,7 @@ const GenomeCard = ({ genome }) => {
 
   return (
     <Link href={`/genomes/${genome.id}`} className="group block">
-      <Card className="relative overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-lg border border-indigo-200/50 dark:border-indigo-800/50 bg-white dark:bg-gray-800 backdrop-blur-sm">
+      <Card className="relative overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-lg border  bg-white dark:bg-gray-800 backdrop-blur-sm">
         <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/50 to-transparent dark:from-indigo-950/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
         <CardContent className="p-6 space-y-4 relative">
