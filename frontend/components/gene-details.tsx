@@ -94,6 +94,24 @@ const GeneDetails: React.FC<GeneDetailsProps> = ({
             </div>
           ))}
         </div>
+          {/* Description Section */}
+          {selectedGene.description && (
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-slate-200/60 dark:border-gray-700/60">
+            <div className="p-6">
+              <div className="flex items-start space-x-3 mb-4">
+                <div className="h-10 w-10 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
+                  <Info className="h-5 w-5 text-indigo-500 dark:text-indigo-400" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Description</h2>
+                  <p className="text-sm text-slate-600 dark:text-slate-400 mt-4">
+                    {selectedGene.description}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Interactive Sequence Viewer */}
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-slate-200/60 dark:border-gray-700/60">
@@ -155,24 +173,7 @@ const GeneDetails: React.FC<GeneDetailsProps> = ({
           </div>
         </div>
 
-        {/* Description Section */}
-        {selectedGene.description && (
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-slate-200/60 dark:border-gray-700/60">
-            <div className="p-6">
-              <div className="flex items-start space-x-3 mb-4">
-                <div className="h-10 w-10 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
-                  <Info className="h-5 w-5 text-indigo-500 dark:text-indigo-400" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Description</h2>
-                  <p className="text-sm text-slate-600 dark:text-slate-400 mt-4">
-                    {selectedGene.description}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+      
       </div>
     </div>
   );
