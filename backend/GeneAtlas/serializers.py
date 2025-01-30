@@ -2,6 +2,7 @@ from rest_framework import serializers
 from AccessControl.models import CustomUser
 from .models import Genome, Gene, Peptide, GeneAnnotation, PeptideAnnotation, GeneAnnotationStatus, AsyncTasksCache
 from django.contrib.auth.validators import UnicodeUsernameValidator
+from django.contrib.auth import get_user_model
 
 class GenomeSerializer(serializers.ModelSerializer):
     sequence = serializers.CharField(write_only=True)
@@ -126,7 +127,7 @@ class TaskInputSerializer(serializers.Serializer):
     key = serializers.UUIDField(required=False, allow_null=True)
     state = serializers.ChoiceField(required=False, choices=AsyncTasksCache.STATUS_CHOICES, allow_blank=True, allow_null=True)
     user = serializers.CharField(required=False, max_length=150, validators=[UnicodeUsernameValidator()], allow_null=True)
-    task = serializers.ChoiceField(required=False, choices=["BLAST"], allow_blank=True, allow_null=True)
+    task = serializers.ChoiceField(required=False, choices=["BLAST","PFAMScan"], allow_blank=True, allow_null=True)
 
 class BlastQueryInputSerializer(serializers.Serializer):
     """Validates BLAST query parameters from user"""
@@ -139,3 +140,10 @@ class BlastRunInputSerializer(serializers.Serializer):
 class StatsInputSerializer(serializers.Serializer):
     """Validates parameters from user"""
     user = serializers.CharField(required=False, max_length=150, validators=[UnicodeUsernameValidator()], allow_null=True)
+
+class PFAMRunInputSerializer(serializers.Serializer):
+    """Validates PFAM run parameters from user"""
+    sequence = serializers.CharField(required=True)
+    evalue = serializers.FloatField(required=False, allow_null=True)
+    asp = serializers.BooleanField(required=False, allow_null=True)
+    user = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.all(), required=True)
