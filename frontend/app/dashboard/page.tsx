@@ -361,19 +361,6 @@ export default function Dashboard() {
                 </p>
               </div>
               <div className="flex gap-4">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button variant="outline" size="icon">
-                        <Bell className="h-5 w-5" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Notifications</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-
                 {user.role === "ANNOTATOR" && (
                   <TooltipProvider>
                     <Tooltip>
@@ -395,10 +382,10 @@ export default function Dashboard() {
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Link href="/gene-validation">
-                        <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-sm">
-                          <CheckCircle className="mr-2 h-4 w-4" />
-                          Review Pending Annotations
-                        </Button>
+                          <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-sm">
+                            <CheckCircle className="mr-2 h-4 w-4" />
+                            Review Pending Annotations
+                          </Button>
                         </Link>
                       </TooltipTrigger>
                       <TooltipContent>
