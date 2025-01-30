@@ -267,12 +267,18 @@ const ValidatorDashboard = () => {
       try {
         // Fetch both PENDING and ONGOING annotations
         const [pendingResponse, ongoingResponse] = await Promise.all([
-          fetch("http://127.0.0.1:8000/data/api/status/?status=PENDING&limit=3", {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          fetch("http://127.0.0.1:8000/data/api/status/?status=ONGOING&limit=3", {
-            headers: { Authorization: `Bearer ${token}` },
-          })
+          fetch(
+            "http://127.0.0.1:8000/data/api/status/?status=PENDING&limit=3",
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          ),
+          fetch(
+            "http://127.0.0.1:8000/data/api/status/?status=ONGOING&limit=3",
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          ),
         ]);
 
         if (!pendingResponse.ok || !ongoingResponse.ok) {
@@ -318,7 +324,7 @@ const ValidatorDashboard = () => {
 
   return (
     <div className="lg:col-span-3 space-y-6">
-       <Link href="/gene-assignment" className="block">
+      <Link href="/gene-assignment" className="block">
         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/50 dark:to-indigo-950/50 border border-blue-100 dark:border-blue-900 rounded-lg p-4 shadow-sm hover:shadow-md transition-all">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -326,11 +332,19 @@ const ValidatorDashboard = () => {
                 <Dna className="h-5 w-5" />
               </div>
               <div>
-                <h3 className="font-medium text-blue-900 dark:text-blue-100">Manage Gene Assignments</h3>
-                <p className="text-sm text-blue-600 dark:text-blue-300">Distribute genes to available annotators across the platforms</p>
+                <h3 className="font-medium text-blue-900 dark:text-blue-100">
+                  Manage Gene Assignments
+                </h3>
+                <p className="text-sm text-blue-600 dark:text-blue-300">
+                  Distribute genes to available annotators across the platforms
+                </p>
               </div>
             </div>
-            <Button variant="outline" size="sm" className="gap-2 border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2 border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900"
+            >
               Assign Genes <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
@@ -374,11 +388,17 @@ const ValidatorDashboard = () => {
                       className="flex justify-between items-center p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-slate-200 dark:border-gray-700"
                     >
                       <div className="flex items-center gap-4">
-                        <div className={`rounded-full p-2 ${getStatusColor("PENDING")}`}>
+                        <div
+                          className={`rounded-full p-2 ${getStatusColor(
+                            "PENDING"
+                          )}`}
+                        >
                           <Dna className="h-4 w-4" />
                         </div>
                         <div>
-                          <div className="font-medium">Gene {annotation.gene}</div>
+                          <div className="font-medium">
+                            Gene {annotation.gene}
+                          </div>
                           <div className="text-sm text-gray-500 dark:text-gray-400">
                             Submitted for review
                           </div>
@@ -439,7 +459,11 @@ const ValidatorDashboard = () => {
                       className="flex justify-between items-center p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-slate-200 dark:border-gray-700"
                     >
                       <div className="flex items-center gap-4">
-                        <div className={`rounded-full p-2 ${getStatusColor("ONGOING")}`}>
+                        <div
+                          className={`rounded-full p-2 ${getStatusColor(
+                            "ONGOING"
+                          )}`}
+                        >
                           <Clock className="h-4 w-4" />
                         </div>
                         <div>
@@ -447,7 +471,6 @@ const ValidatorDashboard = () => {
                             <span className="font-medium">
                               You're annotating {annotation.gene}
                             </span>
-                            
                           </div>
                           <div className="text-sm text-gray-500 dark:text-gray-400">
                             You last worked on this{" "}
@@ -457,7 +480,7 @@ const ValidatorDashboard = () => {
                       </div>
                       <Link href={`/annotate/${annotation.gene}`} passHref>
                         <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-sm">
-                          Continue Annotating
+                          Continue
                           <ArrowRight className="ml-2 h-4 w-4" />
                         </Button>
                       </Link>
@@ -476,8 +499,6 @@ const ValidatorDashboard = () => {
     </div>
   );
 };
-
-
 
 const RoleDashboard = ({ role }) => {
   const dashboardComponents = {
