@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import {
   ChevronLeft,
   ChevronRight,
@@ -7,7 +7,9 @@ import {
   ZoomOut,
   Search,
   Info,
-  Loader,
+  Loader2,
+  Dna,
+  XCircle,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import GeneDetails from "@/components/gene-details";
@@ -32,16 +34,6 @@ const GenomeViewer = ({ genomeName = "Escherichia_coli_cft073" }) => {
   const [error, setError] = useState(null);
   const [copied, setCopied] = useState(false);
 
-  const copyToClipboard = async () => {
-    try {
-      await navigator.clipboard.writeText(selectedGene.sequence);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error("Failed to copy text:", err);
-    }
-  };
-
   // Load data on component mount
   useEffect(() => {
     const fetchGenes = async () => {
@@ -55,9 +47,7 @@ const GenomeViewer = ({ genomeName = "Escherichia_coli_cft073" }) => {
         if (!response.ok) {
           throw new Error("Failed to fetch genes");
         }
-        console.log("Response", response);
         const data = await response.json();
-        console.log("Data", data);
         setGenes(data);
       } catch (err) {
         setError(err.message);
@@ -67,50 +57,30 @@ const GenomeViewer = ({ genomeName = "Escherichia_coli_cft073" }) => {
     };
 
     fetchGenes();
-    console.log("Genome Name", genomeName);
-    console.log("Genes", genes);
   }, [genomeName]);
 
-  if (isLoading) {
-    return (
-      <Card className="w-full max-w-6xl">
-        <CardContent className="flex items-center justify-center h-64">
-          <div className="flex flex-col items-center gap-4">
-            <Loader className="w-8 h-8 animate-spin text-blue-500" />
-            <p className="text-gray-600">Loading genome data...</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (error) {
-    return (
-      <Card className="w-full max-w-6xl">
-        <CardContent className="flex items-center justify-center h-64">
-          <div className="text-center text-red-500">
-            <p className="font-semibold">Error loading genome data</p>
-            <p className="text-sm mt-2">{error}</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (!genes || genes.length === 0) {
-    return (
-      <EmptyGenomeViewer genomeName={genomeName} />
-    );
-  }
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(selectedGene.sequence);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy text:", err);
+    }
+  };
 
   // Calculate genome statistics
-  const genomeSize = Math.max(...genes.map((gene) => gene.end));
-  const geneCount = genes.length;
-  const averageGeneLength = Math.round(
-    genes.reduce((acc, gene) => acc + (gene.end - gene.start + 1), 0) /
-      geneCount
-  );
-  console.log("Genes", genes);
+  const genomeStats = {
+    size: genes.length > 0 ? Math.max(...genes.map((gene) => gene.end)) : 0,
+    count: genes.length,
+    averageLength:
+      genes.length > 0
+        ? Math.round(
+            genes.reduce((acc, gene) => acc + (gene.end - gene.start + 1), 0) /
+              genes.length
+          )
+        : 0,
+  };
 
   // Filter visible genes
   const visibleGenes = genes.filter(
@@ -217,7 +187,8 @@ const GenomeViewer = ({ genomeName = "Escherichia_coli_cft073" }) => {
             >
               <div
                 className={`h-full cursor-pointer ${getGeneColor(
-                  gene.description
+                  gene.description,
+                  gene
                 )}
                   ${
                     selectedGene?.name === gene.name
@@ -272,14 +243,6 @@ const GenomeViewer = ({ genomeName = "Escherichia_coli_cft073" }) => {
                             {(gene.end - gene.start + 1).toLocaleString()} bp
                           </p>
                         </div>
-                        <div className="col-span-2">
-                          <p className="text-gray-400 dark:text-gray-500">
-                            Sequence
-                          </p>
-                          <p className="bg-gray-900 rounded font-mono text-xs text-white overflow-hidden whitespace-nowrap text-ellipsis ">
-                            {gene.sequence}
-                          </p>
-                        </div>
                       </div>
                     </div>
 
@@ -303,252 +266,271 @@ const GenomeViewer = ({ genomeName = "Escherichia_coli_cft073" }) => {
     ));
   };
 
-  return (
-    <div className="space-y-4">
-      <Card className="shadow-lg dark:bg-gray-800">
-        <CardHeader className="border-b bg-gray-50 dark:bg-gray-900">
-          <div className="flex justify-between items-center">
-            <div>
-              <CardTitle className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                Genome Browser
-              </CardTitle>
-              <p className="text-lg text-gray-600 dark:text-gray-400">
-                {genomeName.replace(/_/g, " ")}
-              </p>
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-900">
+        <div className="max-w-7xl mx-auto px-6 py-32">
+          <div className="flex flex-col items-center justify-center text-center">
+            <div className="h-12 w-12 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center mb-4">
+              <Loader2 className="h-6 w-6 animate-spin text-indigo-500 dark:text-indigo-400" />
             </div>
-            <div className="flex items-center gap-4">
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
+              Loading Genome Data
+            </h2>
+            <p className="text-slate-600 dark:text-slate-400">
+              Please wait while we fetch the genome information
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-900">
+        <div className="max-w-7xl mx-auto px-6 py-32">
+          <div className="flex flex-col items-center justify-center text-center">
+            <div className="h-12 w-12 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center mb-4">
+              <XCircle className="h-6 w-6 text-red-500 dark:text-red-400" />
+            </div>
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
+              Error Loading Genome
+            </h2>
+            <p className="text-slate-600 dark:text-slate-400 max-w-md mx-auto">
+              {error}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!genes || genes.length === 0) {
+    return <EmptyGenomeViewer genomeName={genomeName} />;
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-900">
+      <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
+        {/* Hero Header */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-slate-200/60 dark:border-gray-700/60">
+          <div className="p-8 border-b border-slate-200/60 dark:border-gray-700/60 bg-gradient-to-r from-slate-50 to-white dark:from-gray-800 dark:to-gray-800/50">
+            <div className="flex items-start space-x-4">
+              <div className="h-12 w-12 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
+                <Dna className="h-6 w-6 text-indigo-500 dark:text-indigo-400" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">
+                  Genome Browser
+                </h1>
+                <p className="text-slate-600 dark:text-slate-400 mt-1">
+                  {genomeName.replace(/_/g, " ")}
+                </p>
+              </div>
               <button
                 onClick={() => setShowHelp(!showHelp)}
-                className="p-3 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 
-                  transition-colors"
-                aria-label="Toggle help"
+                className="ml-auto p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-gray-700 transition-colors"
               >
-                <Info className="w-6 h-6 text-gray-700 dark:text-gray-300" />
+                <Info className="w-5 h-5 text-slate-400 dark:text-slate-500" />
               </button>
             </div>
+
+            {showHelp && (
+              <div className="mt-6 p-6 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-100/60 dark:border-indigo-800/60">
+                <h4 className="text-lg font-semibold text-indigo-900 dark:text-indigo-300 mb-3">
+                  Quick Guide
+                </h4>
+
+                <ul className="space-y-3 text-indigo-800 dark:text-indigo-300">
+                  <li className="flex items-center gap-2">
+                    <ChevronLeft className="w-4 h-4" />
+                    Navigate through the genome using arrow controls
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <ZoomIn className="w-4 h-4" />
+                    Adjust detail level with zoom controls
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Search className="w-4 h-4" />
+                    Search genes by name or description
+                  </li>
+                </ul>
+              </div>
+            )}
           </div>
 
-          {showHelp && (
-            <div className="mt-6 p-6 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg">
-              <h4 className="text-lg font-semibold text-indigo-900 dark:text-indigo-300 mb-3">
-                Quick Guide:
-              </h4>
-              <ul className="space-y-2 text-indigo-800 dark:text-indigo-300">
-                <li className="flex items-center gap-2">
-                  <ChevronLeft className="w-4 h-4" />
-                  Navigate through the genome using arrow controls
-                </li>
-                <li className="flex items-center gap-2">
-                  <ZoomIn className="w-4 h-4" />
-                  Adjust detail level with zoom controls
-                </li>
-                <li className="flex items-center gap-2">
-                  <Search className="w-4 h-4" />
-                  Search genes by name or description
-                </li>
-              </ul>
-            </div>
-          )}
-        </CardHeader>
-        <CardContent className="space-y-6 p-6">
-          {/* Statistics Bar */}
-          <div className="grid grid-cols-3 gap-6">
-            {[
-              {
-                label: "Genome Size",
-                value: `${genomeSize.toLocaleString()} bp`,
-              },
-              { label: "Total Genes", value: geneCount.toLocaleString() },
-              {
-                label: "Avg. Gene Length",
-                value: `${averageGeneLength.toLocaleString()} bp`,
-              },
-            ].map((stat) => (
-              <div
-                key={stat.label}
-                className="bg-white dark:bg-gray-900 rounded-lg p-4 shadow-sm 
-                  border border-gray-100 dark:border-gray-700"
-              >
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
-                  {stat.label}
-                </p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {stat.value}
-                </p>
-              </div>
-            ))}
-          </div>
-
-          {/* Controls */}
-          <div className="flex flex-wrap gap-6 items-center bg-gray-50 dark:bg-gray-900/50 p-4 rounded-lg">
-            {/* Navigation Controls Group */}
-            <div className="flex items-center gap-2 p-2 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
-              <button
-                onClick={() =>
-                  setViewportStart(
-                    Math.max(0, viewportStart - Math.floor(viewportSize / 2))
-                  )
-                }
-                className="p-2 rounded-md hover:bg-indigo-50 dark:hover:bg-indigo-900/30 
-        text-indigo-600 dark:text-indigo-400 transition-colors"
-                title="Move left"
-              >
-                <ChevronLeft className="w-6 h-6" />
-              </button>
-              <button
-                onClick={() =>
-                  setViewportStart(
-                    Math.min(
-                      genomeSize - viewportSize,
-                      viewportStart + Math.floor(viewportSize / 2)
-                    )
-                  )
-                }
-                className="p-2 rounded-md hover:bg-indigo-50 dark:hover:bg-indigo-900/30 
-        text-indigo-600 dark:text-indigo-400 transition-colors"
-                title="Move right"
-              >
-                <ChevronRight className="w-6 h-6" />
-              </button>
-              <div className="h-8 border-r border-gray-200 dark:border-gray-700 mx-2" />
-              <button
-                onClick={() =>
-                  setViewportSize(
-                    Math.max(1000, viewportSize - Math.floor(viewportSize / 2))
-                  )
-                }
-                className="p-2 rounded-md hover:bg-indigo-50 dark:hover:bg-indigo-900/30 
-        text-indigo-600 dark:text-indigo-400 transition-colors"
-                title="Zoom in"
-              >
-                <ZoomIn className="w-6 h-6" />
-              </button>
-              <button
-                onClick={() =>
-                  setViewportSize(
-                    Math.min(
-                      genomeSize,
-                      viewportSize + Math.floor(viewportSize / 2)
-                    )
-                  )
-                }
-                className="p-2 rounded-md hover:bg-indigo-50 dark:hover:bg-indigo-900/30 
-        text-indigo-600 dark:text-indigo-400 transition-colors"
-                title="Zoom out"
-              >
-                <ZoomOut className="w-6 h-6" />
-              </button>
-            </div>
-
-            {/* Search and Filter Group */}
-            <div className="flex items-center gap-4 flex-grow max-w-2xl">
-              <div className="relative flex-grow">
-                <Search
-                  className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 
-        text-gray-400 dark:text-gray-500"
-                />
-                <Input
-                  type="text"
-                  placeholder="Search genes..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 bg-white dark:bg-gray-800 border-gray-200 
-          dark:border-gray-700 focus:ring-indigo-500 dark:focus:ring-indigo-400 
-          focus:border-indigo-500 dark:focus:border-indigo-400"
-                />
-              </div>
-              <Select
-                value={filterType}
-                onValueChange={(value) => setFilterType(value)}
-              >
-                <SelectTrigger
-                  className="w-[200px] bg-white dark:bg-gray-800 border-gray-200 
-        dark:border-gray-700 focus:ring-indigo-500 dark:focus:ring-indigo-400 
-        focus:border-indigo-500 dark:focus:border-indigo-400"
+          <div className="p-8 space-y-8">
+            {/* Statistics Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {[
+                {
+                  label: "Genome Size",
+                  value: `${genomeStats.size.toLocaleString()} bp`,
+                },
+                {
+                  label: "Total Genes",
+                  value: genomeStats.count.toLocaleString(),
+                },
+                {
+                  label: "Avg. Gene Length",
+                  value: `${genomeStats.averageLength.toLocaleString()} bp`,
+                },
+              ].map((stat) => (
+                <div
+                  key={stat.label}
+                  className="bg-slate-50 dark:bg-gray-800/50 rounded-lg p-4 border border-slate-200/60 dark:border-gray-700/60"
                 >
-                  <SelectValue placeholder="Select type" />
-                </SelectTrigger>
-                <SelectContent className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-                  <SelectItem
-                    value="all"
-                    className="hover:bg-indigo-50 dark:hover:bg-indigo-900/30"
-                  >
-                    All Types
-                  </SelectItem>
-                  <SelectItem
-                    value="ribosom"
-                    className="hover:bg-indigo-50 dark:hover:bg-indigo-900/30"
-                  >
-                    Ribosomal
-                  </SelectItem>
-                  <SelectItem
-                    value="polymeras"
-                    className="hover:bg-indigo-50 dark:hover:bg-indigo-900/30"
-                  >
-                    Polymerase
-                  </SelectItem>
-                  <SelectItem
-                    value="elongation"
-                    className="hover:bg-indigo-50 dark:hover:bg-indigo-900/30"
-                  >
-                    Elongation
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+                  <dt className="text-sm text-slate-500 dark:text-slate-400">
+                    {stat.label}
+                  </dt>
+                  <dd className="mt-1 text-2xl font-semibold text-slate-900 dark:text-white">
+                    {stat.value}
+                  </dd>
+                </div>
+              ))}
             </div>
 
-            {/* Position Indicator */}
-            <div
-              className="bg-white dark:bg-gray-800 px-4 py-2 rounded-lg shadow-sm border 
-    border-gray-100 dark:border-gray-700"
-            >
-              <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
-                Viewing:{" "}
-                <span className="text-indigo-600 dark:text-indigo-400">
-                  {viewportStart.toLocaleString()}-
-                  {(viewportStart + viewportSize).toLocaleString()}
-                </span>{" "}
-                bp
-              </span>
-            </div>
-          </div>
+            {/* Controls Section */}
+            <div className="flex flex-wrap gap-6 items-center">
+              {/* Navigation Controls */}
+              <div className="flex items-center gap-2 p-2 bg-white dark:bg-gray-800 rounded-lg border border-slate-200/60 dark:border-gray-700/60">
+                <button
+                  onClick={() =>
+                    setViewportStart(
+                      Math.max(0, viewportStart - Math.floor(viewportSize / 2))
+                    )
+                  }
+                  className="p-2 rounded-md hover:bg-indigo-50 dark:hover:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 transition-colors"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() =>
+                    setViewportStart(
+                      Math.min(
+                        genomeStats.size - viewportSize,
+                        viewportStart + Math.floor(viewportSize / 2)
+                      )
+                    )
+                  }
+                  className="p-2 rounded-md hover:bg-indigo-50 dark:hover:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 transition-colors"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+                <div className="h-8 border-r border-slate-200 dark:border-slate-700 mx-2" />
+                <button
+                  onClick={() =>
+                    setViewportSize(
+                      Math.max(
+                        1000,
+                        viewportSize - Math.floor(viewportSize / 2)
+                      )
+                    )
+                  }
+                  className="p-2 rounded-md hover:bg-indigo-50 dark:hover:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 transition-colors"
+                >
+                  <ZoomIn className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() =>
+                    setViewportSize(
+                      Math.min(
+                        genomeStats.size,
+                        viewportSize + Math.floor(viewportSize / 2)
+                      )
+                    )
+                  }
+                  className="p-2 rounded-md hover:bg-indigo-50 dark:hover:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 transition-colors"
+                >
+                  <ZoomOut className="w-5 h-5" />
+                </button>
+              </div>
 
-          {/* Genome Visualization */}
-          <div className="border rounded-lg p-4 bg-gray-900">
-            <div className="mb-2">
-              <div className="flex justify-between text-xs text-gray-400 mb-2">
+              {/* Search and Filter */}
+              <div className="flex items-center gap-4 flex-grow max-w-2xl">
+                <div className="relative flex-grow">
+                  <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
+                  <Input
+                    type="text"
+                    placeholder="Search genes..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 border-slate-200 dark:border-slate-700 bg-white dark:bg-gray-800"
+                  />
+                </div>
+                <Select
+                  value={filterType}
+                  onValueChange={(value) => setFilterType(value)}
+                >
+                  <SelectTrigger className="w-[180px] border-slate-200 dark:border-slate-700 bg-white dark:bg-gray-800">
+                    <SelectValue placeholder="Filter by type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value="ribosom">Ribosomal</SelectItem>
+                    <SelectItem value="polymeras">Polymerase</SelectItem>
+                    <SelectItem value="elongation">Elongation</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Position Display */}
+              <div className="bg-slate-50 dark:bg-gray-800/50 px-4 py-2 rounded-lg border border-slate-200/60 dark:border-gray-700/60">
+                <span className="text-sm text-slate-600 dark:text-slate-300">
+                  Viewing: {viewportStart.toLocaleString()}-
+                  {(viewportStart + viewportSize).toLocaleString()} bp
+                </span>
+              </div>
+            </div>
+
+            {/* Genome Visualization */}
+            <div className="rounded-lg border border-slate-200/60 dark:border-gray-700/60 p-6 bg-slate-50 dark:bg-gray-800/50">
+              <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400 mb-4">
                 <span>{viewportStart.toLocaleString()}</span>
                 <span>{(viewportStart + viewportSize).toLocaleString()}</span>
               </div>
-              <div className="relative w-full" style={{ minHeight: "100px" }}>
+
+              <div className="relative w-full bg-gray-900 dark:bg-gray-950 rounded-lg p-4 min-h-[200px]">
                 {renderGeneTracks()}
               </div>
-              {/* Scale bar */}
-              <div className="flex justify-between text-xs text-gray-400 mt-2">
-                <div className="flex-1 border-t border-gray-600 mt-2"></div>
-                <div className="px-2 text-center">
-                  {viewportSize.toLocaleString()} bp
+
+              <div className="flex justify-center text-xs text-slate-500 dark:text-slate-400 mt-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-16 border-t border-slate-300 dark:border-slate-600"></div>
+                  <span>{viewportSize.toLocaleString()} bp</span>
+                  <div className="w-16 border-t border-slate-300 dark:border-slate-600"></div>
                 </div>
-                <div className="flex-1 border-t border-gray-600 mt-2"></div>
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Selected Gene Details */}
-
-          {selectedGene && (
-            <GeneDetails
-              selectedGene={selectedGene}
-              onClose={() => setSelectedGene(null)}
-              onCopySequence={copyToClipboard}
-              isCopied={copied}
-              viewportStart={viewportStart}
-              viewportSize={viewportSize}
-            />
-          )}
-        </CardContent>
-      </Card>
-
+        {/* Gene Details Section */}
+        {selectedGene ? (
+          <GeneDetails
+            selectedGene={selectedGene}
+            onCopySequence={copyToClipboard}
+            isCopied={copied}
+            viewportStart={viewportStart}
+            viewportSize={viewportSize}
+          />
+        ) : (
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-slate-200/60 dark:border-gray-700/60 p-8">
+            <div className="flex flex-col items-center justify-center text-center">
+              <div className="h-12 w-12 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center mb-4">
+                <Dna className="h-6 w-6 text-indigo-500 dark:text-indigo-400" />
+              </div>
+              <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
+                Select a Gene
+              </h2>
+              <p className="text-slate-600 dark:text-slate-400 max-w-md">
+                Click on any gene in the viewer above to see detailed information, sequence data, and more.
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
