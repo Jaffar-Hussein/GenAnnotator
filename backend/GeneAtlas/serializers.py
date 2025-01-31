@@ -2,6 +2,7 @@ from rest_framework import serializers
 from AccessControl.models import CustomUser
 from .models import Genome, Gene, Peptide, GeneAnnotation, PeptideAnnotation, GeneAnnotationStatus, AsyncTasksCache
 from django.contrib.auth.validators import UnicodeUsernameValidator
+from django.core.validators import RegexValidator
 from django.contrib.auth import get_user_model
 
 class GenomeSerializer(serializers.ModelSerializer):
@@ -45,16 +46,16 @@ class GeneSerializer(serializers.ModelSerializer):
 
 class GeneQuerySerializer(serializers.Serializer):
     """Validates gene query parameters from user"""
-    name = serializers.CharField(required=False, allow_null=True, max_length=100) 
+    name = serializers.CharField(required=False, allow_null=True, max_length=100, validators=[RegexValidator(regex=r"^[A-Z]{3}[0-9]+$", message="Invalid gene name")]) 
     genome = serializers.CharField(required=False, allow_null=True, max_length=100) 
     length = serializers.IntegerField(required=False, allow_null=True)
     gc_content = serializers.FloatField(required=False, allow_null=True) 
     annotated = serializers.BooleanField(required=False, allow_null=True) 
     limit = serializers.IntegerField(required=False, allow_null=True)
-    sequence__icontains = serializers.CharField(required=False, allow_null=True, max_length=100)
-    sequence__endswith = serializers.CharField(required=False, allow_null=True, max_length=100)
-    sequence__startswith = serializers.CharField(required=False, allow_null=True, max_length=100)
-    sequence__iexact = serializers.CharField(required=False, allow_null=True, max_length=100)
+    sequence__icontains = serializers.CharField(required=False, allow_null=True, max_length=100, validators=[RegexValidator(regex=r"^[CAGTcagt]+$", message="Invalid motif")])
+    sequence__endswith = serializers.CharField(required=False, allow_null=True, max_length=100, validators=[RegexValidator(regex=r"^[CAGTcagt]+$", message="Invalid motif")])
+    sequence__startswith = serializers.CharField(required=False, allow_null=True, max_length=100, validators=[RegexValidator(regex=r"^[CAGTcagt]+$", message="Invalid motif")])
+    sequence__iexact = serializers.CharField(required=False, allow_null=True, max_length=100, validators=[RegexValidator(regex=r"^[CAGTcagt]+$", message="Invalid motif")])
 
 class PeptideSerializer(serializers.ModelSerializer):
     """Formats peptide data for API responses 
@@ -65,15 +66,15 @@ class PeptideSerializer(serializers.ModelSerializer):
 
 class PeptideQuerySerializer(serializers.Serializer):
     """Validates peptide query parameters from user"""
-    name = serializers.CharField(required=False, allow_null=True, max_length=100)
-    gene = serializers.CharField(required=False, allow_null=True, max_length=100)
+    name = serializers.CharField(required=False, allow_null=True, max_length=100, validators=[RegexValidator(regex=r"^[A-Z]{3}[0-9]+$", message="Invalid peptide name")])
+    gene = serializers.CharField(required=False, allow_null=True, max_length=100, validators=[RegexValidator(regex=r"^[A-Z]{3}[0-9]+$", message="Invalid gene name")])
     length = serializers.IntegerField(required=False, allow_null=True)
     gene__annotated = serializers.BooleanField(required=False, allow_null=True)
     limit = serializers.IntegerField(required=False, allow_null=True)
-    sequence__icontains = serializers.CharField(required=False, allow_null=True, max_length=100)
-    sequence__endswith = serializers.CharField(required=False, allow_null=True, max_length=100)
-    sequence__startswith = serializers.CharField(required=False, allow_null=True, max_length=100)
-    sequence__iexact = serializers.CharField(required=False, allow_null=True, max_length=100)
+    sequence__icontains = serializers.CharField(required=False, allow_null=True, max_length=100, validators=[RegexValidator(regex=r"^[ACDEFGHIKLMNPQRSTVWY]+$", message="Invalid motif")])
+    sequence__endswith = serializers.CharField(required=False, allow_null=True, max_length=100, validators=[RegexValidator(regex=r"^[ACDEFGHIKLMNPQRSTVWY]+$", message="Invalid motif")])
+    sequence__startswith = serializers.CharField(required=False, allow_null=True, max_length=100, validators=[RegexValidator(regex=r"^[ACDEFGHIKLMNPQRSTVWY]+$", message="Invalid motif")])
+    sequence__iexact = serializers.CharField(required=False, allow_null=True, max_length=100, validators=[RegexValidator(regex=r"^[ACDEFGHIKLMNPQRSTVWY]+$", message="Invalid motif")])
 
 class GeneAnnotationSerializer(serializers.ModelSerializer):
     """Formats gene annotation data for API responses 
@@ -135,7 +136,10 @@ class BlastQueryInputSerializer(serializers.Serializer):
 
 class BlastRunInputSerializer(serializers.Serializer):
     """Validates BLAST run parameters from user"""
-    pass
+    gene = serializers.CharField(required=True, max_length=150, validators=[RegexValidator(regex=r"^[A-Z]{3}[0-9]+$", message="Invalid gene name")])
+    program = serializers.ChoiceField(required=False, choices=["blastn","blastp","blastx","tblastn","tblastx"], allow_null=True)
+    database = serializers.ChoiceField(required=False, choices=["nt","nr","refseq_rna","refseq_genomic","refseq_protein","swissprot","pdb","pat","env_nr","env_nt"], allow_null=True)
+    evalue = serializers.FloatField(required=False, allow_null=True)
 
 class StatsInputSerializer(serializers.Serializer):
     """Validates parameters from user"""
@@ -143,7 +147,7 @@ class StatsInputSerializer(serializers.Serializer):
 
 class PFAMRunInputSerializer(serializers.Serializer):
     """Validates PFAM run parameters from user"""
-    sequence = serializers.CharField(required=True)
+    peptide = serializers.CharField(required=True, max_length=150, validators=[RegexValidator(regex=r"^[A-Z]{3}[0-9]+$", message="Invalid peptide name")])
     evalue = serializers.FloatField(required=False, allow_null=True)
     asp = serializers.BooleanField(required=False, allow_null=True)
-    user = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.all(), required=True)
+    # user = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.all(), required=True)

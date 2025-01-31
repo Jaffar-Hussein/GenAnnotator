@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.urls import reverse
 from GeneAtlas import urls
 from django.views.generic import CreateView
-from .serializers import GenomeSerializer, GeneSerializer, PeptideSerializer, GeneAnnotationSerializer, PeptideAnnotationSerializer, GeneAnnotationStatusSerializer, TaskSerializer, TaskInputSerializer, BlastQueryInputSerializer, StatsInputSerializer, PFAMRunInputSerializer
+from .serializers import GenomeSerializer, GeneSerializer, PeptideSerializer, GeneAnnotationSerializer, PeptideAnnotationSerializer, GeneAnnotationStatusSerializer, TaskSerializer, TaskInputSerializer, BlastQueryInputSerializer, BlastRunInputSerializer, StatsInputSerializer, PFAMRunInputSerializer, GeneQuerySerializer, PeptideQuerySerializer
 from rest_framework import status, request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -81,6 +81,11 @@ class GeneAPIView(APIView):
         if(all(v is None for v in params.values())):
             return Response({"error": "No query parameters provided. Please paginate the result."}, status=status.HTTP_400_BAD_REQUEST)
         else:
+            # Validate the query parameters
+            try:
+                GeneQuerySerializer(data=params).is_valid(raise_exception=True)
+            except Exception as e:
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
             query_results = inf.filter(**{k: v for k, v in params.items() if v is not None and k not in ["limit"]})
 
         if(params["limit"] is not None):
@@ -117,6 +122,11 @@ class PeptideAPIView(APIView):
             if(all(v is None for v in params.values())):
                 return Response({"error": "No query parameters provided. Please paginate the result"}, status=status.HTTP_400_BAD_REQUEST)
             else:
+                # Validate the query parameters
+                try:
+                    PeptideQuerySerializer(data=params).is_valid(raise_exception=True)
+                except Exception as e:
+                    return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
                 query_results = inf.filter(**{k: v for k, v in params.items() if v is not None and k not in ["limit"]})
                 if(query_results.count() == 0):
                     return Response({"error": "Peptide(s) not found."}, status=status.HTTP_404_NOT_FOUND)
@@ -497,85 +507,42 @@ class BlastAPIView(APIView):
     permission_classes = [IsAuthenticated&(IsAnnotatorUser|IsValidatorUser)]
 
     def get(self, request) -> Response:
+        # Get the key of the task
         task = request.GET.get('key', None)
         try:
-            BlastQueryInputSerializer(data={"key": task}).is_valid(raise_exception=True)
+            TaskInputSerializer(data={"key": task}).is_valid(raise_exception=True)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        # From this point on, the parameters are assumed to be valid
+        # retrieve the task from the cache
         if task:
-            try:
-                task_obj = AsyncTasksCache.objects.get(key=task)
-                if task_obj.task == "BLAST":
-                    if(task_obj.state == AsyncTasksCache.completed):
-                        return Response({"task": task_obj.key, "state": task_obj.state, "user": task_obj.user.username, 
-                                        "params": task_obj.params, 
-                                        "result": HUEY.result(task_obj.storage, preserve=True)},
-                                        status=status.HTTP_200_OK)
-                    elif(task_obj.state == AsyncTasksCache.pending or task_obj.state == AsyncTasksCache.in_progress):
-                        return Response({"state": task_obj.state, "message": "Task is still in progress."}, status=status.HTTP_202_ACCEPTED)
-                    else:
-                        return Response({"error": "Task failed."}, status=status.HTTP_400_BAD_REQUEST)
-                else:
-                    return Response({"error": "Task is not a BLAST task."}, status=status.HTTP_404_NOT_FOUND)
-            except AsyncTasksCache.DoesNotExist:
-                return Response({"error": "Task not found."}, status=status.HTTP_404_NOT_FOUND)
+            return AsyncTasksCache.retrieve_task(key=task, task_type="BLAST", user=request.user)
     
     def post(self, request) -> Response:
+        # Validate the input parameters
+        try:
+            BlastRunInputSerializer(data=request.data).is_valid(raise_exception=True)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        # From this point on, the parameters are assumed to be valid
         # Gene name to be blasted
-        gene = request.data.get('gene', None)
+        try:
+            gene = Gene.objects.get(name=request.data.get('gene', None))
+        except Gene.DoesNotExist:
+            return Response({"error": "Gene not found."}, status=status.HTTP_404_NOT_FOUND)
         if gene:
+            # Check object permissions
             try:
-                # Parameters for the BLAST task
-                blast_params = {"sequence": Gene.objects.get(name=gene).sequence, # Sequence to be blasted
-                        "program": request.data.get('program', "blastn"), # BLAST program to be used
-                        "database": request.data.get('database', "nt"), # BLAST database to be used
-                        "evalue": request.data.get('evalue', 0.001)} # E-value threshold
-            except Gene.DoesNotExist:
-                return Response({"error": "Gene not found."}, status=status.HTTP_404_NOT_FOUND)
-            # Check if same task already in the cache
-            AsyncTasksCache.clean_cache()
-            query_result = AsyncTasksCache.query_cache(params=blast_params)
-            # If there is a cached result found
-            if query_result.count() > 0:
-                cached_obj = query_result.first()
-                # If the task is completed and still within the cache period, check if the result is found
-                if(cached_obj.state == AsyncTasksCache.completed and cached_obj.updated_at > timezone.now() - timedelta(days=1)):
-                    # Get the Redis key of the result
-                    result_key = cached_obj.storage
-                    # Get the result from the Redis cache
-                    cached_result = HUEY.result(result_key, preserve=True)
-                    # If the result is found, return it
-                    if(cached_result is not None):
-                        return Response(cached_result, status=status.HTTP_200_OK)
-                    # Delete the task if the state is completed but the result is not found meaning the cache is corrupted
-                    else:
-                        cached_obj.delete()
-                        # Follow with the BLAST task submission
-                # If the task is pending or in progress, return the task key
-                elif(cached_obj.state == AsyncTasksCache.pending or cached_obj.state == AsyncTasksCache.in_progress):
-                    return Response({"message": f"BLAST job {cached_obj.key} already submitted."}, status=status.HTTP_200_OK)
-                # Delete the task if it is not in a valid state (not pending, in progress or completed)
-                else:
-                    cached_obj.delete()
-                    # Follow with the BLAST task submission
-            try:
-                # Create a new task in the cache
-                with transaction.atomic():
-                    key = uuid.uuid4()
-                    cached_obj: AsyncTasksCache = AsyncTasksCache.cache_task(key=key, task="BLAST", user=request.user, params=blast_params)
-                    # Enqueue the BLAST task
-                    def _enqueue_blast():
-                        
-                        task = run_blast(blast_params["sequence"], blast_params["program"], blast_params["database"], blast_params["evalue"])
-                        cached_obj.storage = task.id
-                        cached_obj.save(update_fields=["storage"])
-                    # Enqueue the task on commit
-                    transaction.on_commit(_enqueue_blast)
-                    return Response({"message": f"BLAST job {key} submitted."}, status=status.HTTP_202_ACCEPTED)
-
-                return Response({"error": "BLAST job failed to submit."}, status=status.HTTP_400_BAD_REQUEST)
+                self.check_object_permissions(request, gene)
             except Exception as e:
-                return Response({"error": "BLAST job failed to submit.", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"error": str(e)}, status=status.HTTP_403_FORBIDDEN)
+            sequence = gene.sequence
+            # Parameters for the BLAST task
+            blast_params = {"sequence": sequence, # Sequence to be blasted
+                    "program": request.data.get('program', "blastn"), # BLAST program to be used
+                    "database": request.data.get('database', "nt"), # BLAST database to be used
+                    "evalue": request.data.get('evalue', 0.001)} # E-value threshold
+            return AsyncTasksCache.get_or_create_task(task_type="BLAST", task_params=blast_params, task_funct=run_blast, user=request.user)
         else:
             return Response({"error": "Gene parameter not provided."}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -604,22 +571,31 @@ class PFAMAPIView(APIView):
     
     def post(self, request) -> Response:
 
-        # Make paramaters for the PFAM task
+        # Validate the input parameters
         try:
-            sequence = Peptide.objects.get(name=request.data.get('peptide', None)).sequence
-            pfam_params = {"sequence": sequence, # Sequence to be scanned against the PFAM database
-                        "evalue": request.data.get('evalue', 0.001), # E-value threshold
-                        "asp": request.data.get('asp', True), # Active site prediction method
-                        "user": request.user.id, # User who submitted the task
-            }
+            PFAMRunInputSerializer(data=request.data).is_valid(raise_exception=True)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Get the peptide to be scanned
+        try:
+            peptide = Peptide.objects.get(name=request.data.get('peptide', None))
         except Peptide.DoesNotExist:
             return Response({"error": "Peptide not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        # Validate the parameters
+        # Check object permissions
         try:
-            PFAMRunInputSerializer(data=pfam_params).is_valid(raise_exception=True)
+            self.check_object_permissions(request, peptide)
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": str(e)}, status=status.HTTP_403_FORBIDDEN)
+        
+        # Make paramaters for the PFAM task
+        sequence = peptide.sequence
+        pfam_params = {"sequence": sequence, # Sequence to be scanned against the PFAM database
+                    "evalue": request.data.get('evalue', 0.001), # E-value threshold
+                    "asp": request.data.get('asp', True), # Active site prediction method
+                    "user": request.user.id, # User who submitted the task
+        }
         
         # From this point on, the parameters are assumed to be valid
         return AsyncTasksCache.get_or_create_task(task_type="PFAMScan", task_params=pfam_params, task_funct=pfamscan, user=request.user)

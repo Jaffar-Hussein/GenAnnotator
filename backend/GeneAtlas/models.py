@@ -15,6 +15,7 @@ from django.db import transaction
 from GenAnnot import settings
 from huey.contrib.djhuey import HUEY
 import uuid
+from django.core.validators import RegexValidator
 
 
 class Genome(models.Model):
@@ -51,12 +52,12 @@ class Genome(models.Model):
     
 class Gene(models.Model):
 
-    name = models.CharField(max_length=100, primary_key=True)
+    name = models.CharField(max_length=100, primary_key=True, validators=[RegexValidator(regex=r"^[A-Z]{3}[0-9]+$", message="Invalid gene name")])
     genome = models.ForeignKey(Genome, on_delete=models.CASCADE)
     start = models.IntegerField(blank=False, null=False)
     end = models.IntegerField(blank=False, null=False)
     header = models.TextField(blank=False, null=False, default=">Gene")
-    sequence = models.TextField()
+    sequence = models.TextField(validators=[RegexValidator(regex=r"^[CAGT]+$", message="Invalid gene sequence")])
     length = length = models.IntegerField(editable=False)
     gc_content = models.FloatField(editable=False, default=0.0)
     annotated = models.BooleanField(default=False)
@@ -83,10 +84,10 @@ class Gene(models.Model):
         return self.name
     
 class Peptide(models.Model):
-    name = models.CharField(max_length=100, default="Peptide", primary_key=True)
+    name = models.CharField(max_length=100, default="AAA0000", primary_key=True, validators=[RegexValidator(regex=r"^[A-Z]{3}[0-9]+$", message="Invalid gene name")])
     gene = models.ForeignKey(Gene, on_delete=models.CASCADE)
     header = models.TextField(blank=False, null=False, default=">Peptide")
-    sequence = models.TextField()
+    sequence = models.TextField(validators=[RegexValidator(regex=r"^[ACDEFGHIKLMNPQRSTVWY]+$", message="Invalid peptide sequence")])
     length = models.IntegerField(editable=False)
 
     def save(self, *args, **kwargs):
