@@ -10,6 +10,8 @@ services:
       - api
     ports:
       - "3000:3000"
+    environment:
+      - NEXT_LOCAL=False
     env_file:
       - ./frontend/.env
 
@@ -22,8 +24,12 @@ services:
       - redis
     ports:
       - "8000:8000"
+    environment:
+      - DJANGO_LOCAL=False
     env_file:
       - ./backend/.env
+    volumes:
+      - ./backend/staticfiles:/app/backend/staticfiles
 
   redis:
     container_name: redis
