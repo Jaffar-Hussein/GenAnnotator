@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-const BACKEND_URL = process.env.NEXT_LOCAL === "True" ? "http://localhost:8000" : process.env.NEXT_DOCKER_BACKEND_URL || "http://api:8000";
+const BACKEND_URL = process.env.NEXT_LOCAL === "True" ? process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000" : process.env.NEXT_DOCKER_BACKEND_URL || "http://api:8000";
 const SESSION_DURATION = 60 * 60; 
 const REFRESH_DURATION = 7 * 24 * 60 * 60; 
 
