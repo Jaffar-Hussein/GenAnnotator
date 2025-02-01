@@ -17,10 +17,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
+import { FlickeringGrid } from "@/components/ui/flickering-grid";
+import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Select,
@@ -149,7 +147,9 @@ export default function PeptidesPage() {
 
   // Calculate average sequence length
   const averageLength = peptides.length
-    ? Math.round(peptides.reduce((acc, p) => acc + p.length, 0) / peptides.length)
+    ? Math.round(
+        peptides.reduce((acc, p) => acc + p.length, 0) / peptides.length
+      )
     : 0;
 
   // Calculate unique genes count
@@ -208,82 +208,98 @@ export default function PeptidesPage() {
           className="space-y-8"
         >
           {/* Header with Stats */}
-          <div className="rounded-2xl bg-white dark:bg-gray-800 border dark:border-gray-700 shadow-sm p-6 lg:p-8">
-            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <h1 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-gray-50">
-                    Peptides
-                  </h1>
-                  <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl">
-                    Explore and analyze peptide sequences with comprehensive annotations and insights.
-                  </p>
+          <div className="relative rounded-2xl bg-white dark:bg-gray-800 border dark:border-gray-700 shadow-sm overflow-hidden">
+            {/* Flickering Grid Background */}
+            <div className="absolute inset-0">
+              <FlickeringGrid
+                className="absolute inset-0 z-0 size-full"
+                squareSize={4}
+                gridGap={6}
+                color="rgb(99, 102, 241)"
+                maxOpacity={0.2}
+                flickerChance={0.3}
+                height={800}
+                width={1500}
+              />
+            </div>
+            <div className="relative z-10 p-6 lg:p-8">
+              <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <h1 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-gray-50">
+                      Peptides
+                    </h1>
+                    <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl">
+                      Explore and analyze peptide sequences with comprehensive
+                      annotations and insights.
+                    </p>
+                  </div>
+
+                  {/* Quick Stats */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 pt-4">
+                    <div className="p-6 rounded-xl bg-gradient-to-br from-indigo-50 to-indigo-100/50 dark:from-indigo-900/50 dark:to-indigo-800/30 border border-indigo-100/50 dark:border-indigo-700/20 shadow-sm hover:shadow-md transition-shadow">
+                      <div className="flex flex-col">
+                        <p className="text-sm font-medium text-indigo-600 dark:text-indigo-300">
+                          Total Peptides
+                        </p>
+                        <p className="mt-2 text-3xl font-semibold text-indigo-700 dark:text-indigo-200">
+                          {totalCount.toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="p-6 rounded-xl bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-900/50 dark:to-emerald-800/30 border border-emerald-100/50 dark:border-emerald-700/20 shadow-sm hover:shadow-md transition-shadow">
+                      <div className="flex flex-col">
+                        <p className="text-sm font-medium text-emerald-600 dark:text-emerald-300">
+                          Unique Genes
+                        </p>
+                        <p className="mt-2 text-3xl font-semibold text-emerald-700 dark:text-emerald-200">
+                          {uniqueGenes}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="p-6 rounded-xl bg-gradient-to-br from-amber-50 to-amber-100/50 dark:from-amber-900/50 dark:to-amber-800/30 border border-amber-100/50 dark:border-amber-700/20 shadow-sm hover:shadow-md transition-shadow">
+                      <div className="flex flex-col">
+                        <p className="text-sm font-medium text-amber-600 dark:text-amber-300">
+                          Average Length
+                        </p>
+                        <p className="mt-2 text-3xl font-semibold text-amber-700 dark:text-amber-200">
+                          {averageLength}
+                          <span className="text-base ml-1">aa</span>
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="p-6 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/50 dark:to-blue-800/30 border border-blue-100/50 dark:border-blue-700/20 shadow-sm hover:shadow-md transition-shadow">
+                      <div className="flex flex-col">
+                        <p className="text-sm font-medium text-blue-600 dark:text-blue-300">
+                          Sequences
+                        </p>
+                        <p className="mt-2 text-3xl font-semibold text-blue-700 dark:text-blue-200">
+                          {peptides.length}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-  
-                {/* Quick Stats */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 pt-4">
-                  <div className="p-6 rounded-xl bg-gradient-to-br from-indigo-50 to-indigo-100/50 dark:from-indigo-900/50 dark:to-indigo-800/30 border border-indigo-100/50 dark:border-indigo-700/20 shadow-sm hover:shadow-md transition-shadow">
-                    <div className="flex flex-col">
-                      <p className="text-sm font-medium text-indigo-600 dark:text-indigo-300">
-                        Total Peptides
-                      </p>
-                      <p className="mt-2 text-3xl font-semibold text-indigo-700 dark:text-indigo-200">
-                        {totalCount.toLocaleString()}
-                      </p>
-                    </div>
-                  </div>
-  
-                  <div className="p-6 rounded-xl bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-900/50 dark:to-emerald-800/30 border border-emerald-100/50 dark:border-emerald-700/20 shadow-sm hover:shadow-md transition-shadow">
-                    <div className="flex flex-col">
-                      <p className="text-sm font-medium text-emerald-600 dark:text-emerald-300">
-                        Unique Genes
-                      </p>
-                      <p className="mt-2 text-3xl font-semibold text-emerald-700 dark:text-emerald-200">
-                        {uniqueGenes}
-                      </p>
-                    </div>
-                  </div>
-  
-                  <div className="p-6 rounded-xl bg-gradient-to-br from-amber-50 to-amber-100/50 dark:from-amber-900/50 dark:to-amber-800/30 border border-amber-100/50 dark:border-amber-700/20 shadow-sm hover:shadow-md transition-shadow">
-                    <div className="flex flex-col">
-                      <p className="text-sm font-medium text-amber-600 dark:text-amber-300">
-                        Average Length
-                      </p>
-                      <p className="mt-2 text-3xl font-semibold text-amber-700 dark:text-amber-200">
-                        {averageLength}
-                        <span className="text-base ml-1">aa</span>
-                      </p>
-                    </div>
-                  </div>
-  
-                  <div className="p-6 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/50 dark:to-blue-800/30 border border-blue-100/50 dark:border-blue-700/20 shadow-sm hover:shadow-md transition-shadow">
-                    <div className="flex flex-col">
-                      <p className="text-sm font-medium text-blue-600 dark:text-blue-300">
-                        Sequences
-                      </p>
-                      <p className="mt-2 text-3xl font-semibold text-blue-700 dark:text-blue-200">
-                        {peptides.length}
-                      </p>
-                    </div>
-                  </div>
+
+                {/* Action Buttons */}
+                <div className="flex flex-col gap-3">
+                  <Button
+                    className="w-full sm:w-auto bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-700 hover:to-indigo-600 text-white shadow-lg shadow-indigo-500/20"
+                    onClick={() => {
+                      /* Add peptide upload handler */
+                    }}
+                  >
+                    <Upload className="mr-2 h-4 w-4" />
+                    Upload Peptide
+                  </Button>
                 </div>
-              </div>
-  
-              {/* Action Buttons */}
-              <div className="flex flex-col gap-3">
-                <Button
-                  className="w-full sm:w-auto bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-700 hover:to-indigo-600 text-white shadow-lg shadow-indigo-500/20"
-                  onClick={() => {
-                    /* Add peptide upload handler */
-                  }}
-                >
-                  <Upload className="mr-2 h-4 w-4" />
-                  Upload Peptide
-                </Button>
               </div>
             </div>
           </div>
-  
+
           {/* Search and Filters */}
           <SearchFilters
             searchQuery={searchQuery}
@@ -293,7 +309,7 @@ export default function PeptidesPage() {
             viewMode={viewMode}
             onViewModeChange={setViewMode}
           />
-  
+
           {/* Loading and Error States */}
           {loading ? (
             <div className="text-center py-12">
@@ -312,7 +328,7 @@ export default function PeptidesPage() {
               </AlertDescription>
             </Alert>
           ) : null}
-  
+
           {/* Content Section */}
           {!loading && !error && (
             <>
@@ -337,7 +353,7 @@ export default function PeptidesPage() {
               ) : (
                 <PeptideList peptides={filteredPeptides} />
               )}
-  
+
               {/* Pagination Controls */}
               <div className="flex items-center justify-between px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
                 <div className="flex items-center">

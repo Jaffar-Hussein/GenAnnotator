@@ -4,7 +4,7 @@ import GeneCard from "@/components/gene-card";
 import GeneListView from "@/components/gene-list";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-
+import { FlickeringGrid } from "@/components/ui/flickering-grid";
 import {
  Upload,
   Database,
@@ -121,7 +121,21 @@ export default function GenesPage() {
           className="space-y-8"
         >
           {/* Header with Stats */}
-          <div className="rounded-2xl bg-white dark:bg-gray-800 border dark:border-gray-700 shadow-sm p-6 lg:p-8">
+          <div className="relative rounded-2xl bg-white dark:bg-gray-800 border dark:border-gray-700 shadow-sm overflow-hidden">
+             {/* Flickering Grid Background */}
+                          <div className="absolute inset-0">
+                            <FlickeringGrid
+                              className="absolute inset-0 z-0 size-full"
+                              squareSize={4}
+                              gridGap={6}
+                              color="rgb(99, 102, 241)"
+                              maxOpacity={0.2}
+                              flickerChance={0.3}
+                              height={800}
+                              width={1500}
+                            />
+                          </div>
+                          <div className="relative z-10 p-6 lg:p-8">
             <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
               <div className="space-y-4">
                 <div className="space-y-2">
@@ -204,6 +218,7 @@ export default function GenesPage() {
                   Upload Gene
                 </Button>
               </div>
+            </div>
             </div>
           </div>
 
