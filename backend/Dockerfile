@@ -14,6 +14,7 @@ RUN pip install --upgrade pip  \
 && cd /backend/ \
 && python3 manage.py migrate \
 && python3 manage.py simulateuser \
-&& python3 manage.py load
+&& python3 manage.py load \
+&& python3 manage.py collectstatic --noinput
 
 CMD ["supervisord", "-c", "/backend/supervisord.conf"]
