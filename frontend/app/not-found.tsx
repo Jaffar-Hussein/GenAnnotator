@@ -1,12 +1,12 @@
-'use client';
+'use client'
 import React from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { Shield, Home, ArrowLeft } from 'lucide-react';
+import { Ghost, Home, ArrowLeft } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { FlickeringGrid } from "@/components/ui/flickering-grid";
 
-export default function ForbiddenPage() {
+export default function NotFoundPage() {
   return (
     <div className="relative min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 flex items-center justify-center p-4 overflow-hidden">
       {/* Flickering Grid Background */}
@@ -15,7 +15,7 @@ export default function ForbiddenPage() {
           className="relative inset-0 z-0 [mask-image:radial-gradient(600px_circle_at_center,white,transparent)]"
           squareSize={4}
           gridGap={6}
-          color="rgb(79, 70, 229)"
+          color="rgb(147, 51, 234)"
           maxOpacity={0.3}
           flickerChance={0.1}
           height={1200}
@@ -32,7 +32,7 @@ export default function ForbiddenPage() {
           transition={{ duration: 0.5 }}
         >
           <div className="w-24 h-24 mx-auto  rounded-xl flex items-center justify-center">
-            <Shield className="w-12 h-12 text-indigo-600 dark:text-indigo-300" />
+            <Ghost className="w-12 h-12 text-indigo-600 dark:text-indigo-300" />
           </div>
         </motion.div>
         
@@ -44,10 +44,10 @@ export default function ForbiddenPage() {
           className="space-y-3"
         >
           <h1 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
-            Access Denied
+            Page Not Found
           </h1>
           <p className="text-gray-600 dark:text-gray-300">
-            Sorry, but you don't have permission to access this page. Please check your credentials or contact your administrator for assistance.
+            Oops! It seems like you've ventured into uncharted territory. The page you're looking for has vanished into the digital void.
           </p>
         </motion.div>
 
@@ -78,7 +78,7 @@ export default function ForbiddenPage() {
           </Button>
         </motion.div>
 
-        {/* Additional Help */}
+        {/* Support Link */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -86,12 +86,12 @@ export default function ForbiddenPage() {
           className="pt-8 text-sm text-gray-600 dark:text-gray-400"
         >
           <p>
-            If you believe this is a mistake, please{' '}
+            Need help finding something? {' '}
             <Link 
               href="/support" 
-              className="text-indigo-600 dark:text-indigo-300 hover:underline"
+              className="text-indigo-600 dark:text-indigo-400 hover:underline"
             >
-              contact support
+              Contact our support team
             </Link>
           </p>
         </motion.div>
