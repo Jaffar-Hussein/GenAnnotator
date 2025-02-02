@@ -5,6 +5,7 @@ import { GridBackground } from '@/components/grid-background'
 import { AppSidebar } from '@/components/Sidebar'
 import { FloatingNav } from '@/components/floating-navbar'
 import { usePathname } from 'next/navigation'
+import { Banner } from '@/components/Banner'
 
 export default function ClientLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname()
@@ -31,6 +32,7 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
       enableSystem
       disableTransitionOnChange
     >
+      <Banner />
       {pathname === '/' ? (
         <div className="min-h-screen bg-background text-foreground relative">
           <GridBackground />
