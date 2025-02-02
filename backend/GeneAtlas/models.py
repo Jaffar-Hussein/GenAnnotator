@@ -304,7 +304,7 @@ class AsyncTasksCache(models.Model):
                     # Follow with the task submission
             # If the task is pending or in progress, return the task key
             elif(cached_obj.state == AsyncTasksCache.pending or cached_obj.state == AsyncTasksCache.in_progress):
-                return Response({"message": f"{task_type} job {cached_obj.key} already submitted."}, status=status.HTTP_200_OK)
+                return Response({"key": f"{cached_obj.key}"}, status=status.HTTP_200_OK)
             # Delete the task if it is not in a valid state (not pending, in progress or completed)
             else:
                 cached_obj.delete()
@@ -321,7 +321,7 @@ class AsyncTasksCache(models.Model):
                     cached_obj.save(update_fields=["storage"])
                 # Enqueue the task on commit
                 transaction.on_commit(_enqueue)
-                return Response({"message": f"{task_type} job {key} submitted."}, status=status.HTTP_202_ACCEPTED)
+                return Response({"key": f"{key}"}, status=status.HTTP_202_ACCEPTED)
 
             return Response({"error": f"{task_type} job failed to submit."}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
