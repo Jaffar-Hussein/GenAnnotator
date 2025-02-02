@@ -188,12 +188,13 @@ const AnnotatorDashboard = () => {
   const [pendingAnnotations, setPendingAnnotations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const token = useAuthStore((state) => state.accessToken);
+  const username = useAuthStore((state) => state.user?.username);
 
   useEffect(() => {
     const fetchAnnotations = async () => {
       try {
         const response = await fetch(
-          "http://127.0.0.1:8000/data/api/status/?status=ONGOING&limit=3",
+          `http://127.0.0.1:8000/data/api/status/?status=ONGOING&limit=3&annotator=${username}` ,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -271,13 +272,13 @@ const ValidatorDashboard = () => {
         // Fetch both PENDING and ONGOING annotations
         const [pendingResponse, ongoingResponse] = await Promise.all([
           fetch(
-            "http://127.0.0.1:8000/data/api/status/?status=PENDING&limit=3",
+            `http://127.0.0.1:8000/data/api/status/?status=PENDING&limit=3&annotator=${user}`,
             {
               headers: { Authorization: `Bearer ${token}` },
             }
           ),
           fetch(
-            "http://127.0.0.1:8000/data/api/status/?status=ONGOING&limit=3",
+            `http://127.0.0.1:8000/data/api/status/?status=ONGOING&limit=3&annotator=${user}`,
             {
               headers: { Authorization: `Bearer ${token}` },
             }
