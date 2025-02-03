@@ -7,18 +7,52 @@ interface BannerState {
   show: boolean;
   message: string;
   type: 'info' | 'success' | 'error' | 'warning';
-  showBanner: (message: string, type: 'info' | 'success' | 'error' | 'warning') => void;
+  timeoutId: number | null;
+  showBanner: (
+    message: string, 
+    type: 'info' | 'success' | 'error' | 'warning',
+    duration?: number
+  ) => void;
   hideBanner: () => void;
+  setTimeoutId: (id: number | null) => void;
 }
+
+const DEFAULT_DURATION = 5000; // 5 seconds default
 
 export const useBannerStore = create<BannerState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       show: false,
       message: '',
       type: 'info',
-      showBanner: (message, type) => set({ show: true, message, type }),
-      hideBanner: () => set({ show: false, message: '', type: 'info' })
+      timeoutId: null,
+      showBanner: (message, type, duration) => {
+        // Clear any existing timeout
+        const currentTimeoutId = get().timeoutId;
+        if (currentTimeoutId) {
+          clearTimeout(currentTimeoutId);
+        }
+
+        // Set the new banner
+        set({ show: true, message, type });
+
+        // Set new timeout if duration is specified or using default
+        if (duration !== 0) { // Allow explicit 0 to disable auto-hide
+          const newTimeoutId = window.setTimeout(() => {
+            get().hideBanner();
+          }, duration || DEFAULT_DURATION);
+          
+          set({ timeoutId: newTimeoutId });
+        }
+      },
+      hideBanner: () => {
+        const currentTimeoutId = get().timeoutId;
+        if (currentTimeoutId) {
+          clearTimeout(currentTimeoutId);
+        }
+        set({ show: false, message: '', type: 'info', timeoutId: null });
+      },
+      setTimeoutId: (id) => set({ timeoutId: id })
     }),
     {
       name: 'banner-storage',
@@ -26,7 +60,7 @@ export const useBannerStore = create<BannerState>()(
   )
 );
 
-const BannerIcon = ({ type }) => {
+const BannerIcon = ({ type }: { type: 'info' | 'success' | 'error' | 'warning' }) => {
   const icons = {
     success: <CheckCircle2 className="h-5 w-5" />,
     error: <XCircle className="h-5 w-5" />,
@@ -106,7 +140,10 @@ export const Banner = () => {
                 <div className="flex-shrink-0">
                   <button
                     onClick={hideBanner}
-                    className={`rounded-full p-1.5 transition-colors ${styles.text} ${styles.hover} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-900 focus:ring-current`}
+                    className={`rounded-full p-1.5 transition-colors ${styles.text} ${styles.hover} 
+                              focus:outline-none focus:ring-2 focus:ring-offset-2 
+                              focus:ring-offset-white dark:focus:ring-offset-gray-900 
+                              focus:ring-current`}
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -122,5 +159,12 @@ export const Banner = () => {
 
 export const useBanner = () => {
   const { showBanner, hideBanner } = useBannerStore();
-  return { showBanner, hideBanner };
+  return { 
+    showBanner: (
+      message: string, 
+      type: 'info' | 'success' | 'error' | 'warning', 
+      duration?: number
+    ) => showBanner(message, type, duration),
+    hideBanner 
+  };
 };
