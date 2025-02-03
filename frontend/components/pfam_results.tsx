@@ -1,14 +1,21 @@
-'use client'
-import React, { useEffect, useState } from 'react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { motion } from 'framer-motion';
-import { Button } from '@/components/ui/button';
-import { 
-  Database, 
-  ArrowRight, 
-  AlertCircle, 
-  ChevronDown, 
+"use client";
+import React, { useEffect, useState } from "react";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+
+import {
+  Database,
+  ArrowRight,
+  AlertCircle,
+  ChevronDown,
   ChevronUp,
   Info,
   Download,
@@ -16,15 +23,16 @@ import {
   Maximize2,
   Minimize2,
   FileCheck,
-  Loader2
-} from 'lucide-react';
+  Loader2,
+} from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { usePfamTask } from '@/hooks/use-pfamTask';
+import { usePfamTask } from "@/hooks/use-pfamTask";
+import PfamAlignment from "@/components/alignment-viewer";
 
 interface PfamAnalysisProps {
   peptide: string;
@@ -33,7 +41,7 @@ interface PfamAnalysisProps {
 const PfamDomainCard = ({ domain }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showFullAlignment, setShowFullAlignment] = useState(false);
-
+  
   const toggleExpand = () => setIsExpanded(!isExpanded);
   const toggleAlignment = () => setShowFullAlignment(!showFullAlignment);
 
@@ -86,80 +94,91 @@ const PfamDomainCard = ({ domain }) => {
           {/* Domain Statistics */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-              <div className="text-sm font-medium text-gray-500 dark:text-gray-400">Accession</div>
+              <div className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                Accession
+              </div>
               <div className="text-lg font-semibold">{domain.acc}</div>
             </div>
             <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-              <div className="text-sm font-medium text-gray-500 dark:text-gray-400">Bit Score</div>
+              <div className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                Bit Score
+              </div>
               <div className="text-lg font-semibold">{domain.bits}</div>
             </div>
             <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-              <div className="text-sm font-medium text-gray-500 dark:text-gray-400">Position</div>
-              <div className="text-lg font-semibold">{domain.seq.from}-{domain.seq.to}</div>
+              <div className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                Position
+              </div>
+              <div className="text-lg font-semibold">
+                {domain.seq.from}-{domain.seq.to}
+              </div>
             </div>
             <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-              <div className="text-sm font-medium text-gray-500 dark:text-gray-400">Length</div>
+              <div className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                Length
+              </div>
               <div className="text-lg font-semibold">{domain.model_length}</div>
             </div>
           </div>
 
-          {/* Sequence Alignment */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="text-sm font-medium">Sequence Alignment</div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={toggleAlignment}
-                className="gap-2"
-              >
-                {showFullAlignment ? (
-                  <>
-                    <Minimize2 className="h-4 w-4" />
-                    Collapse
-                  </>
-                ) : (
-                  <>
-                    <Maximize2 className="h-4 w-4" />
-                    Expand
-                  </>
-                )}
-              </Button>
-            </div>
-            <div className={`bg-gray-50 dark:bg-gray-900 p-4 rounded-lg transition-all ${showFullAlignment ? '' : 'max-h-48 overflow-y-auto'}`}>
-              <pre className="font-mono text-sm overflow-x-auto">
-                {domain.align.map((line, i) => (
-                  <div key={i} className="whitespace-pre">
-                    {line}
-                  </div>
-                ))}
-              </pre>
-            </div>
-          </div>
+          {/* Sequence Alignment Section */}
+          <PfamAlignment align={domain.align} />
+          
 
           {/* Domain Visualization */}
           <div className="space-y-2">
             <div className="text-sm font-medium">Domain Position</div>
+            {/* Main bar */}
             <div className="relative h-8">
+              {/* Background track */}
               <div className="absolute inset-0 bg-gray-100 dark:bg-gray-900 rounded-full" />
+              {/* Domain indicator */}
               <div
-                className="absolute h-full bg-gradient-to-r from-indigo-600 to-indigo-600 rounded-full"
+                className="absolute h-full bg-indigo-600 dark:bg-indigo-500 rounded-full 
+                 transition-all duration-200 hover:bg-indigo-500"
                 style={{
-                  left: `${(parseInt(domain.seq.from) - 1) / parseInt(domain.model_length) * 100}%`,
-                  width: `${(parseInt(domain.seq.to) - parseInt(domain.seq.from) + 1) / parseInt(domain.model_length) * 100}%`
+                  left: `${Math.max(
+                    0,
+                    Math.min(
+                      100,
+                      ((parseInt(domain.seq.from) - 1) /
+                        parseInt(domain.model_length)) *
+                        100
+                    )
+                  )}%`,
+                  width: `${Math.max(
+                    2,
+                    Math.min(
+                      100,
+                      ((parseInt(domain.seq.to) -
+                        parseInt(domain.seq.from) +
+                        1) /
+                        parseInt(domain.model_length)) *
+                        100
+                    )
+                  )}%`,
                 }}
               >
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger className="w-full h-full" />
-                    <TooltipContent>
-                      <p>Position: {domain.seq.from}-{domain.seq.to}</p>
-                      <p>Length: {parseInt(domain.seq.to) - parseInt(domain.seq.from) + 1} aa</p>
+                    <TooltipContent className="p-2">
+                      <p className="text-sm">
+                        Position: {domain.seq.from}-{domain.seq.to}
+                      </p>
+                      <p className="text-sm">
+                        Length:{" "}
+                        {parseInt(domain.seq.to) -
+                          parseInt(domain.seq.from) +
+                          1}{" "}
+                        aa
+                      </p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
               </div>
             </div>
+            {/* Scale numbers */}
             <div className="flex justify-between text-sm text-gray-500">
               <span>1</span>
               <span>{domain.model_length}</span>
@@ -172,16 +191,17 @@ const PfamDomainCard = ({ domain }) => {
               variant="outline"
               size="sm"
               className="gap-2"
-              onClick={() => window.open(`https://pfam.xfam.org/family/${domain.acc}`, '_blank')}
+              onClick={() =>
+                window.open(
+                  `https://pfam.xfam.org/family/${domain.acc}`,
+                  "_blank"
+                )
+              }
             >
               <ExternalLink className="h-4 w-4" />
               View in Pfam
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-2"
-            >
+            <Button variant="outline" size="sm" className="gap-2">
               <Download className="h-4 w-4" />
               Download Data
             </Button>
@@ -222,47 +242,49 @@ const PfamAnalysis: React.FC<PfamAnalysisProps> = ({ peptide }) => {
   if (isLoading || isPolling) {
     return (
       <Card className="bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-all border dark:border-gray-700">
-      <CardContent className="text-center py-12 px-6">
-        {/* Loading Indicator */}
-        <div className="inline-flex items-center justify-center p-3 mb-6 
-                      bg-indigo-50 dark:bg-indigo-900/30 rounded-xl">
-          <Loader2 className="h-8 w-8 animate-spin text-indigo-500 dark:text-indigo-400" />
-        </div>
-
-        {/* Status Text */}
-        <div className="space-y-2 mb-6">
-          <div className="text-gray-900 dark:text-gray-100 text-lg font-medium">
-            {isPolling ? "PFAM Analysis Running" : "Analyzing Sequence"}
+        <CardContent className="text-center py-12 px-6">
+          {/* Loading Indicator */}
+          <div
+            className="inline-flex items-center justify-center p-3 mb-6 
+                      bg-indigo-50 dark:bg-indigo-900/30 rounded-xl"
+          >
+            <Loader2 className="h-8 w-8 animate-spin text-indigo-500 dark:text-indigo-400" />
           </div>
-          <div className="text-gray-500 dark:text-gray-400 text-sm max-w-sm mx-auto">
-            {isPolling 
-              ? "We're searching through protein family databases to identify domains" 
-              : "Searching for PFAM domains and analyzing sequence patterns"}
-          </div>
-        </div>
 
-        {/* Progress Indicator */}
-        {isPolling && (
-          <div className="max-w-md mx-auto">
-            <div className="w-full bg-gray-100 dark:bg-gray-700 h-1 rounded-full overflow-hidden">
-              <motion.div
-                className="h-full bg-indigo-500 dark:bg-indigo-400"
-                initial={{ width: "0%" }}
-                animate={{ 
-                  width: ["20%", "80%"],
-                  transition: { 
-                    duration: 2,
-                    repeat: Infinity,
-                    repeatType: "reverse",
-                    ease: "easeInOut"
-                  }
-                }}
-              />
+          {/* Status Text */}
+          <div className="space-y-2 mb-6">
+            <div className="text-gray-900 dark:text-gray-100 text-lg font-medium">
+              {isPolling ? "PFAM Analysis Running" : "Analyzing Sequence"}
+            </div>
+            <div className="text-gray-500 dark:text-gray-400 text-sm max-w-sm mx-auto">
+              {isPolling
+                ? "We're searching through protein family databases to identify domains"
+                : "Searching for PFAM domains and analyzing sequence patterns"}
             </div>
           </div>
-        )}
-      </CardContent>
-    </Card>
+
+          {/* Progress Indicator */}
+          {isPolling && (
+            <div className="max-w-md mx-auto">
+              <div className="w-full bg-gray-100 dark:bg-gray-700 h-1 rounded-full overflow-hidden">
+                <motion.div
+                  className="h-full bg-indigo-500 dark:bg-indigo-400"
+                  initial={{ width: "0%" }}
+                  animate={{
+                    width: ["20%", "80%"],
+                    transition: {
+                      duration: 2,
+                      repeat: Infinity,
+                      repeatType: "reverse",
+                      ease: "easeInOut",
+                    },
+                  }}
+                />
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     );
   }
 
@@ -274,9 +296,7 @@ const PfamAnalysis: React.FC<PfamAnalysisProps> = ({ peptide }) => {
           <div className="text-gray-900 dark:text-gray-100 font-medium mb-1">
             Analysis Error
           </div>
-          <div className="text-red-500 dark:text-red-400 text-sm">
-            {error}
-          </div>
+          <div className="text-red-500 dark:text-red-400 text-sm">{error}</div>
         </CardContent>
       </Card>
     );
@@ -292,7 +312,7 @@ const PfamAnalysis: React.FC<PfamAnalysisProps> = ({ peptide }) => {
             <div>
               <CardTitle className="flex items-center gap-2">
                 Query Sequence
-                <Badge 
+                <Badge
                   variant="secondary"
                   className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-0"
                 >
@@ -322,7 +342,8 @@ const PfamAnalysis: React.FC<PfamAnalysisProps> = ({ peptide }) => {
               No PFAM Domains Found
             </CardTitle>
             <CardDescription className="text-center">
-              Your sequence didn't match any known PFAM domains. Here's what this could mean:
+              Your sequence didn't match any known PFAM domains. Here's what
+              this could mean:
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -336,7 +357,8 @@ const PfamAnalysis: React.FC<PfamAnalysisProps> = ({ peptide }) => {
                     </div>
                     <h3 className="font-medium">Novel Protein Family</h3>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                      This could be a new, uncharacterized protein family not yet in PFAM
+                      This could be a new, uncharacterized protein family not
+                      yet in PFAM
                     </p>
                   </div>
                 </div>
@@ -349,7 +371,8 @@ const PfamAnalysis: React.FC<PfamAnalysisProps> = ({ peptide }) => {
                     </div>
                     <h3 className="font-medium">Divergent Sequence</h3>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                      May be a distant relative of known families, falling below detection threshold
+                      May be a distant relative of known families, falling below
+                      detection threshold
                     </p>
                   </div>
                 </div>
@@ -362,7 +385,8 @@ const PfamAnalysis: React.FC<PfamAnalysisProps> = ({ peptide }) => {
                     </div>
                     <h3 className="font-medium">No Known Domains</h3>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                      The sequence might not contain any currently recognized protein domains
+                      The sequence might not contain any currently recognized
+                      protein domains
                     </p>
                   </div>
                 </div>
@@ -370,11 +394,14 @@ const PfamAnalysis: React.FC<PfamAnalysisProps> = ({ peptide }) => {
 
               {/* Suggestions */}
               <div className="mt-6 p-4 bg-gradient-to-r from-indigo-50 to-indigo-50 dark:from-indigo-950/50 dark:to-indigo-950/50 rounded-lg border border-indigo-100 dark:border-indigo-900">
-                <h3 className="font-medium mb-2 text-indigo-900 dark:text-indigo-100">What you can try:</h3>
+                <h3 className="font-medium mb-2 text-indigo-900 dark:text-indigo-100">
+                  What you can try:
+                </h3>
                 <ul className="space-y-2 text-sm text-indigo-600 dark:text-indigo-300">
                   <li className="flex items-center gap-2">
                     <ArrowRight className="h-4 w-4" />
-                    Try adjusting the E-value threshold for more permissive matching
+                    Try adjusting the E-value threshold for more permissive
+                    matching
                   </li>
                   <li className="flex items-center gap-2">
                     <ArrowRight className="h-4 w-4" />
