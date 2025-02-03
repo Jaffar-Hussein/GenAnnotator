@@ -153,7 +153,7 @@ const BiotypeSearch = ({
             onFocus={() => setIsOpen(true)}
             className="w-full pl-10 bg-gray-50 dark:bg-gray-900 border-slate-200 
                      dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600
-                     focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+                     focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400"
           />
         </div>
 
@@ -175,13 +175,13 @@ const BiotypeSearch = ({
                         <button
                           key={biotype.value}
                           onClick={() => handleSelect(biotype)}
-                          className="w-full px-3 py-2 text-left hover:bg-blue-50 dark:hover:bg-blue-900/20
+                          className="w-full px-3 py-2 text-left hover:bg-indigo-50 dark:hover:bg-indigo-900/20
                                    flex items-center gap-3 border-b last:border-b-0 dark:border-gray-700
                                    transition-colors"
                         >
                           <div className="w-5">
                             {value === biotype.value && (
-                              <Check className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                              <Check className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
                             )}
                           </div>
                           <div>
