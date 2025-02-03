@@ -151,7 +151,7 @@ class PeptideAPIView(APIView):
     
 class AnnotationAPIView(APIView):
 
-    permission_classes = [IsAuthenticated&(IsAnnotatorUser|IsValidatorUser|ReadOnly)]
+    permission_classes = [IsAuthenticated&(IsAnnotatorUser|IsValidatorUser|IsAdminUser|ReadOnly)]
 
     def get(self, request) -> Response:
         inf_annotation_gene = GeneAnnotation.objects.all()
@@ -248,7 +248,7 @@ class AnnotationAPIView(APIView):
 
 class AnnotationStatusAPIView(APIView):
 
-    permission_classes = [IsAuthenticated&(IsAnnotatorUser|IsValidatorUser|ReadOnly)]
+    permission_classes = [IsAuthenticated&(IsAnnotatorUser|IsValidatorUser|IsAdminUser|ReadOnly)]
 
     def get(self, request) -> Response:
         inf = GeneAnnotationStatus.objects.all()
@@ -505,7 +505,7 @@ class TaskAPIView(APIView):
     
 class BlastAPIView(APIView):
 
-    permission_classes = [IsAuthenticated&(IsAnnotatorUser|IsValidatorUser)]
+    permission_classes = [IsAuthenticated&(IsAnnotatorUser|IsValidatorUser|IsAdminUser)]
 
     def get(self, request) -> Response:
         # Get the key of the task
@@ -555,7 +555,7 @@ class BlastAPIView(APIView):
     
 class PFAMAPIView(APIView):
 
-    permission_classes = [IsAuthenticated&(IsAnnotatorUser|IsValidatorUser)]
+    permission_classes = [IsAuthenticated&(IsAnnotatorUser|IsValidatorUser|IsAdminUser)]
 
     def get(self, request) -> Response:
         # Get the key of the task

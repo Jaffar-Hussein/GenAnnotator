@@ -11,7 +11,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
-from .serializers import SignUpSerializer, LoginSerializer, UserSerializer
+from .serializers import SignUpSerializer, LoginSerializer, UserSerializer, UserProfileSerializer
 from .models import CustomUser
 from allauth.account.utils import send_email_confirmation
 from rest_framework.pagination import LimitOffsetPagination
@@ -102,7 +102,7 @@ class UserAPIView(APIView):
     # Authentificated admin users can access this view
 
     # Permission classes
-    permission_classes = [IsAuthenticated|IsAdminUser]
+    permission_classes = [IsAuthenticated&IsAdminUser]
 
     # Method for GET requests
     def get(self, request, *args, **kwargs) -> Response:
@@ -161,3 +161,32 @@ class UserAPIView(APIView):
     
     def delete(self, request, user_id, *args, **kwargs) -> Response:
         return Response({"error": "DELETE request not supported."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    
+class UserProfileAPIView(APIView):
+
+    # Authentificated users can access this view to change their profile
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs) -> Response:
+        return Response({"error: GET request not supported."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    
+    def put(self, request, *args, **kwargs) -> Response:
+        try:
+            input = UserProfileSerializer(data=request.data)
+            input.is_valid(raise_exception=True)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        # From this point, the request is valid
+        # Update the user profile
+        serializer = UserSerializer(instance=request.user,data=input.data,partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"success": "Profile updated."}, status=status.HTTP_200_OK)
+        return Response({"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+        
+    def delete(self, request, *args, **kwargs) -> Response:
+        return Response({"error: DELETE request not supported."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    
+    def post(self, request, *args, **kwargs) -> Response:
+        return Response({"error: POST request not supported."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
