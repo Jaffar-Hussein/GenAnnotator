@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .views import SignUpView, SignupAPIView, LoginAPIView, UserAPIView
+from .views import SignUpView, SignupAPIView, LoginAPIView, UserAPIView, UserProfileAPIView
 from dj_rest_auth.views import PasswordChangeView, PasswordResetView, PasswordResetConfirmView
 from dj_rest_auth.registration.views import VerifyEmailView, ResendEmailVerificationView
 from rest_framework_simplejwt.views import TokenVerifyView, TokenRefreshView
@@ -19,4 +19,5 @@ urlpatterns = [
     path("api/user/resend-email/", ResendEmailVerificationView.as_view(), name="rest_resend_email"),
     path("api/user/role/<str:user>", UserAPIView.as_view(), name="user_api_set"),
     path("api/user/", UserAPIView.as_view(), name="user_api_stats"),
+    path("api/user/profile/", UserProfileAPIView.as_view(), name="user_profile_api"),
 ]
