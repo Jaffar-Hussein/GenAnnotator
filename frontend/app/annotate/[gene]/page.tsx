@@ -10,6 +10,11 @@ import GenomeViewer from "@/components/genome-viewer";
 import BlastAnalysis from "@/components/blast_results_wrapper";
 import PfamAnalysis from "@/components/pfam_results";
 import { useGeneData } from "@/hooks/useGeneData";
+import  BiotypeSearch  from "@/components/biotype-inputs";
+import  StrandSelector  from "@/components/strand-input";
+import {  Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 const GeneAnnotationPage = ({
   params,
 }: {
@@ -18,9 +23,22 @@ const GeneAnnotationPage = ({
   const { gene } = use(params);
   const [activeTab, setActiveTab] = useState("viewer");
   const [annotationStatus, setAnnotationStatus] = useState("draft");
+  const [geneBiotype, setGeneBiotype] = useState("");
+  const [transcriptBiotype, setTranscriptBiotype] = useState("");
+  const [strand, setStrand] = useState(1);
+  
   const { geneData, annotation, loading, error, refetch } =
     useGeneData(gene);
-
+  console.log(annotation);
+  const currentAnnotation = annotation?.gene?.[0] || {
+    gene_instance: "",
+    strand: 1,
+    gene: "No gene provided.",
+    gene_biotype: "No gene biotype provided.",
+    transcript_biotype: "No transcript biotype provided.",
+    gene_symbol: "No gene symbol provided.",
+    description: "No description provided.",
+  };
 
   return (
     <div className="container mx-auto p-4 max-w-6xl space-y-6">
@@ -131,89 +149,119 @@ const GeneAnnotationPage = ({
           <div className="space-y-6">
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                <Label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
                   Gene Instance
-                </label>
-                <input
+                </Label>
+                <Input
                   type="text"
                   className="w-full p-2 rounded-lg border border-slate-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900"
                   name="gene_instance"
+                  placeholder={currentAnnotation.gene_instance}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                <Label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
                   Gene
-                </label>
-                <input
+                </Label>
+                <Input
                   type="text"
                   className="w-full p-2 rounded-lg border border-slate-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900"
                   name="gene"
+                  placeholder={currentAnnotation.gene}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                <Label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
                   Gene Symbol
-                </label>
-                <input
+                </Label>
+                <Input
                   type="text"
                   className="w-full p-2 rounded-lg border border-slate-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900"
                   name="gene_symbol"
+                  placeholder={currentAnnotation.gene_symbol}
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-3 gap-4">
-              <div>
+              {/* <div>
                 <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
                   Gene Biotype
                 </label>
                 <select
                   className="w-full p-2 rounded-lg border border-slate-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900"
                   name="gene_biotype"
+                  placeholder={currentAnnotation.gene_biotype}
                 >
                   <option value="">Select Biotype</option>
                   <option value="protein_coding">Protein Coding</option>
                   <option value="pseudogene">Pseudogene</option>
                   <option value="ncRNA">ncRNA</option>
                 </select>
-              </div>
-              <div>
+              </div> */}
+              {/* <div>
                 <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
                   Transcript Biotype
                 </label>
                 <select
                   className="w-full p-2 rounded-lg border border-slate-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900"
                   name="transcript_biotype"
+                  placeholder={currentAnnotation.transcript_biotype}
                 >
                   <option value="">Select Biotype</option>
                   <option value="protein_coding">Protein Coding</option>
                   <option value="pseudogene">Pseudogene</option>
                   <option value="ncRNA">ncRNA</option>
                 </select>
-              </div>
-              <div>
+              </div> */}
+             <div>
+    <BiotypeSearch
+      value={geneBiotype}
+      onChange={setGeneBiotype}
+      label="Gene Biotype"
+      required={true}
+    />
+  </div>
+  <div>
+    <BiotypeSearch
+      value={transcriptBiotype}
+      onChange={setTranscriptBiotype}
+      label="Transcript Biotype"
+      required={true}
+    />
+  </div>
+              {/* <div>
                 <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
                   Strand
                 </label>
                 <select
                   className="w-full p-2 rounded-lg border border-slate-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900"
                   name="strand"
-                  defaultValue="1"
+                  placeholder={currentAnnotation.strand}
                 >
                   <option value="1">Forward (+1)</option>
                   <option value="-1">Reverse (-1)</option>
                 </select>
-              </div>
+              </div> */}
+              <div>
+    <StrandSelector
+      value={strand}
+      onChange={setStrand}
+      label="Strand"
+      required={true}
+    />
+  </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+              <Label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
                 Description
-              </label>
-              <textarea
+              </Label>
+              <Textarea
                 className="w-full p-2 rounded-lg border border-slate-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 h-24"
                 name="description"
-              ></textarea>
+                placeholder={currentAnnotation.description}
+              ></Textarea>
             </div>
           </div>
         </CardContent>
