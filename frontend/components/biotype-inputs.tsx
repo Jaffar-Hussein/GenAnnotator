@@ -175,7 +175,7 @@ const BiotypeSearch = ({
                         <button
                           key={biotype.value}
                           onClick={() => handleSelect(biotype)}
-                          className="w-full px-3 py-2 text-left hover:bg-indigo-50 dark:hover:bg-indigo-900/20
+                          className="w-full px-3 py-2 text-left dark:bg-gray-900 hover:bg-indigo-50 dark:hover:bg-indigo-900/20
                                    flex items-center gap-3 border-b last:border-b-0 dark:border-gray-700
                                    transition-colors"
                         >
