@@ -268,47 +268,105 @@ const GeneAnnotationPage = ({
       </div>
 
       {/* Main content area with tabs */}
-      <Card className="bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-all border dark:border-gray-700">
-        <CardHeader>
+      <Card
+        className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700
+                   shadow-sm hover:shadow-md transition-all duration-200"
+      >
+        <CardHeader className="p-0">
           <Tabs defaultValue="viewer" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="viewer" className="gap-2">
-                <Eye size={16} />
-                Sequence Viewer
-              </TabsTrigger>
-              <TabsTrigger value="genome" className="gap-2">
-                <Dna size={16} />
-                Genome Browser
-              </TabsTrigger>
-              <TabsTrigger value="pfam" className="gap-2">
-                <Database size={16} />
-                PFAM Analysis
-              </TabsTrigger>
-              <TabsTrigger value="blast" className="gap-2">
-                <Database size={16} />
-                BLAST Results
-              </TabsTrigger>
-            </TabsList>
+            <div className="px-6 pt-6">
+              <TabsList
+                className="grid w-full grid-cols-4 bg-slate-100 dark:bg-slate-800/50 
+                              p-1 rounded-lg border border-slate-200 dark:border-slate-700"
+              >
+                <TabsTrigger
+                  value="viewer"
+                  className="gap-2 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900
+                         data-[state=active]:text-indigo-600 dark:data-[state=active]:text-indigo-400
+                         data-[state=active]:shadow-sm
+                         text-slate-600 dark:text-slate-400
+                         hover:text-slate-900 dark:hover:text-slate-200
+                         transition-all duration-200"
+                >
+                  <Eye size={16} />
+                  Sequence Viewer
+                </TabsTrigger>
+                <TabsTrigger
+                  value="genome"
+                  className="gap-2 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900
+                         data-[state=active]:text-indigo-600 dark:data-[state=active]:text-indigo-400
+                         data-[state=active]:shadow-sm
+                         text-slate-600 dark:text-slate-400
+                         hover:text-slate-900 dark:hover:text-slate-200
+                         transition-all duration-200"
+                >
+                  <Dna size={16} />
+                  Genome Browser
+                </TabsTrigger>
+                <TabsTrigger
+                  value="pfam"
+                  className="gap-2 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900
+                         data-[state=active]:text-indigo-600 dark:data-[state=active]:text-indigo-400
+                         data-[state=active]:shadow-sm
+                         text-slate-600 dark:text-slate-400
+                         hover:text-slate-900 dark:hover:text-slate-200
+                         transition-all duration-200"
+                >
+                  <Database size={16} />
+                  PFAM Analysis
+                </TabsTrigger>
+                <TabsTrigger
+                  value="blast"
+                  className="gap-2 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900
+                         data-[state=active]:text-indigo-600 dark:data-[state=active]:text-indigo-400
+                         data-[state=active]:shadow-sm
+                         text-slate-600 dark:text-slate-400
+                         hover:text-slate-900 dark:hover:text-slate-200
+                         transition-all duration-200"
+                >
+                  <Database size={16} />
+                  BLAST Results
+                </TabsTrigger>
+              </TabsList>
+            </div>
 
-            <div className="mt-6">
+            <div className="mt-6 px-6 pb-6">
               <TabsContent value="viewer">
-                <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-slate-200 dark:border-gray-700">
+                <div
+                  className="bg-slate-50 dark:bg-slate-900 rounded-lg p-4 
+                          border border-slate-200 dark:border-slate-700
+                          shadow-sm"
+                >
                   <SequenceDisplay sequence={geneData?.sequence} />
                 </div>
               </TabsContent>
 
               <TabsContent value="genome">
-                <GenomeViewer genomeName={geneData?.genome} />
+                <div
+                  className="bg-slate-50 dark:bg-slate-900 rounded-lg p-4 
+                          border border-slate-200 dark:border-slate-700
+                          shadow-sm"
+                >
+                  <GenomeViewer genomeName={geneData?.genome} />
+                </div>
               </TabsContent>
 
               <TabsContent value="pfam">
-                <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-slate-200 dark:border-gray-700">
+                <div
+                  className="bg-slate-50 dark:bg-slate-900 rounded-lg p-4 
+                          border border-slate-200 dark:border-slate-700
+                          shadow-sm"
+                >
                   <PfamAnalysis peptide={geneData?.name} />
                 </div>
               </TabsContent>
 
               <TabsContent value="blast">
-                <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-slate-200 dark:border-gray-700">
+                <div
+                  className="bg-slate-50 dark:bg-slate-900 rounded-lg p-4 
+                          border border-slate-200 dark:border-slate-700
+                          shadow-sm"
+                >
                   <BlastAnalysis gene={geneData?.name} />
                 </div>
               </TabsContent>
