@@ -180,7 +180,11 @@ export function useBlastTask() {
         // Task accepted, needs polling
         store.setTaskKey(data.key)
         store.startPolling(accessToken, username!, showBanner)
-        showBanner('BLAST analysis started', 'info')
+        showBanner(
+          "BLAST analysis is running in the background. You can leave this page - we'll notify you when results are ready.",
+          "info",
+          0 
+        );
       } else if (response.status === 200) {
         // Immediate results available
         
