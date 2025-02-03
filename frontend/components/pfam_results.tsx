@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { 
   Database, 
@@ -45,7 +46,7 @@ const PfamDomainCard = ({ domain }) => {
               {domain.name}
               <Badge
                 variant="secondary"
-                className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-0"
+                className="bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border-0"
               >
                 {domain.type}
               </Badge>
@@ -67,7 +68,7 @@ const PfamDomainCard = ({ domain }) => {
           <div className="flex items-center gap-2">
             <Badge
               variant="outline"
-              className="text-xs bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/50 dark:to-indigo-900/50"
+              className="text-xs bg-gradient-to-r from-indigo-50 to-indigo-50 dark:from-indigo-900/50 dark:to-indigo-900/50"
             >
               E-value: {domain.evalue}
             </Badge>
@@ -142,7 +143,7 @@ const PfamDomainCard = ({ domain }) => {
             <div className="relative h-8">
               <div className="absolute inset-0 bg-gray-100 dark:bg-gray-900 rounded-full" />
               <div
-                className="absolute h-full bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full"
+                className="absolute h-full bg-gradient-to-r from-indigo-600 to-indigo-600 rounded-full"
                 style={{
                   left: `${(parseInt(domain.seq.from) - 1) / parseInt(domain.model_length) * 100}%`,
                   width: `${(parseInt(domain.seq.to) - parseInt(domain.seq.from) + 1) / parseInt(domain.model_length) * 100}%`
@@ -221,16 +222,47 @@ const PfamAnalysis: React.FC<PfamAnalysisProps> = ({ peptide }) => {
   if (isLoading || isPolling) {
     return (
       <Card className="bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-all border dark:border-gray-700">
-        <CardContent className="text-center py-8 px-4">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-gray-500 dark:text-gray-400" />
-          <div className="text-gray-900 dark:text-gray-100 font-medium mb-1">
-            Analyzing sequence...
+      <CardContent className="text-center py-12 px-6">
+        {/* Loading Indicator */}
+        <div className="inline-flex items-center justify-center p-3 mb-6 
+                      bg-indigo-50 dark:bg-indigo-900/30 rounded-xl">
+          <Loader2 className="h-8 w-8 animate-spin text-indigo-500 dark:text-indigo-400" />
+        </div>
+
+        {/* Status Text */}
+        <div className="space-y-2 mb-6">
+          <div className="text-gray-900 dark:text-gray-100 text-lg font-medium">
+            {isPolling ? "PFAM Analysis Running" : "Analyzing Sequence"}
           </div>
-          <div className="text-gray-500 dark:text-gray-400 text-sm">
-            Searching for PFAM domains
+          <div className="text-gray-500 dark:text-gray-400 text-sm max-w-sm mx-auto">
+            {isPolling 
+              ? "We're searching through protein family databases to identify domains" 
+              : "Searching for PFAM domains and analyzing sequence patterns"}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+
+        {/* Progress Indicator */}
+        {isPolling && (
+          <div className="max-w-md mx-auto">
+            <div className="w-full bg-gray-100 dark:bg-gray-700 h-1 rounded-full overflow-hidden">
+              <motion.div
+                className="h-full bg-indigo-500 dark:bg-indigo-400"
+                initial={{ width: "0%" }}
+                animate={{ 
+                  width: ["20%", "80%"],
+                  transition: { 
+                    duration: 2,
+                    repeat: Infinity,
+                    repeatType: "reverse",
+                    ease: "easeInOut"
+                  }
+                }}
+              />
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
     );
   }
 
@@ -299,7 +331,7 @@ const PfamAnalysis: React.FC<PfamAnalysisProps> = ({ peptide }) => {
                 {/* Novel Family */}
                 <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
                   <div className="flex flex-col items-center text-center gap-2">
-                    <div className="rounded-full p-2 bg-blue-500/10 text-blue-500">
+                    <div className="rounded-full p-2 bg-indigo-500/10 text-indigo-500">
                       <Database className="h-4 w-4" />
                     </div>
                     <h3 className="font-medium">Novel Protein Family</h3>
@@ -337,9 +369,9 @@ const PfamAnalysis: React.FC<PfamAnalysisProps> = ({ peptide }) => {
               </div>
 
               {/* Suggestions */}
-              <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/50 dark:to-indigo-950/50 rounded-lg border border-blue-100 dark:border-blue-900">
-                <h3 className="font-medium mb-2 text-blue-900 dark:text-blue-100">What you can try:</h3>
-                <ul className="space-y-2 text-sm text-blue-600 dark:text-blue-300">
+              <div className="mt-6 p-4 bg-gradient-to-r from-indigo-50 to-indigo-50 dark:from-indigo-950/50 dark:to-indigo-950/50 rounded-lg border border-indigo-100 dark:border-indigo-900">
+                <h3 className="font-medium mb-2 text-indigo-900 dark:text-indigo-100">What you can try:</h3>
+                <ul className="space-y-2 text-sm text-indigo-600 dark:text-indigo-300">
                   <li className="flex items-center gap-2">
                     <ArrowRight className="h-4 w-4" />
                     Try adjusting the E-value threshold for more permissive matching

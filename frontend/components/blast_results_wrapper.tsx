@@ -54,34 +54,38 @@ const BlastAnalysis: React.FC<BlastAnalysisProps> = ({ gene }) => {
 
   if (isLoading || isPolling) {
     return (
-      <Card className="bg-white dark:bg-slate-800 shadow-sm hover:shadow-md transition-all border border-slate-200 dark:border-slate-700">
-      <CardContent className="text-center py-8 px-4">
-        <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-500 dark:text-blue-400" />
-        <div className="text-slate-900 dark:text-slate-100 font-medium mb-1">
-          {isPolling ? "BLAST Analysis Running" : "Starting BLAST Analysis"}
-        </div>
-        <div className="text-slate-500 dark:text-slate-400 text-sm">
-          {isPolling ? "Analysis is continuing in the background" : "Searching sequence database"}
+      <Card className="bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-all border dark:border-gray-700">
+      <CardContent className="text-center py-12 px-6">
+        {/* Loading Indicator */}
+        <div className="inline-flex items-center justify-center p-3 mb-6 
+                      bg-indigo-50 dark:bg-indigo-900/30 rounded-xl">
+          <Loader2 className="h-8 w-8 animate-spin text-indigo-500 dark:text-indigo-400" />
         </div>
 
-        {isPolling && (
-          <div className="mt-4 bg-blue-50 dark:bg-blue-900/30 rounded-lg p-3 mx-auto max-w-md
-                         border border-blue-100 dark:border-blue-800">
-            <div className="flex items-center justify-center gap-2 text-blue-700 dark:text-blue-300">
-              <BellRingIcon className="h-4 w-4" />
-              <span className="text-sm">You can safely navigate away - we'll notify you when ready</span>
-            </div>
+        {/* Status Text */}
+        <div className="space-y-2 mb-6">
+          <div className="text-gray-900 dark:text-gray-100 text-lg font-medium">
+            {isPolling ? "BLAST Analysis Running" : "Starting BLAST"}
           </div>
-        )}
-        
-        <div className="mt-4">
-          <div className="flex justify-between items-center mb-2 text-sm text-slate-500 dark:text-slate-400">
-            <span>Progress</span>
+          <div className="text-gray-500 dark:text-gray-400 text-sm max-w-sm mx-auto">
+            {isPolling 
+              ? "Comparing your sequence against the database to find similar sequences" 
+              : "Preparing your sequence for database search"}
+          </div>
+        </div>
+
+        {/* Progress Bar */}
+        <div className="max-w-md mx-auto space-y-2">
+          <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400">
+            <div className="flex items-center gap-1.5">
+              <Database className="h-4 w-4" />
+              <span>Database Search Progress</span>
+            </div>
             <span>{isPolling ? "75%" : "25%"}</span>
           </div>
-          <div className="w-full bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
+          <div className="w-full bg-gray-100 dark:bg-gray-700 h-2 rounded-full overflow-hidden">
             <motion.div
-              className="h-full bg-blue-500 dark:bg-blue-400"
+              className="h-full bg-indigo-500 dark:bg-indigo-400"
               initial={{ width: "0%" }}
               animate={{ width: isPolling ? "75%" : "25%" }}
               transition={{ duration: 1 }}
@@ -130,7 +134,7 @@ const BlastAnalysis: React.FC<BlastAnalysisProps> = ({ gene }) => {
             <div className="grid gap-4 md:grid-cols-3">
               <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
                 <div className="flex flex-col items-center text-center gap-2">
-                  <div className="rounded-full p-2 bg-blue-500/10 text-blue-500">
+                  <div className="rounded-full p-2 bg-indigo-500/10 text-indigo-500">
                     <Database className="h-4 w-4" />
                   </div>
                   <h3 className="font-medium">Novel Sequence</h3>
