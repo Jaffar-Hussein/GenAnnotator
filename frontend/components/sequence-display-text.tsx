@@ -1,14 +1,17 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Copy, Search, ChevronRight, ArrowLeft, ArrowRight, CornerDownLeft } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface SequenceDisplayProps {
   sequence?: string | null;
   width?: number;
+}
+
+interface SearchMatch {
+  position: number;
+  sequence: string;
+  context: string;
 }
 
 const nucleotideColors = {
@@ -20,47 +23,25 @@ const nucleotideColors = {
   '-': 'bg-gray-50 text-gray-500 dark:bg-gray-900 dark:text-gray-500'
 };
 
-interface SearchMatch {
-  position: number;
-  sequence: string;
-  context: string;
-}
-
 const SequenceDisplay: React.FC<SequenceDisplayProps> = ({ 
   sequence = '',
   width = 70,
 }) => {
+  // 1. All useState hooks
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMatch, setSelectedMatch] = useState<SearchMatch | null>(null);
   const [searchMatches, setSearchMatches] = useState<SearchMatch[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  // 2. All useRef hooks
   const containerRef = useRef<HTMLDivElement>(null);
   const sequenceLineRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setShowDropdown(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  if (!sequence) {
-    return (
-      <div className="w-full p-8 text-center text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900 rounded-xl border dark:border-gray-800">
-        No sequence data available
-      </div>
-    );
-  }
-
-  const getSequenceContext = (position: number, matchLength: number) => {
+  // Helper function - defined before hooks that use it
+  const getSequenceContext = useCallback((position: number, matchLength: number) => {
     const contextSize = 10;
     const start = Math.max(0, position - contextSize);
     const end = Math.min(sequence.length, position + matchLength + contextSize);
@@ -71,8 +52,9 @@ const SequenceDisplay: React.FC<SequenceDisplayProps> = ({
       match: context.slice(position - start, position - start + matchLength),
       after: context.slice(position - start + matchLength)
     };
-  };
+  }, [sequence]);
 
+  // 3. All useCallback hooks
   const findMatches = useCallback((query: string) => {
     setSearchQuery(query);
     if (!query || query.length < 2) {
@@ -100,7 +82,33 @@ const SequenceDisplay: React.FC<SequenceDisplayProps> = ({
 
     setSearchMatches(matches);
     setShowDropdown(matches.length > 0);
-  }, [sequence]);
+  }, [sequence, getSequenceContext]);
+
+  const scrollToMatch = useCallback((match: SearchMatch) => {
+    setSelectedMatch(match);
+    setShowDropdown(false);
+    setSearchQuery('');
+
+    const lineNumber = Math.floor(match.position / width);
+    const lineElement = containerRef.current?.children[lineNumber];
+    if (lineElement) {
+      const matchPositionInLine = match.position % width;
+      const nucleotideWidth = 26;
+      const scrollPosition = matchPositionInLine * nucleotideWidth;
+
+      if (sequenceLineRef.current) {
+        sequenceLineRef.current.scrollTo({
+          left: scrollPosition - (sequenceLineRef.current.clientWidth / 2) + (nucleotideWidth * 2),
+          behavior: 'smooth'
+        });
+      }
+
+      lineElement.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'
+      });
+    }
+  }, [width]);
 
   const returnToMatch = useCallback(() => {
     if (selectedMatch && containerRef.current && sequenceLineRef.current) {
@@ -125,33 +133,7 @@ const SequenceDisplay: React.FC<SequenceDisplayProps> = ({
     }
   }, [selectedMatch, width]);
 
-  const scrollToMatch = (match: SearchMatch) => {
-    setSelectedMatch(match);
-    setShowDropdown(false);
-    setSearchQuery('');
-
-    const lineNumber = Math.floor(match.position / width);
-    const lineElement = containerRef.current?.children[lineNumber];
-    if (lineElement) {
-      const matchPositionInLine = match.position % width;
-      const nucleotideWidth = 26;
-      const scrollPosition = matchPositionInLine * nucleotideWidth;
-
-      if (sequenceLineRef.current) {
-        sequenceLineRef.current.scrollTo({
-          left: scrollPosition - (sequenceLineRef.current.clientWidth / 2) + (nucleotideWidth * 2),
-          behavior: 'smooth'
-        });
-      }
-
-      lineElement.scrollIntoView({
-        behavior: 'smooth',
-        block: 'center'
-      });
-    }
-  };
-
-  const handleCopy = async () => {
+  const handleCopy = useCallback(async () => {
     try {
       await navigator.clipboard.writeText(sequence);
       setCopied(true);
@@ -159,8 +141,30 @@ const SequenceDisplay: React.FC<SequenceDisplayProps> = ({
     } catch (err) {
       console.error('Failed to copy:', err);
     }
-  };
+  }, [sequence]);
 
+  // 4. All useEffect hooks
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Early return check after all hooks
+  if (!sequence) {
+    return (
+      <div className="w-full p-8 text-center text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900 rounded-xl border dark:border-gray-800">
+        No sequence data available
+      </div>
+    );
+  }
+
+  // Prepare data for rendering
   const lines = [];
   const cleanSequence = sequence.toString().toUpperCase();
   for (let i = 0; i < cleanSequence.length; i += width) {
@@ -228,7 +232,7 @@ const SequenceDisplay: React.FC<SequenceDisplayProps> = ({
       </div>
 
       {/* Sequence Display */}
-      <div className="border dark:border-gray-800 rounded-xl overflow-hidden bg-white dark:bg-gray-900">
+      <div className="border dark:border-gray-800 rounded-xl container bg-white dark:bg-gray-900">
         {/* Header */}
         <div className="flex justify-between items-center px-4 py-2 border-b dark:border-gray-800 bg-gray-50 dark:bg-gray-800">
           <div className="flex items-center gap-4">
@@ -247,11 +251,10 @@ const SequenceDisplay: React.FC<SequenceDisplayProps> = ({
               </button>
             )}
           </div>
-          
         </div>
         
         {/* Sequence Content */}
-        <div className="overflow-y-auto max-h-[32rem]" ref={containerRef}>
+        <div className="overflow-y-auto max-h-[32rem] max-w-screen" ref={containerRef}>
           {lines.map(({ position, sequence: lineSeq }) => {
             const lineStartPos = position - 1;
             const lineEndPos = lineStartPos + lineSeq.length;
@@ -262,7 +265,7 @@ const SequenceDisplay: React.FC<SequenceDisplayProps> = ({
             return (
               <div 
                 key={position} 
-                className={`flex border-b last:border-b-0 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-900`}
+                className="flex border-b last:border-b-0 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-900"
               >
                 {/* Position number */}
                 <div className="w-20 flex-shrink-0 bg-gray-50 dark:bg-gray-900 border-r dark:border-gray-800 flex items-center justify-end px-3">

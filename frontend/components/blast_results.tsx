@@ -1,8 +1,8 @@
-import React, { useState } from "react";
-import { motion } from "framer-motion";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
   Dna,
   Search,
@@ -11,25 +11,36 @@ import {
   Share2,
   Download,
   ExternalLink,
-} from "lucide-react";
+} from 'lucide-react';
+import BlastResultsTable from '@/components/blast-results-table';
 
-import BlastResultsTable from "@/components/blast-results-table";
-import SequenceDisplay from "@/components/sequence-display-text";
+interface BlastHsp {
+  bit_score?: number;
+  score?: number;
+  evalue: number;
+  identity: number;
+  align_len: number;
+  gaps?: number;
+  query_from?: number;
+  query_to?: number;
+  hit_from?: number;
+  hit_to?: number;
+  hit_strand?: string;
+}
 
-interface OrganismData {
-  name: string;
-  value: number;
+interface BlastDescription {
+  id?: string;
+  accession?: string;
+  title?: string;
+  taxid?: number;
+  sciname: string;
 }
 
 interface BlastHit {
-  hsps: Array<{
-    identity: number;
-    align_len: number;
-    evalue: number;
-  }>;
-  description: Array<{
-    sciname: string;
-  }>;
+  num?: number;
+  description: BlastDescription[];
+  len?: number;
+  hsps: BlastHsp[];
 }
 
 interface BlastSearch {
@@ -39,28 +50,27 @@ interface BlastSearch {
 
 interface BlastResultsProps {
   search: BlastSearch;
-  sequence: string;
   onShare?: () => void;
   onExport?: () => void;
   onOpenNCBI?: () => void;
   className?: string;
 }
 
-const BlastResults: React.FC<BlastResultsProps> = ({
+const BlastResultsComponent: React.FC<BlastResultsProps> = ({
   search,
-  sequence,
   onShare,
   onExport,
   onOpenNCBI,
-  className = "",
+  className = '',
 }) => {
   const [showAllHits, setShowAllHits] = useState(false);
 
-  const firstHit = search.hits[0].hsps[0];
+  const firstHit = search.hits[0]?.hsps[0];
   const totalHits = search.hits.length;
 
-  const organismData: OrganismData[] = search.hits
-    .reduce((acc: OrganismData[], hit) => {
+  // Calculate organism distribution
+  const organismData = search.hits
+    .reduce((acc: { name: string; value: number }[], hit) => {
       const organism = hit.description[0].sciname;
       const existingItem = acc.find((item) => item.name === organism);
       if (existingItem) {
@@ -71,6 +81,10 @@ const BlastResults: React.FC<BlastResultsProps> = ({
       return acc;
     }, [])
     .sort((a, b) => b.value - a.value);
+
+  const formatEValue = (evalue: number) => {
+    return evalue === 0 ? '0.0' : evalue.toExponential(2);
+  };
 
   return (
     <div className={`min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 ${className}`}>
@@ -113,22 +127,22 @@ const BlastResults: React.FC<BlastResultsProps> = ({
             {[
               {
                 icon: Dna,
-                label: "Sequence Length",
+                label: 'Sequence Length',
                 value: `${search.query_len} bp`,
               },
               {
                 icon: Database,
-                label: "Best Match",
-                value: `${((firstHit.identity / firstHit.align_len) * 100).toFixed(1)}%`,
+                label: 'Best Match',
+                value: firstHit ? `${((firstHit.identity / firstHit.align_len) * 100).toFixed(1)}%` : 'N/A',
               },
               {
                 icon: Search,
-                label: "E-value",
-                value: firstHit.evalue.toExponential(2),
+                label: 'E-value',
+                value: firstHit ? formatEValue(firstHit.evalue) : 'N/A',
               },
               {
                 icon: BarChart,
-                label: "Total Matches",
+                label: 'Total Matches',
                 value: totalHits,
               },
             ].map((stat, index) => (
@@ -231,23 +245,6 @@ const BlastResults: React.FC<BlastResultsProps> = ({
                 </Card>
               </div>
             </div>
-
-            {/* Bottom Section: Sequence */}
-            <Card className="bg-white dark:bg-gray-800">
-              <CardHeader>
-                <div className="flex items-center gap-3">
-                  <div className="h-8 w-8 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center">
-                    <Dna className="h-4 w-4 text-indigo-500 dark:text-indigo-400" />
-                  </div>
-                  <CardTitle>Query Sequence</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
-                  <SequenceDisplay sequence={sequence} />
-                </div>
-              </CardContent>
-            </Card>
           </div>
         </div>
       </div>
@@ -255,4 +252,4 @@ const BlastResults: React.FC<BlastResultsProps> = ({
   );
 };
 
-export default BlastResults;
+export default BlastResultsComponent;

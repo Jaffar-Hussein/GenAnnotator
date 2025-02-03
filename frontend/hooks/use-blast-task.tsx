@@ -1,29 +1,50 @@
 import { create } from 'zustand'
-import { useEffect } from 'react'
+import { useEffect,useCallback } from 'react'
 import { useBanner } from '@/components/Banner'
 import { useAuthStore } from '@/store/useAuthStore'
 
 interface BlastResult {
-  [key: string]: any
+  BlastOutput2?: {
+    report?: {
+      results?: {
+        search?: {
+          query_len: number;
+          hits?: Array<{
+            description: any;
+            hsps: Array<{
+              identity: number;
+              align_len: number;
+              evalue: number;
+              bit_score: number;
+              query_from: number;
+              query_to: number;
+              hit_from: number;
+              hit_to: number;
+              hit_strand: string;
+            }>;
+          }>;
+        };
+      };
+    };
+  };
 }
 
 interface BlastStore {
-  taskKey: string | null
-  isLoading: boolean
-  isPolling: boolean
-  error: string | null
-  results: BlastResult | null
-  pollInterval: NodeJS.Timeout | null
-  setTaskKey: (key: string | null) => void
-  setError: (error: string | null) => void
-  setIsLoading: (loading: boolean) => void
-  setIsPolling: (polling: boolean) => void
-  setResults: (results: BlastResult | null) => void
-  startPolling: (accessToken: string, username: string, showBanner: (message: string, type: string) => void) => void
-  stopPolling: () => void
+  taskKey: string | null;
+  isLoading: boolean;
+  isPolling: boolean;
+  error: string | null;
+  results: BlastResult | null;
+  pollInterval: NodeJS.Timeout | null;
+  setTaskKey: (key: string | null) => void;
+  setError: (error: string | null) => void;
+  setIsLoading: (loading: boolean) => void;
+  setIsPolling: (polling: boolean) => void;
+  setResults: (results: BlastResult | null) => void;
+  startPolling: (accessToken: string, username: string, showBanner: (message: string, type: string) => void) => void;
+  stopPolling: () => void;
 }
 
-// Create a persistent store for BLAST results
 const useBlastStore = create<BlastStore>((set, get) => ({
   taskKey: null,
   isLoading: false,
@@ -84,7 +105,7 @@ const useBlastStore = create<BlastStore>((set, get) => ({
               }
 
               const resultData = await resultResponse.json()
-              set({ results: resultData })
+              set({ results: resultData.result }) 
               showBanner('BLAST analysis completed successfully!', 'success')
             } catch (error) {
               showBanner('Failed to fetch BLAST results', 'error')
@@ -127,11 +148,16 @@ export function useBlastTask() {
   const username = useAuthStore((state) => state.user?.username)
   const store = useBlastStore()
 
-  const runBlast = async (gene: string) => {
+  const runBlast = useCallback(async (gene: string) => {
+    if (store.isLoading || store.isPolling) {
+      console.log("BLAST analysis already in progress, skipping");
+      return;
+    }
     store.setIsLoading(true)
     store.setError(null)
     store.setResults(null) // Clear previous results
-    
+    console.log(gene)
+
     try {
       const response = await fetch('http://127.0.0.1:8000/data/api/blast/', {
         method: 'POST',
@@ -139,7 +165,9 @@ export function useBlastTask() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${accessToken}`,
         },
-        body: JSON.stringify({ gene }),
+        body: JSON.stringify({
+          gene: gene
+        })
       })
 
       if (!response.ok) {
@@ -155,16 +183,17 @@ export function useBlastTask() {
         showBanner('BLAST analysis started', 'info')
       } else if (response.status === 200) {
         // Immediate results available
+        
         store.setResults(data)
         showBanner('BLAST results retrieved from cache', 'success')
       }
     } catch (error) {
-      store.setError(error instanceof Error ? error.message : 'Failed to start BLAST')
+      store.setError(error instanceof Error ? error.message : 'Failed to start BLAST analysis')
       showBanner('Failed to start BLAST analysis', 'error')
     } finally {
       store.setIsLoading(false)
     }
-  }
+  }, [accessToken, username]);
 
   useEffect(() => {
     return () => {
