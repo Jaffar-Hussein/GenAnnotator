@@ -45,7 +45,7 @@ const PfamLoader = () => {
   ];
 
   return (
-    // <div className="w-full max-w-2xl mx-auto">
+   
     <Card className="bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-all border dark:border-gray-700">
       <CardContent className="p-8">
         <div className="space-y-8">
@@ -186,7 +186,7 @@ const PfamLoader = () => {
         </div>
       </CardContent>
     </Card>
-    // </div>
+    
   );
 };
 

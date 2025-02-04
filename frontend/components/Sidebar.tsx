@@ -15,6 +15,10 @@ import {
   Dna,
   AtomIcon,
   ClipboardCheck,
+  Mic,
+  Microscope,
+  LayoutDashboard,
+  UsersRound,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeSwitcher } from "@/components/ui/theme-switcher";
@@ -24,43 +28,43 @@ import { useRouter } from "next/navigation";
 
 const navigation = [
   {
-    name: "Dashboard",
+    name: "Overview",
     href: "/dashboard",
-    icon: Home,
+    icon: LayoutDashboard,
     roles: ["ADMIN", "VALIDATOR", "ANNOTATOR", "READER"],
   },
   {
-    name: "Genomes",
+    name: "Genome Explorer",
     href: "/genomes",
-    icon: Database,
+    icon: Microscope,
     roles: ["ADMIN", "VALIDATOR", "ANNOTATOR", "READER"],
   },
   {
-    name: "Genes",
+    name: "Gene Browser",
     href: "/genes",
     icon: Dna,
     roles: ["ADMIN", "VALIDATOR", "ANNOTATOR", "READER"],
   },
   {
-    name: "Peptides",
+    name: "Protein Library",
     href: "/peptides",
     icon: AtomIcon,
     roles: ["ADMIN", "VALIDATOR", "ANNOTATOR", "READER"],
   },
   {
-    name: "Gene Assignment",
+    name: "Assign Tasks",
     href: "/gene-assignment",
-    icon: ClipboardList,
+    icon: UsersRound,
     roles: ["ADMIN", "VALIDATOR"],
   },
   {
-    name: "Pending Annotations",
+    name: "Validation Queue",
     href: "/gene-validation",
     icon: TicketCheck,
     roles: ["ADMIN", "VALIDATOR"],
   },
   {
-    name: "My Annotations",
+    name: "My Workspace",
     href: "/my-annotations",
     icon: ClipboardCheck,
     roles: ["ADMIN", "VALIDATOR", "ANNOTATOR"],
