@@ -4,15 +4,16 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "next build",
+    "build": "next build -d --no-lint ",
     "start": "next start",
     "lint": "next lint"
   },
   "dependencies": {
     "@next/swc-darwin-arm64": "^15.1.4",
-    "@radix-ui/react-dialog": "^1.1.4",
+    "@radix-ui/react-dialog": "^1.1.5",
     "@radix-ui/react-dropdown-menu": "^2.1.4",
     "@radix-ui/react-label": "^2.1.1",
+    "@radix-ui/react-popover": "^1.1.5",
     "@radix-ui/react-progress": "^1.1.1",
     "@radix-ui/react-scroll-area": "^1.2.2",
     "@radix-ui/react-select": "^2.1.4",
@@ -24,6 +25,7 @@
     "@types/jwt-decode": "^2.2.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "cmdk": "^1.0.0",
     "framer-motion": "^11.15.0",
     "jwt-decode": "^4.0.0",
     "lucide-react": "^0.469.0",
