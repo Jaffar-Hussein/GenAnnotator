@@ -264,6 +264,7 @@ export default function Login() {
                 dark:border-gray-700 dark:text-gray-100 dark:placeholder:text-gray-400
                 focus:ring-indigo-500 dark:focus:ring-indigo-400"
                               disabled={loading}
+                              placeholder="Enter your password"
                             />
                             <Button
                               type="button"
