@@ -5,7 +5,7 @@ import { jwtDecode } from 'jwt-decode';
 // Define role permissions mapping
 const ROLE_PERMISSIONS = {
   '/admin': ['ADMIN'],
-  '/dashboard': ['ADMIN', 'VALIDATOR', 'ANNOTATOR', 'READER'],
+  // '/dashboard': ['ADMIN', 'VALIDATOR', 'ANNOTATOR', 'READER'],
   '/profile': ['ADMIN', 'VALIDATOR', 'ANNOTATOR', 'READER'],
   '/gene-assignment': ['ADMIN', 'VALIDATOR'],
   '/my-annotations': ['ADMIN', 'VALIDATOR', 'ANNOTATOR'],
