@@ -104,9 +104,40 @@ export function AppSidebar() {
       <div className="h-full flex flex-col overflow-y-auto">
         {/* Logo */}
         <div className="flex-shrink-0 px-8 pb-12 pt-12">
-          <Link href="/" className="flex items-center justify-center">
-            <div className="w-10 h-10 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-300 flex items-center justify-center">
-              GA
+          <Link href="/" className="flex items-center justify-center group">
+            <div className="relative">
+              <div
+                className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 
+                       dark:from-indigo-400 dark:to-purple-500
+                       transform transition-all duration-300 ease-out
+                       group-hover:scale-105 group-hover:shadow-lg
+                       dark:group-hover:shadow-indigo-500/30"
+              >
+                <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-white/20 to-transparent" />
+
+                <div className="absolute inset-0 rounded-xl shadow-inner" />
+              </div>
+
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span
+                  className="text-lg font-bold tracking-wider bg-gradient-to-br from-white to-white/80 text-transparent bg-clip-text
+                           transform transition-all duration-300 ease-out
+                           group-hover:scale-110"
+                >
+                  GA
+                </span>
+              </div>
+
+              <div
+                className="absolute -right-1 -top-1 w-2 h-2 rounded-full bg-purple-300 dark:bg-purple-400 
+                         transform transition-all duration-300 ease-out
+                         group-hover:scale-150 group-hover:opacity-75"
+              />
+              <div
+                className="absolute -left-0.5 -bottom-0.5 w-1.5 h-1.5 rounded-full bg-indigo-300 dark:bg-indigo-400 
+                         transform transition-all duration-300 ease-out
+                         group-hover:scale-150 group-hover:opacity-75"
+              />
             </div>
           </Link>
         </div>
@@ -169,7 +200,7 @@ export function AppSidebar() {
               href="/profile"
               className={cn(
                 "flex items-center p-3 rounded-lg",
-                
+
                 "hover:bg-indigo-50 dark:hover:bg-indigo-500/10",
                 "transition-all duration-200"
               )}
@@ -192,7 +223,9 @@ export function AppSidebar() {
                   transition: "all 0.2s ease-in-out",
                 }}
               >
-                <p className="text-sm font-medium truncate text-gray-900 dark:text-gray-100">{userName}</p>
+                <p className="text-sm font-medium truncate text-gray-900 dark:text-gray-100">
+                  {userName}
+                </p>
                 <p className="text-xs text-muted-foreground text-gray-500 dark:text-gray-400 truncate">
                   {user?.role}
                 </p>
