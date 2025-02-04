@@ -1,6 +1,6 @@
 from rest_framework.permissions import BasePermission, SAFE_METHODS
-from .models import CustomUser
-from GeneAtlas.models import GeneAnnotation, GeneAnnotationStatus
+from AccessControl.models import CustomUser
+from .models import GeneAnnotation, GeneAnnotationStatus, Gene, Peptide
 
 # Custom permission classes
 
@@ -28,6 +28,10 @@ class IsAnnotatorUser(BasePermission):
             return obj.status.annotator == request.user
         elif isinstance(obj,GeneAnnotationStatus):
             return obj.annotator == request.user
+        elif isinstance(obj,Peptide):
+            return GeneAnnotation.objects.get(gene_instance=obj.gene).status.annotator == request.user
+        elif isinstance(obj,Gene):
+            return GeneAnnotation.objects.get(gene_instance=obj).status.annotator == request.user
         
 # Check if the user is a validator
 class IsValidatorUser(BasePermission):

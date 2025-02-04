@@ -3,6 +3,7 @@ from django.contrib.auth.models import AbstractUser
 from django.core.validators import validate_email
 from phonenumber_field.modelfields import PhoneNumberField
 
+
 class CustomUser(AbstractUser):
 
     # Set role of user
@@ -14,7 +15,11 @@ class CustomUser(AbstractUser):
         else:
             return False
 
-    email = models.EmailField(max_length=254, unique=True, blank=False, null=False, validators=[validate_email])
+    email = models.EmailField(max_length=254,
+                              unique=True,
+                              blank=False,
+                              null=False,
+                              validators=[validate_email])
     phone_number = PhoneNumberField(blank=True)
 
     # User roles
@@ -26,7 +31,9 @@ class CustomUser(AbstractUser):
         (annotator, 'Annotator'),
         (validator, 'Validator'),
     ]
-    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='READER')
+    role = models.CharField(max_length=10,
+                            choices=ROLE_CHOICES,
+                            default='READER')
 
     last_login_time = models.DateTimeField(auto_now=True)
 

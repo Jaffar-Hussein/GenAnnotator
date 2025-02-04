@@ -1,28 +1,41 @@
 "use client";
-import { use } from "react";
-import { useRouter } from 'next/navigation';
-import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { HelpCircle, Save, ArrowLeft, Send, Loader2, Dna, ChevronRight, Pencil } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { useAnnotationForm } from '@/hooks/useSubmitAnnotations';
-
-interface FormFieldProps {
-  label: string;
-  name: string;
-  tooltip?: string;
-  children: React.ReactNode;
-}
-
-export default function AnnotationForm({ params }: { params: { gene: string } }) {
-  const router = useRouter();
+import React, { useState, use } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Save, Send, Eye, Database, Dna, Clock } from "lucide-react";
+import SequenceDisplay from "@/components/sequence-display-text";
+import GenomeViewer from "@/components/genome-viewer";
+import BlastAnalysis from "@/components/blast_results_wrapper";
+import PfamAnalysis from "@/components/pfam_results";
+import { useGeneData } from "@/hooks/useGeneData";
+import BiotypeSearch from "@/components/biotype-inputs";
+import StrandSelector from "@/components/strand-input";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useAnnotationForm } from "@/hooks/useSubmitAnnotations";
+import { useBanner } from "@/components/Banner";
+const GeneAnnotationPage = ({
+  params,
+}: {
+  params: Promise<{ gene: string }>;
+}) => {
   const { gene } = use(params);
-  
+  const { showBanner } = useBanner();
+  const [annotationStatus, setAnnotationStatus] = useState("draft");
+  const { geneData, annotation } = useGeneData(gene);
+  const currentAnnotation = annotation?.gene?.[0] || {
+    gene_instance: "",
+    strand: 1,
+    gene: "No gene provided.",
+    gene_biotype: "No gene biotype provided.",
+    transcript_biotype: "No transcript biotype provided.",
+    gene_symbol: "No gene symbol provided.",
+    description: "No description provided.",
+  };
+
   const {
     formData,
     setFormData,
@@ -31,341 +44,446 @@ export default function AnnotationForm({ params }: { params: { gene: string } })
     error,
     success,
     saveDraft,
-    submitAnnotation
+    submitForReview,
   } = useAnnotationForm(gene);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
+  // Handle form field changes
+  const handleFormChange = (field: string, value: any) => {
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [field]: value,
     }));
   };
 
-  const handleSelectChange = (value: string, name: keyof typeof formData) => {
-    setFormData(prev => ({
-      ...prev,
-      [name]: name === 'strand' ? parseInt(value) : value
-    }));
+  // Handle draft save
+  const handleSaveDraft = async () => {
+    try {
+      await saveDraft();
+      showBanner("Draft saved successfully", "success", 3000);
+      setAnnotationStatus("draft");
+    } catch (err) {
+      showBanner(
+        err instanceof Error ? err.message : "Failed to save draft",
+        "error",
+        5000
+      );
+    }
   };
 
-  const FormField = ({ label, name, tooltip, children }: FormFieldProps) => (
-    <div className="space-y-2">
-      <div className="flex items-center gap-2">
-        <Label htmlFor={name} className="text-sm font-medium text-slate-700 dark:text-slate-200">
-          {label}
-        </Label>
-        {tooltip && (
-          <div className="group relative">
-            <HelpCircle className="h-4 w-4 text-slate-400 hover:text-slate-600 transition-colors dark:text-slate-500" />
-            <span className="absolute bottom-full left-1/2 mb-2 hidden -translate-x-1/2 rounded-lg bg-slate-800 px-3 py-2 text-sm text-white shadow-lg group-hover:block w-48 z-50">
-              {tooltip}
-            </span>
-          </div>
-        )}
-      </div>
-      {children}
+  // Handle submission
+  const handleSubmit = async () => {
+    try {
+      await submitForReview();
+      showBanner(
+        "Annotation submitted for review successfully",
+        "success",
+        3000
+      );
+      setAnnotationStatus("pending_review");
+    } catch (err) {
+      showBanner(
+        err instanceof Error ? err.message : "Failed to submit annotation",
+        "error",
+        5000
+      );
+    }
+  };
+
+  // Update your buttons section
+  const renderActionButtons = () => (
+    <div className="space-x-4">
+      <Button
+        variant="outline"
+        onClick={handleSaveDraft}
+        disabled={saving || loading}
+        className="gap-2 border-slate-200 dark:border-slate-700 
+                   bg-white hover:bg-slate-100 
+                   dark:bg-slate-800 dark:hover:bg-slate-700
+                   text-slate-700 dark:text-slate-300
+                   hover:text-slate-900 dark:hover:text-slate-100
+                   transition-colors duration-200"
+      >
+        <Save
+          size={16}
+          className={`${saving ? "animate-pulse" : ""} 
+                      transition-colors duration-200`}
+        />
+        {saving ? "Saving..." : "Save Draft"}
+      </Button>
+
+      <Button
+        onClick={handleSubmit}
+        disabled={saving || loading}
+        className="gap-2 
+                   bg-gradient-to-r from-indigo-600 to-indigo-600 
+                   hover:from-indigo-700 hover:to-indigo-700
+                   dark:from-indigo-500 dark:to-indigo-500
+                   dark:hover:from-indigo-600 dark:hover:to-indigo-600
+                   text-white
+                   shadow-sm hover:shadow
+                   transition-all duration-200
+                   disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <Send
+          size={16}
+          className={`${loading ? "animate-pulse" : ""}
+                      transition-transform group-hover:translate-x-0.5
+                      duration-200`}
+        />
+        {loading ? "Submitting..." : "Submit Annotation"}
+      </Button>
     </div>
   );
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-violet-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
-        >
-          <Loader2 className="h-12 w-12 animate-spin text-violet-500 dark:text-violet-400" />
-        </motion.div>
+  const renderFormInputs = () => (
+    <div className="space-y-6">
+      <div className="grid grid-cols-3 gap-4">
+        <div>
+          <Label>Gene Instance</Label>
+          <Input
+            value={currentAnnotation.gene_instance || ""}
+            onChange={(e) => handleFormChange("gene_instance", e.target.value)}
+            placeholder={currentAnnotation.gene_instance}
+            disabled
+          />
+        </div>
+        <div>
+          <Label>Gene</Label>
+          <Input
+            value={formData.gene || ""}
+            onChange={(e) => handleFormChange("gene", e.target.value)}
+            placeholder={currentAnnotation.gene}
+          />
+        </div>
+        <div>
+          <Label>Gene Symbol</Label>
+          <Input
+            value={formData.gene_symbol || ""}
+            onChange={(e) => handleFormChange("gene_symbol", e.target.value)}
+            placeholder={currentAnnotation.gene_symbol}
+          />
+        </div>
       </div>
-    );
-  }
+
+      <div className="grid grid-cols-3 gap-4">
+        <div>
+          <BiotypeSearch
+            value={formData.gene_biotype || ""}
+            onChange={(value) => handleFormChange("gene_biotype", value)}
+            label="Gene Biotype"
+            required={true}
+          />
+        </div>
+        <div>
+          <BiotypeSearch
+            value={formData.transcript_biotype || ""}
+            onChange={(value) => handleFormChange("transcript_biotype", value)}
+            label="Transcript Biotype"
+            required={true}
+          />
+        </div>
+        <div>
+          <StrandSelector
+            value={formData.strand}
+            onChange={(value) => handleFormChange("strand", value)}
+            label="Strand"
+            required={true}
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label>Description</Label>
+        <Textarea
+          value={formData.description || ""}
+          onChange={(e) => handleFormChange("description", e.target.value)}
+          placeholder={currentAnnotation.description}
+          className="h-24"
+        />
+      </div>
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-      <div className="container mx-auto p-6 max-w-5xl">
-        {/* Navigation breadcrumb */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-          className="flex items-center space-x-2 mb-8 text-sm text-slate-600 dark:text-slate-400"
-        >
-          <Button 
-            variant="ghost" 
-            onClick={() => router.push('/my-annotations')}
-            className="hover:text-violet-600 dark:hover:text-violet-400 transition-colors"
-          >
-            <ArrowLeft className="h-4 w-4 mr-1" />
-            All Annotations
-          </Button>
-          <ChevronRight className="h-4 w-4" />
-          <span className="font-medium">Gene Annotation</span>
-        </motion.div>
-  
-        {/* Header Section */}
-        <motion.div 
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="mb-12 text-center"
-        >
-          <motion.div 
-            whileHover={{ rotate: 360, scale: 1.1 }}
-            transition={{ duration: 0.5 }}
-            className="h-16 w-16 rounded-2xl bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center mx-auto mb-6"
-          >
-            <Pencil className="h-8 w-8 text-violet-500 dark:text-violet-400" />
-          </motion.div>
-          <h1 className="text-4xl font-bold text-slate-900 dark:text-white mb-4">
-            Annotate Gene: {gene}
-          </h1>
-          <p className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
-            Add functional annotations and metadata for this sequence to contribute to our genomic database
-          </p>
-        </motion.div>
-  
-        {/* Main Form */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <Card className="border-0 shadow-xl bg-white/80 dark:bg-gray-800/50 backdrop-blur-sm">
-            <CardContent className="p-8">
-              <form onSubmit={(e) => e.preventDefault()} className="space-y-10">
-                {/* Gene Details Section */}
-                <motion.div 
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 }}
-                  className="rounded-xl bg-white dark:bg-gray-800/80 p-6 border border-slate-200/60 dark:border-gray-700/60 shadow-sm"
+    <div className="container mx-auto p-4 max-w-6xl space-y-6">
+      {/* Header with gene info and actions */}
+
+      <div
+        className="bg-white dark:bg-slate-800 rounded-xl p-6 
+                shadow-sm hover:shadow-md
+                border border-slate-200 dark:border-slate-700
+                transition-all duration-200"
+      >
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-4">
+            {/* Icon container with gradient background */}
+            <div
+              className="rounded-full p-3
+                      bg-gradient-to-br from-indigo-50 to-indigo-100 
+                      dark:from-indigo-900/50 dark:to-indigo-900/50 
+                      text-indigo-600 dark:text-indigo-400
+                      shadow-sm"
+            >
+              <Dna className="h-6 w-6" />
+            </div>
+
+            {/* Text content */}
+            <div className="space-y-1">
+              <h1
+                className="text-2xl font-bold 
+                       text-slate-900 dark:text-slate-100
+                       flex items-center gap-2"
+              >
+                Gene:
+                <span className="text-indigo-700 dark:text-indigo-400">
+                  {geneData?.name}
+                </span>
+              </h1>
+
+              <div className="flex items-center gap-3">
+                <Badge
+                  variant="secondary"
+                  className={`px-3 py-1 rounded-full font-medium
+              ${
+                annotationStatus === "draft"
+                  ? "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300"
+                  : annotationStatus === "pending_review"
+                  ? "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300"
+                  : "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300"
+              } border-0`}
                 >
-                  <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-6">Gene Details</h2>
-                  <div className="grid gap-6 md:grid-cols-2">
-                    <FormField label="Gene" name="gene" required>
-                      <Input
-                        id="gene"
-                        name="gene"
-                        value={formData.gene || ''}
-                        onChange={handleChange}
-                        className="border-slate-200 dark:border-gray-700 dark:bg-gray-800/80"
-                        required
-                      />
-                    </FormField>
-  
-                    <FormField label="Gene Symbol" name="gene_symbol" required>
-                      <Input
-                        id="gene_symbol"
-                        name="gene_symbol"
-                        value={formData.gene_symbol || ''}
-                        onChange={handleChange}
-                        className="border-slate-200 dark:border-gray-700 dark:bg-gray-800/80"
-                        required
-                      />
-                    </FormField>
-  
-                    <FormField 
-                      label="Strand" 
-                      name="strand"
-                      tooltip="DNA strand orientation"
-                      required
-                    >
-                      <Select 
-                        value={formData.strand.toString()} 
-                        onValueChange={(value) => handleSelectChange(value, 'strand')}
-                      >
-                        <SelectTrigger className="border-slate-200 dark:border-gray-700 dark:bg-gray-800/80">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="1">Forward (+1)</SelectItem>
-                          <SelectItem value="-1">Reverse (-1)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </FormField>
-  
-                    <FormField label="Peptide" name="peptide" required>
-                      <Input
-                        id="peptide"
-                        name="peptide"
-                        value={formData.peptide || ''}
-                        onChange={handleChange}
-                        className="border-slate-200 dark:border-gray-700 dark:bg-gray-800/80"
-                        required
-                      />
-                    </FormField>
-                  </div>
-                </motion.div>
-  
-                {/* Type Information Section */}
-                <motion.div 
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                  className="rounded-xl bg-white dark:bg-gray-800/80 p-6 border border-slate-200/60 dark:border-gray-700/60 shadow-sm"
-                >
-                  <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-6">Type Information</h2>
-                  <div className="grid gap-6 md:grid-cols-2">
-                    <FormField 
-                      label="Gene Biotype" 
-                      name="gene_biotype"
-                      tooltip="Biological type of the gene"
-                      required
-                    >
-                      <Select 
-                        value={formData.gene_biotype} 
-                        onValueChange={(value) => handleSelectChange(value, 'gene_biotype')}
-                      >
-                        <SelectTrigger className="border-slate-200 dark:border-gray-700 dark:bg-gray-800/80">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="protein_coding">Protein Coding</SelectItem>
-                          <SelectItem value="non_coding">Non Coding</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </FormField>
-  
-                    <FormField 
-                      label="Transcript Biotype" 
-                      name="transcript_biotype"
-                      required
-                    >
-                      <Select 
-                        value={formData.transcript_biotype} 
-                        onValueChange={(value) => handleSelectChange(value, 'transcript_biotype')}
-                      >
-                        <SelectTrigger className="border-slate-200 dark:border-gray-700 dark:bg-gray-800/80">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="protein_coding">Protein Coding</SelectItem>
-                          <SelectItem value="non_coding">Non Coding</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </FormField>
-  
-                    <FormField label="Transcript" name="transcript" required>
-                      <Input
-                        id="transcript"
-                        name="transcript"
-                        value={formData.transcript || ''}
-                        onChange={handleChange}
-                        className="border-slate-200 dark:border-gray-700 dark:bg-gray-800/80"
-                        placeholder="Enter transcript ID"
-                        required
-                      />
-                    </FormField>
-                  </div>
-                </motion.div>
-  
-                {/* Description Section */}
-                <motion.div 
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
-                  className="rounded-xl bg-white dark:bg-gray-800/80 p-6 border border-slate-200/60 dark:border-gray-700/60 shadow-sm"
-                >
-                  <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-6">Description</h2>
-                  <FormField 
-                    label="Description" 
-                    name="description"
-                    tooltip="Detailed description of the annotation"
-                    required
-                  >
-                    <Textarea
-                      id="description"
-                      name="description"
-                      value={formData.description || ''}
-                      onChange={handleChange}
-                      className="min-h-[120px] border-slate-200 dark:border-gray-700 dark:bg-gray-800/80"
-                      placeholder="Enter a detailed description of the annotation..."
-                      required
-                    />
-                  </FormField>
-                </motion.div>
-  
-                {/* Alerts */}
-                {error && (
-                  <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <Alert variant="destructive" className="rounded-xl border-2">
-                      <AlertTitle className="font-semibold">Error</AlertTitle>
-                      <AlertDescription>{error}</AlertDescription>
-                    </Alert>
-                  </motion.div>
-                )}
-  
-                {success && (
-                  <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <Alert className="rounded-xl border-2 border-green-200 bg-green-50/80 backdrop-blur-sm dark:bg-green-900/30 dark:border-green-900/30">
-                      <AlertDescription className="text-green-800 dark:text-green-300">
-                        {success}
-                      </AlertDescription>
-                    </Alert>
-                  </motion.div>
-                )}
-  
-                {/* Action Buttons */}
-                <motion.div 
-                  className="flex justify-between items-center pt-6 border-t border-slate-200 dark:border-gray-700"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
-                >
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={saveDraft}
-                    disabled={saving}
-                    className="border-2 hover:bg-slate-50 dark:hover:bg-gray-700 transition-colors"
-                  >
-                    {saving ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                        Saving...
-                      </>
-                    ) : (
-                      <>
-                        <Save className="h-4 w-4 mr-2" />
-                        Save Draft
-                      </>
-                    )}
-                  </Button>
-  
-                  <Button
-                    type="button"
-                    onClick={submitAnnotation}
-                    disabled={loading}
-                    className="bg-violet-500 hover:bg-violet-600 dark:bg-violet-600 dark:hover:bg-violet-500 text-white px-6 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all"
-                  >
-                    {loading ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                        Submitting...
-                      </>
-                    ) : (
-                      <>
-                        <Send className="h-4 w-4 mr-2" />
-                        Submit for Validation
-                      </>
-                    )}
-                  </Button>
-                </motion.div>
-              </form>
-            </CardContent>
-          </Card>
-        </motion.div>
+                  {annotationStatus}
+                </Badge>
+
+                <span className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                  <Clock className="h-4 w-4" />
+                  Last updated 2 hours ago
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Action buttons */}
+          <div className="space-x-4">{renderActionButtons()}</div>
+        </div>
       </div>
+
+      {/* Main content area with tabs */}
+      <Card
+        className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700
+                   shadow-sm hover:shadow-md transition-all duration-200"
+      >
+        <CardHeader className="p-0">
+          <Tabs defaultValue="viewer" className="w-full">
+            <div className="px-6 pt-6">
+              <TabsList
+                className="grid w-full grid-cols-4 bg-slate-100 dark:bg-slate-800/50 
+                              p-1 rounded-lg border border-slate-200 dark:border-slate-700"
+              >
+                <TabsTrigger
+                  value="viewer"
+                  className="gap-2 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900
+                         data-[state=active]:text-indigo-600 dark:data-[state=active]:text-indigo-400
+                         data-[state=active]:shadow-sm
+                         text-slate-600 dark:text-slate-400
+                         hover:text-slate-900 dark:hover:text-slate-200
+                         transition-all duration-200"
+                >
+                  <Eye size={16} />
+                  Sequence Viewer
+                </TabsTrigger>
+                <TabsTrigger
+                  value="genome"
+                  className="gap-2 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900
+                         data-[state=active]:text-indigo-600 dark:data-[state=active]:text-indigo-400
+                         data-[state=active]:shadow-sm
+                         text-slate-600 dark:text-slate-400
+                         hover:text-slate-900 dark:hover:text-slate-200
+                         transition-all duration-200"
+                >
+                  <Dna size={16} />
+                  Genome Browser
+                </TabsTrigger>
+                <TabsTrigger
+                  value="pfam"
+                  className="gap-2 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900
+                         data-[state=active]:text-indigo-600 dark:data-[state=active]:text-indigo-400
+                         data-[state=active]:shadow-sm
+                         text-slate-600 dark:text-slate-400
+                         hover:text-slate-900 dark:hover:text-slate-200
+                         transition-all duration-200"
+                >
+                  <Database size={16} />
+                  PFAM Analysis
+                </TabsTrigger>
+                <TabsTrigger
+                  value="blast"
+                  className="gap-2 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900
+                         data-[state=active]:text-indigo-600 dark:data-[state=active]:text-indigo-400
+                         data-[state=active]:shadow-sm
+                         text-slate-600 dark:text-slate-400
+                         hover:text-slate-900 dark:hover:text-slate-200
+                         transition-all duration-200"
+                >
+                  <Database size={16} />
+                  BLAST Results
+                </TabsTrigger>
+              </TabsList>
+            </div>
+
+            <div className="mt-6 px-6 pb-6">
+              <TabsContent value="viewer">
+                <div
+                  className="bg-slate-50 dark:bg-slate-900 rounded-lg p-4 
+                          border border-slate-200 dark:border-slate-700
+                          shadow-sm"
+                >
+                  <SequenceDisplay sequence={geneData?.sequence} />
+                </div>
+              </TabsContent>
+
+              <TabsContent value="genome">
+                <div
+                  className="bg-slate-50 dark:bg-slate-900 rounded-lg p-4 
+                          border border-slate-200 dark:border-slate-700
+                          shadow-sm"
+                >
+                  <GenomeViewer genomeName={geneData?.genome} />
+                </div>
+              </TabsContent>
+
+              <TabsContent value="pfam">
+                <div
+                  className="bg-slate-50 dark:bg-slate-900 rounded-lg p-4 
+                          border border-slate-200 dark:border-slate-700
+                          shadow-sm"
+                >
+                  <PfamAnalysis peptide={geneData?.name} />
+                </div>
+              </TabsContent>
+
+              <TabsContent value="blast">
+                <div
+                  className="bg-slate-50 dark:bg-slate-900 rounded-lg p-4 
+                          border border-slate-200 dark:border-slate-700
+                          shadow-sm"
+                >
+                  <BlastAnalysis gene={geneData?.name} />
+                </div>
+              </TabsContent>
+            </div>
+          </Tabs>
+        </CardHeader>
+      </Card>
+
+      {/* Annotation form area */}
+      <Card className="bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-all border dark:border-gray-700">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            Annotation Details
+            <Badge
+              variant="secondary"
+              className="bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border-0"
+            >
+              Required
+            </Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {/* <div className="space-y-6">
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                  Gene Instance
+                </Label>
+                <Input
+                  type="text"
+                  className="w-full p-2 rounded-lg border border-slate-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900"
+                  name="gene_instance"
+                  placeholder={currentAnnotation.gene_instance}
+                />
+              </div>
+              <div>
+                <Label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                  Gene
+                </Label>
+                <Input
+                  type="text"
+                  className="w-full p-2 rounded-lg border border-slate-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900"
+                  name="gene"
+                  placeholder={currentAnnotation.gene}
+                />
+              </div>
+              <div>
+                <Label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                  Gene Symbol
+                </Label>
+                <Input
+                  type="text"
+                  className="w-full p-2 rounded-lg border border-slate-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900"
+                  name="gene_symbol"
+                  placeholder={currentAnnotation.gene_symbol}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                Transcript Biotype
+              </label>
+              <select
+                className="w-full p-2 rounded-lg border border-slate-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900"
+                name="transcript_biotype"
+                placeholder={currentAnnotation.transcript_biotype}
+              >
+                <option value="">Select Biotype</option>
+                <option value="protein_coding">Protein Coding</option>
+                <option value="pseudogene">Pseudogene</option>
+                <option value="ncRNA">ncRNA</option>
+              </select>
+
+              <div>
+                <BiotypeSearch
+                  value={geneBiotype}
+                  onChange={setGeneBiotype}
+                  label="Gene Biotype"
+                  required={true}
+                />
+              </div>
+              <div>
+                <BiotypeSearch
+                  value={transcriptBiotype}
+                  onChange={setTranscriptBiotype}
+                  label="Transcript Biotype"
+                  required={true}
+                />
+              </div>
+
+              <div>
+                <StrandSelector
+                  value={strand}
+                  onChange={setStrand}
+                  label="Strand"
+                  required={true}
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                Description
+              </Label>
+              <Textarea
+                className="w-full p-2 rounded-lg border border-slate-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 h-24"
+                name="description"
+                placeholder={currentAnnotation.description}
+              ></Textarea>
+            </div>
+          </div> */}
+          {renderFormInputs()}
+        </CardContent>
+      </Card>
     </div>
   );
-}
+};
+
+export default GeneAnnotationPage;

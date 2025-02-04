@@ -18,12 +18,14 @@ from datetime import timedelta
 # Load env variables
 load_dotenv()
 
+LOCAL = eval(os.getenv('DJANGO_LOCAL'))
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SITE_NAME = 'GenAnnotator'
 
-SITE_DOMAIN = 'localhost:3000'
+SITE_DOMAIN = 'localhost:3000' if LOCAL else 'client:3000'
 
 
 # Quick-start development settings - unsuitable for production
@@ -33,9 +35,9 @@ SITE_DOMAIN = 'localhost:3000'
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DJANGO_DEBUG')
+DEBUG = eval(os.getenv('DJANGO_DEBUG'))
 
-ALLOWED_HOSTS = [".vercel.app", ".now.sh","localhost","127.0.0.1"]
+ALLOWED_HOSTS = [".vercel.app", ".now.sh","localhost","127.0.0.1","0.0.0.0","api"]
 
 SITE_ID = 1
 
@@ -64,6 +66,7 @@ INSTALLED_APPS = [
     'dj_rest_auth.registration',
     "phonenumber_field",
     "django_extensions",
+    "huey.contrib.djhuey",
 ]
 
 MIDDLEWARE = [
@@ -85,7 +88,7 @@ REST_FRAMEWORK = {
     ),
 }
 
-FRONT_END_URL = "http://localhost:3000"
+FRONT_END_URL = "http://localhost:3000" if LOCAL else "http://client:3000"
 
 REST_AUTH = {
     'USE_JWT': True,
@@ -96,6 +99,7 @@ REST_AUTH = {
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    "http://client:3000",
 ]
 
 # JWT Settings
@@ -231,11 +235,38 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
 
-STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# Huey settings
+
+HUEY = {
+    'huey_class': 'huey.RedisExpireHuey',
+    'name': 'genannotator',
+    'results': True,
+    'store_none': False,
+    'immediate': LOCAL,
+    'utc': True,
+    'connection': {
+        'host': 'localhost' if LOCAL else 'redis',
+        'port': 6379,
+    },
+    'consumer': {
+        'workers': 1,
+        'worker_type': 'thread',
+        'initial_delay': 0.1,
+        'backoff': 1.15,
+        'max_delay': 10.0,
+        'scheduler_interval': 1,
+        'periodic': True,
+        'check_worker_health': True,
+        'health_check_interval': 1,
+    },
+    "expire_time": 86400,
+}

@@ -149,9 +149,6 @@ export async function fetchUsers({ role }: FetchUsersParams = {}): Promise<
       limit: "1000",
     });
 
-    if (role) {
-      params.append("role", role);
-    }
 
     const response = await fetch(
       `${API_URL}/access/api/user/?${params.toString()}`,
@@ -182,7 +179,7 @@ export async function fetchUsers({ role }: FetchUsersParams = {}): Promise<
       role: item.role,
     }));
     if (role) {
-      return processedData.filter((item: User) => item.role === role);
+      return processedData.filter((item: User) => item.role === role || item.role === "VALIDATOR");
     }
     return processedData;
   } catch (error) {
@@ -247,13 +244,15 @@ export async function assignGeneToUser({ user, genes }) {
         gene: genes,
       }),
     });
-
+    
     if (!response.ok) {
-      throw new Error("Failed to assign gene");
+      const data = await response.json();
+      throw new Error(data.error);
     }
 
     return await response.json();
   } catch (error) {
-    throw error;
+    throw new Error((error as Error).message);
+   
   }
 }

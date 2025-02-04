@@ -7,10 +7,16 @@ from zlib import compress, decompress
 from .decorators import validator_only
 from rest_framework.response import Response
 from rest_framework import status
-from django.core.mail import EmailMultiAlternatives
-from django.template.loader import render_to_string
+from hashlib import sha256
+from json import dumps
+from datetime import timedelta
+from django.utils import timezone
+from django.db import transaction
+from GenAnnot import settings
+from huey.contrib.djhuey import HUEY
+import uuid
+from django.core.validators import RegexValidator
 
-# Create your models here.
 
 class Genome(models.Model):
     name = models.CharField(max_length=100, unique=True, primary_key=True)
@@ -46,12 +52,12 @@ class Genome(models.Model):
     
 class Gene(models.Model):
 
-    name = models.CharField(max_length=100, primary_key=True)
+    name = models.CharField(max_length=100, primary_key=True, validators=[RegexValidator(regex=r"^[A-Z]{3}[0-9]+$", message="Invalid gene name")])
     genome = models.ForeignKey(Genome, on_delete=models.CASCADE)
     start = models.IntegerField(blank=False, null=False)
     end = models.IntegerField(blank=False, null=False)
     header = models.TextField(blank=False, null=False, default=">Gene")
-    sequence = models.TextField()
+    sequence = models.TextField(validators=[RegexValidator(regex=r"^[CAGT]+$", message="Invalid gene sequence")])
     length = length = models.IntegerField(editable=False)
     gc_content = models.FloatField(editable=False, default=0.0)
     annotated = models.BooleanField(default=False)
@@ -78,10 +84,10 @@ class Gene(models.Model):
         return self.name
     
 class Peptide(models.Model):
-    name = models.CharField(max_length=100, default="Peptide", primary_key=True)
+    name = models.CharField(max_length=100, default="AAA0000", primary_key=True, validators=[RegexValidator(regex=r"^[A-Z]{3}[0-9]+$", message="Invalid gene name")])
     gene = models.ForeignKey(Gene, on_delete=models.CASCADE)
     header = models.TextField(blank=False, null=False, default=">Peptide")
-    sequence = models.TextField()
+    sequence = models.TextField(validators=[RegexValidator(regex=r"^[ACDEFGHIKLMNPQRSTVWY]+$", message="Invalid peptide sequence")])
     length = models.IntegerField(editable=False)
 
     def save(self, *args, **kwargs):
@@ -167,9 +173,9 @@ class GeneAnnotationStatus(models.Model):
         self.rejection_reason = None
         self.updated_at = datetime.now()
         self.save()
-
+        
     @validator_only()
-    def setuser(self, request, *args, **kwargs) -> Response:
+    def setuser(manager, request, *args, **kwargs) -> Response:
         if kwargs.get('user') is None:
             return Response(
                 {'error': 'User required'}, 
@@ -177,46 +183,8 @@ class GeneAnnotationStatus(models.Model):
             )
         else:
             user = kwargs.get('user')
-            self.status = self.ONGOING
-            self.annotator = user
-            self.updated_at = datetime.now()
-            self.save()
-            return Response({'status': f'Annotation {self.gene} assigned to {user}'}, status=status.HTTP_200_OK)
-
-
-    def send_annotation_mail(self, mail_type):
-
-        if mail_type == "assigned":
-            template = "email_annotation_assigned"
-        elif mail_type == "update":
-            template = "email_annotation_update"
-
-        context = {"user" : self.annotator, 
-                   "anotation": self.gene,
-                   "status": self.status}
-
-        # Render the text content.
-        text_content = render_to_string(
-            template_name=f"emails/{template}.txt",
-            context=context,
-        )
-
-        # Render the HTML content.
-        html_content = render_to_string(
-            template_name=f"emails/{template}.html",
-            context=context,
-        )
-
-        # Create a multipart email instance.
-        msg = EmailMultiAlternatives(
-            subject="Annotation Update",
-            body=text_content,
-            to=[self.annotator.email],
-        )
-
-        # Attach the HTML content to the email instance and send.
-        msg.attach_alternative(html_content, "text/html")
-        msg.send()
+            success = manager.update(status=GeneAnnotationStatus.ONGOING, annotator=user, updated_at=datetime.now())
+            return Response({'status': f'{success} annotation(s) successfully assigned to {user}'}, status=status.HTTP_200_OK)
 
     RAW = 'RAW'
     ONGOING = 'ONGOING'
@@ -253,3 +221,141 @@ class PeptideAnnotation(models.Model):
 
     def __str__(self):
         return f"{str(self.peptide)}"
+    
+class AsyncTasksCache(models.Model):
+
+    # States of the async cached task
+    pending = "PENDING"
+    in_progress = "IN_PROGRESS"
+    completed = "COMPLETED"
+    rejected = "REJECTED"
+
+    STATUS_CHOICES = [
+        (pending, 'Pending'),
+        (in_progress, 'In Progress'),
+        (completed, 'Completed'),
+        (rejected, 'Rejected'),
+    ]
+
+    # Used to retrieve the task and return the result if available
+    # Response is dependent on the task state
+    def retrieve_task(key: str, user: CustomUser, task_type: str) -> Response:
+        try:
+            task_obj = AsyncTasksCache.objects.get(key=key)
+            if task_obj.task == task_type:
+                if(task_obj.state == AsyncTasksCache.completed):
+                    return Response({"task": task_obj.key, "state": task_obj.state, "user": task_obj.user.username, 
+                                    "params": task_obj.params, 
+                                    "result": HUEY.result(task_obj.storage, preserve=True)},
+                                    status=status.HTTP_200_OK)
+                elif(task_obj.state == AsyncTasksCache.pending or task_obj.state == AsyncTasksCache.in_progress):
+                    return Response({"state": task_obj.state, "message": "Task is still in progress."}, status=status.HTTP_202_ACCEPTED)
+                else:
+                    return Response({"error": "Task failed."}, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                return Response({"error": f"Task is not a {task_type} task."}, status=status.HTTP_404_NOT_FOUND)
+        except AsyncTasksCache.DoesNotExist:
+            return Response({"error": "Task not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    # Used to hash the parameters
+    def hash_params(params: dict) -> str:
+        return sha256(dumps(obj=params, ensure_ascii=True, default=str, sort_keys=True).encode()).hexdigest()
+    
+    # Used to cache the task
+    def cache_task(key: str, task: str, user: CustomUser, params: dict):
+        params_hash = AsyncTasksCache.hash_params(params)
+        return AsyncTasksCache.objects.create(key=key, task=task, user=user, params_hash=params_hash, params=params, 
+                                              state=AsyncTasksCache.completed if settings.HUEY["immediate"] else AsyncTasksCache.pending)
+    
+    # Used to query the cache
+    def query_cache(key: str = None, user: str = None, params: dict = None) -> object:
+        params_hash = AsyncTasksCache.hash_params(params)
+        query_params = {
+            "key": key,
+            "user": user,
+            "params_hash": params_hash,
+        }
+        return AsyncTasksCache.objects.filter(**{k: v for k, v in query_params.items() if v is not None})
+    
+    # Used to clean the cache by deleting old tasks
+    def clean_cache():
+        AsyncTasksCache.objects.filter(updated_at__lt=timezone.now() - timedelta(hours=24)).delete()
+    
+    # Used to get or create a task by working with the cache
+    def get_or_create_task(task_type: str, task_params: dict, task_funct, user: CustomUser) -> Response:
+        # Check if same task already in the cache
+        AsyncTasksCache.clean_cache()
+        query_result = AsyncTasksCache.query_cache(params=task_params)
+        # If there is a cached result found
+        if query_result.count() > 0:
+            cached_obj = query_result.first()
+            # If the task is completed and still within the cache period, check if the result is found
+            if(cached_obj.state == AsyncTasksCache.completed and cached_obj.updated_at > timezone.now() - timedelta(days=1)):
+                # Get the Redis key of the result
+                result_key = cached_obj.storage
+                # Get the result from the Redis cache
+                cached_result = HUEY.result(result_key, preserve=True)
+                # If the result is found, return it
+                if(cached_result is not None):
+                    return Response(cached_result, status=status.HTTP_200_OK)
+                # Delete the task if the state is completed but the result is not found meaning the cache is corrupted
+                else:
+                    cached_obj.delete()
+                    # Follow with the task submission
+            # If the task is pending or in progress, return the task key
+            elif(cached_obj.state == AsyncTasksCache.pending or cached_obj.state == AsyncTasksCache.in_progress):
+                return Response({"key": f"{cached_obj.key}"}, status=status.HTTP_200_OK)
+            # Delete the task if it is not in a valid state (not pending, in progress or completed)
+            else:
+                cached_obj.delete()
+                # Follow with the task submission
+        try:
+            # Create a new task in the cache
+            with transaction.atomic():
+                key = uuid.uuid4()
+                cached_obj: AsyncTasksCache = AsyncTasksCache.cache_task(key=key, task=task_type, user=user, params=task_params)
+                # Enqueue the task
+                def _enqueue():
+                    task = task_funct(**task_params)
+                    cached_obj.storage = task.id
+                    cached_obj.save(update_fields=["storage"])
+                # Enqueue the task on commit
+                transaction.on_commit(_enqueue)
+                return Response({"key": f"{key}"}, status=status.HTTP_202_ACCEPTED)
+
+            return Response({"error": f"{task_type} job failed to submit."}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error": f"{task_type} job failed to submit.", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+    key = models.CharField(max_length=100, primary_key=True)
+
+    # The storage field is used to store the Huey task id
+    storage = models.CharField(max_length=100, unique=True, null=True, blank=True)
+
+    # The task field is used to store the task name
+    task = models.CharField(max_length=100)
+
+    # The params_hash field is used to store the hash of the params field
+    params_hash = models.CharField(max_length=100, db_index=True)
+
+    # The params field is used to store the task parameters
+    params = models.JSONField(null=True, blank=True)
+
+    # The user field is used to store the user that requested the task
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+
+    # The state field is used to store the task state
+    state = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
+
+    # The error_message field is used to store the error message if the task fails
+    error_message = models.TextField(null=True, blank=True)
+
+    # The created_at field is used to store the task creation date
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    # The updated_at field is used to store the task last update date
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.key} - {self.state} - {self.user}"

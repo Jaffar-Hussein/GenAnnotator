@@ -2,35 +2,29 @@ from django.shortcuts import render
 from django.urls import reverse
 from GeneAtlas import urls
 from django.views.generic import CreateView
-from .serializers import GenomeSerializer, GeneSerializer, PeptideSerializer, GeneAnnotationSerializer, PeptideAnnotationSerializer, GeneAnnotationStatusSerializer
+from .serializers import GenomeSerializer, GeneSerializer, PeptideSerializer, GeneAnnotationSerializer, PeptideAnnotationSerializer, GeneAnnotationStatusSerializer, TaskSerializer, TaskInputSerializer, BlastQueryInputSerializer, BlastRunInputSerializer, StatsInputSerializer, PFAMRunInputSerializer, GeneQuerySerializer, PeptideQuerySerializer
 from rest_framework import status, request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
-from AccessControl.permissions import IsAnnotatorUser, IsValidatorUser, ReadOnly
-from .models import Genome, Gene, Peptide, GeneAnnotation, PeptideAnnotation, GeneAnnotationStatus
+from .permissions import IsAnnotatorUser, IsValidatorUser, ReadOnly
+from .models import Genome, Gene, Peptide, GeneAnnotation, PeptideAnnotation, GeneAnnotationStatus, AsyncTasksCache
 from django.db import transaction, models as db_models
 from django.http import HttpResponse
 from AccessControl.models import CustomUser
 import csv
 import requests
-
-# Create your views here.
+from .tasks import run_blast, pfamscan
+from huey.contrib.djhuey import HUEY
+from django.utils import timezone
+from datetime import timedelta
+import uuid
 
 class HomeView(CreateView):
 
-    def home_rendering(request):
-        endpoints = []
-        print('List of URL patterns:')
-        for pattern in urls.urlpatterns:
-            if(hasattr(pattern, 'name') and hasattr(pattern, 'pattern') and pattern.name != 'home'):
-                endpoints.append({"name": pattern.name.removesuffix("_api"), "url": pattern.pattern})
-        postman_examples = [
-            {"name": "Get All Genomes", "request": "GET /data/api/genome/?all=true"},
-            {"name": "Genome Query", "request": "GET /data/api/genome/?name=Escherichia_coli_cft073"},
-        ]
-        return render(request, "home.html", {"endpoints": endpoints, "postman_examples": postman_examples,"api_version": "v1.0"})
+    def get(self, request):
+        return render(request, "home.html")
 
 class GenomeAPIView(APIView):
     def get(self, request) -> Response:
@@ -39,8 +33,7 @@ class GenomeAPIView(APIView):
             query_results = inf
         else:
             params = {"name": request.GET.get('name', None), # Name of the genome
-                    "species": request.GET.get('species', None), 
-                    "description": request.GET.get('description', None), 
+                    "species": request.GET.get('species', None),  
                     "length": request.GET.get('length', None),
                     "motif": request.GET.get('motif', None),
                     "gc_content": request.GET.get('gc_content', None), 
@@ -75,8 +68,7 @@ class GeneAPIView(APIView):
         inf = Gene.objects.all()
         motif = request.GET.get('motif', None)
         params = {"name": request.GET.get('name', None), # Name of the gene
-                "genome": request.GET.get('genome', None), # Genome to which the gene belongs
-                "description": request.GET.get('description', None), 
+                "genome": request.GET.get('genome', None), # Genome to which the gene belongs 
                 "length": request.GET.get('length', None),
                 "gc_content": request.GET.get('gc_content', None), 
                 "annotated": request.GET.get('annotated', None), # Annotated status of the gene
@@ -89,6 +81,11 @@ class GeneAPIView(APIView):
         if(all(v is None for v in params.values())):
             return Response({"error": "No query parameters provided. Please paginate the result."}, status=status.HTTP_400_BAD_REQUEST)
         else:
+            # Validate the query parameters
+            try:
+                GeneQuerySerializer(data=params).is_valid(raise_exception=True)
+            except Exception as e:
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
             query_results = inf.filter(**{k: v for k, v in params.items() if v is not None and k not in ["limit"]})
 
         if(params["limit"] is not None):
@@ -125,6 +122,11 @@ class PeptideAPIView(APIView):
             if(all(v is None for v in params.values())):
                 return Response({"error": "No query parameters provided. Please paginate the result"}, status=status.HTTP_400_BAD_REQUEST)
             else:
+                # Validate the query parameters
+                try:
+                    PeptideQuerySerializer(data=params).is_valid(raise_exception=True)
+                except Exception as e:
+                    return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
                 query_results = inf.filter(**{k: v for k, v in params.items() if v is not None and k not in ["limit"]})
                 if(query_results.count() == 0):
                     return Response({"error": "Peptide(s) not found."}, status=status.HTTP_404_NOT_FOUND)
@@ -149,7 +151,7 @@ class PeptideAPIView(APIView):
     
 class AnnotationAPIView(APIView):
 
-    permission_classes = [IsAuthenticated&(IsAnnotatorUser|IsValidatorUser|ReadOnly)]
+    permission_classes = [IsAuthenticated&(IsAnnotatorUser|IsValidatorUser|IsAdminUser|ReadOnly)]
 
     def get(self, request) -> Response:
         inf_annotation_gene = GeneAnnotation.objects.all()
@@ -246,25 +248,23 @@ class AnnotationAPIView(APIView):
 
 class AnnotationStatusAPIView(APIView):
 
-    permission_classes = [IsAuthenticated&(IsAnnotatorUser|IsValidatorUser|ReadOnly)]
+    permission_classes = [IsAuthenticated&(IsAnnotatorUser|IsValidatorUser|IsAdminUser|ReadOnly)]
 
     def get(self, request) -> Response:
         inf = GeneAnnotationStatus.objects.all()
         params = {"gene": request.GET.get('gene', None),  # Gene(s) for which the status is to be retrieved
                 "status": request.GET.get('status', None), # Status of the gene annotation
                 "annotator": request.GET.get('annotator', None)} # Annotator assigned to the gene annotation
-        if(all(v is None for v in params.values())):
-            return Response({"error": "No query parameters provided."}, status=status.HTTP_400_BAD_REQUEST)
-        else:
-            query_results = inf.filter(**{k: v for k, v in params.items() if v is not None})
-            if(request.GET.get("limit",None)):
-                paginator = LimitOffsetPagination()
-                query_results = paginator.paginate_queryset(query_results, request)
-                serializer = GeneAnnotationStatusSerializer(query_results, many=True)
-                return paginator.get_paginated_response(serializer.data)
-            else:    
-                serializer = GeneAnnotationStatusSerializer(query_results, many=True)
-                return Response(serializer.data)
+        params["annotator"] = CustomUser.objects.get(username=params["annotator"]) if params["annotator"] is not None else None
+        query_results = inf.filter(**{k: v for k, v in params.items() if v is not None})
+        if(request.GET.get("limit",None)):
+            paginator = LimitOffsetPagination()
+            query_results = paginator.paginate_queryset(query_results, request)
+            serializer = GeneAnnotationStatusSerializer(query_results, many=True)
+            return paginator.get_paginated_response(serializer.data)
+        else:    
+            serializer = GeneAnnotationStatusSerializer(query_results, many=True)
+            return Response(serializer.data)
 
     def put(self, request) -> Response:
 
@@ -281,7 +281,7 @@ class AnnotationStatusAPIView(APIView):
             elif(isinstance(params["gene"], str)):
                 try:
                     if(params["action"] == 'setuser'):
-                        status_obj = [GeneAnnotationStatus.objects.get(gene=params["gene"])]
+                        status_obj = GeneAnnotationStatus.objects.filter(gene=params["gene"])
                     else:
                         status_obj = GeneAnnotationStatus.objects.get(gene=params["gene"])
                 except GeneAnnotationStatus.DoesNotExist:
@@ -295,7 +295,7 @@ class AnnotationStatusAPIView(APIView):
         if status_obj is None:
             return Response({'error': 'No status found'}, status=status.HTTP_404_NOT_FOUND)
 
-        if params["action"] == 'approve':
+        if params["action"].lower() == 'approve':
             if(status_obj.status == GeneAnnotationStatus.PENDING or status_obj.status == GeneAnnotationStatus.REJECTED):
                 if(request.user == status_obj.annotator):
                     return Response({'error': 'Annotator cannot approve their own annotation'}, status=status.HTTP_403_FORBIDDEN)
@@ -303,7 +303,7 @@ class AnnotationStatusAPIView(APIView):
             else:
                 return Response({'error': f'Annotation {status_obj.gene} with status {status_obj.status} cannot be approved'}, status=status.HTTP_400_BAD_REQUEST)
         
-        elif params["action"] == 'reject':
+        elif params["action"].lower() == 'reject':
             if(status_obj.status == GeneAnnotationStatus.PENDING or status_obj.status == GeneAnnotationStatus.APPROVED):
                 if(request.user == status_obj.annotator):
                     return Response({'error': 'Annotator cannot reject their own annotation'}, status=status.HTTP_403_FORBIDDEN)
@@ -312,7 +312,7 @@ class AnnotationStatusAPIView(APIView):
                 return Response({'error': f'Annotation {status_obj.gene} with status {status_obj.status} cannot be rejected'}, status=status.HTTP_400_BAD_REQUEST)
 
                 
-        elif params["action"] == 'submit':
+        elif params["action"].lower() == 'submit':
             if(status_obj.status == GeneAnnotationStatus.ONGOING):
                 try:
                     self.check_object_permissions(request, status_obj)
@@ -323,10 +323,7 @@ class AnnotationStatusAPIView(APIView):
                 return Response({'error': f'Annotation {status_obj.gene} with status {status_obj.status} cannot be submitted'}, status=status.HTTP_400_BAD_REQUEST)
 
         
-        elif params["action"] == "setuser":
-
-            response = {'status': {},
-                        'message': {}}
+        elif params["action"].lower() == "setuser":
             
             if params["gene"] is not None:
                 try:
@@ -334,15 +331,11 @@ class AnnotationStatusAPIView(APIView):
                 except CustomUser.DoesNotExist:
                     return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
                 if(user.role == "ANNOTATOR" or user.role == "VALIDATOR"):
-                    for obj in status_obj:
-                        if(obj.status == GeneAnnotationStatus.RAW):
-                            out = obj.setuser(request, user=user)
-                            response['status'][obj.gene.name] = True if out.status_code == 200 else False
-                            response['message'][obj.gene.name] = out.data['status'] if out.status_code == 200 else out.data['error']
-                        else:
-                            response['status'][obj.gene.name] = False
-                            response['message'][obj.gene.name] = f'A user cannot be set for gene annotation with status {obj.status}'
-                    return Response(response, status=status.HTTP_200_OK)
+                    # Ensure that the user is not assigned to an annotation that is not in the RAW status
+                    raw_obj = status_obj.filter(status=GeneAnnotationStatus.RAW)
+                    if(raw_obj.count() != status_obj.count()):
+                        return Response({'error': 'User cannot be assigned to annotations that are not in the RAW status'}, status=status.HTTP_400_BAD_REQUEST)
+                    return GeneAnnotationStatus.setuser(raw_obj, request, user=user)
                 else:
                     return Response({'error': f'User with role {user.role} cannot be assigned to annotation'}, status=status.HTTP_400_BAD_REQUEST)
             else:
@@ -365,24 +358,27 @@ class StatsAPIView(APIView):
         try:
             user = request.GET.get("user", None)
             if(user is not None):
-                try:
-                    user_pk = CustomUser.objects.get(username=user).id
-                except CustomUser.DoesNotExist:
-                    return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
-                annotations = GeneAnnotationStatus.objects.filter(annotator=user_pk)
-                annotations_ongoing = annotations.filter(status=GeneAnnotationStatus.ONGOING)
-                annotations_pending = annotations.filter(status=GeneAnnotationStatus.PENDING)
-                annotations_approved = annotations.filter(status=GeneAnnotationStatus.APPROVED)
-                annotations_rejected = annotations.filter(status=GeneAnnotationStatus.REJECTED)
-                return Response({"annotations": annotations.count(),
-                                "ongoing": {"count": annotations_ongoing.count(), 
-                                             "annotation": annotations_ongoing.values_list('gene', flat=True)},
-                                "pending": {"count": annotations_pending.count(), 
-                                            "annotation": annotations_pending.values_list('gene', flat=True)},
-                                "approved": {"count": annotations_approved.count(), 
-                                             "annotation": annotations_approved.values_list('gene', flat=True)},
-                                "rejected": {"count": annotations_rejected.count(), 
-                                             "annotation": annotations_rejected.values_list('gene', flat=True)}})
+                if StatsInputSerializer(data={"user": user}).is_valid(raise_exception=False):
+                    try:
+                        user_pk = CustomUser.objects.get(username=user).id
+                    except CustomUser.DoesNotExist:
+                        return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+                    annotations = GeneAnnotationStatus.objects.filter(annotator=user_pk)
+                    annotations_ongoing = annotations.filter(status=GeneAnnotationStatus.ONGOING)
+                    annotations_pending = annotations.filter(status=GeneAnnotationStatus.PENDING)
+                    annotations_approved = annotations.filter(status=GeneAnnotationStatus.APPROVED)
+                    annotations_rejected = annotations.filter(status=GeneAnnotationStatus.REJECTED)
+                    return Response({"annotations": annotations.count(),
+                                    "ongoing": {"count": annotations_ongoing.count(), 
+                                                "annotation": annotations_ongoing.values_list('gene', flat=True)},
+                                    "pending": {"count": annotations_pending.count(), 
+                                                "annotation": annotations_pending.values_list('gene', flat=True)},
+                                    "approved": {"count": annotations_approved.count(), 
+                                                "annotation": annotations_approved.values_list('gene', flat=True)},
+                                    "rejected": {"count": annotations_rejected.count(), 
+                                                "annotation": annotations_rejected.values_list('gene', flat=True)}})
+                else:
+                    return Response({"error": "Invalid user parameter."}, status=status.HTTP_400_BAD_REQUEST)
             else:
                 genome_count = Genome.objects.count()
                 stats_by_genome = Gene.objects.values('genome').annotate(total=db_models.Count('genome'), annotated=db_models.Sum('annotated', output_field=db_models.IntegerField()))
@@ -471,3 +467,142 @@ class DownloadAPIView(APIView):
     
     def delete(self, request) -> Response:
         return Response({"error": "DELETE request not supported."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    
+class TaskAPIView(APIView):
+
+    def get(self, request) -> Response:
+
+        params = {"key": request.GET.get('key', None), # Key of the task
+                "state": request.GET.get('state', None), # Status of the task
+                "user": request.GET.get('user', None), # User who created the task
+                "task": request.GET.get('task', None)} # Kind of task
+        
+        try:
+            TaskInputSerializer(data=params).is_valid(raise_exception=True)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            params["user"] = CustomUser.objects.get(username=params["user"]) if params["user"] is not None else None
+        except CustomUser.DoesNotExist:
+            return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+        
+        query_result = AsyncTasksCache.objects.filter(**{k: v for k, v in params.items() if v is not None})
+        if query_result.count() == 0:
+            return Response({"error": "No task found."}, status=status.HTTP_404_NOT_FOUND)
+        serializer = TaskSerializer(query_result, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    def post(self, request) -> Response:
+        return Response({"error": "POST request not supported."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    
+    def put(self, request) -> Response:
+        return Response({"error": "PUT request not supported."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    
+    def delete(self, request) -> Response:
+        return Response({"error": "DELETE request not supported."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    
+class BlastAPIView(APIView):
+
+    permission_classes = [IsAuthenticated&(IsAnnotatorUser|IsValidatorUser|IsAdminUser)]
+
+    def get(self, request) -> Response:
+        # Get the key of the task
+        task = request.GET.get('key', None)
+        try:
+            TaskInputSerializer(data={"key": task}).is_valid(raise_exception=True)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        # From this point on, the parameters are assumed to be valid
+        # retrieve the task from the cache
+        if task:
+            return AsyncTasksCache.retrieve_task(key=task, task_type="BLAST", user=request.user)
+    
+    def post(self, request) -> Response:
+        # Validate the input parameters
+        try:
+            BlastRunInputSerializer(data=request.data).is_valid(raise_exception=True)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        # From this point on, the parameters are assumed to be valid
+        # Gene name to be blasted
+        try:
+            gene = Gene.objects.get(name=request.data.get('gene', None))
+        except Gene.DoesNotExist:
+            return Response({"error": "Gene not found."}, status=status.HTTP_404_NOT_FOUND)
+        if gene:
+            # Check object permissions
+            try:
+                self.check_object_permissions(request, gene)
+            except Exception as e:
+                return Response({"error": str(e)}, status=status.HTTP_403_FORBIDDEN)
+            sequence = gene.sequence
+            # Parameters for the BLAST task
+            blast_params = {"sequence": sequence, # Sequence to be blasted
+                    "program": request.data.get('program', "blastn"), # BLAST program to be used
+                    "database": request.data.get('database', "nt"), # BLAST database to be used
+                    "evalue": request.data.get('evalue', 0.001)} # E-value threshold
+            return AsyncTasksCache.get_or_create_task(task_type="BLAST", task_params=blast_params, task_funct=run_blast, user=request.user)
+        else:
+            return Response({"error": "Gene parameter not provided."}, status=status.HTTP_400_BAD_REQUEST)
+
+    def put(self, request) -> Response:
+        return Response({"error": "PUT request not supported."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    
+    def delete(self, request) -> Response:
+        return Response({"error": "DELETE request not supported."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    
+class PFAMAPIView(APIView):
+
+    permission_classes = [IsAuthenticated&(IsAnnotatorUser|IsValidatorUser|IsAdminUser)]
+
+    def get(self, request) -> Response:
+        # Get the key of the task
+        key = request.GET.get('key', None)
+        # Validate the query parameters
+        try:
+            TaskInputSerializer(data={"key": key}).is_valid(raise_exception=True)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        # From this point on, the parameters are assumed to be valid
+        if key:
+            # Retrieve the task from the cache
+            return AsyncTasksCache.retrieve_task(key=key, task_type="PFAMScan", user=request.user)
+    
+    def post(self, request) -> Response:
+
+        # Validate the input parameters
+        try:
+            PFAMRunInputSerializer(data=request.data).is_valid(raise_exception=True)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Get the peptide to be scanned
+        try:
+            peptide = Peptide.objects.get(name=request.data.get('peptide', None))
+        except Peptide.DoesNotExist:
+            return Response({"error": "Peptide not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Check object permissions
+        try:
+            self.check_object_permissions(request, peptide)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_403_FORBIDDEN)
+        
+        # Make paramaters for the PFAM task
+        sequence = peptide.sequence
+        pfam_params = {"sequence": sequence, # Sequence to be scanned against the PFAM database
+                    "evalue": request.data.get('evalue', 0.001), # E-value threshold
+                    "asp": request.data.get('asp', True), # Active site prediction method
+                    "user": request.user.id, # User who submitted the task
+        }
+        
+        # From this point on, the parameters are assumed to be valid
+        return AsyncTasksCache.get_or_create_task(task_type="PFAMScan", task_params=pfam_params, task_funct=pfamscan, user=request.user)
+
+    def put(self, request) -> Response:
+        pass
+    
+    def delete(self, request) -> Response:
+        pass

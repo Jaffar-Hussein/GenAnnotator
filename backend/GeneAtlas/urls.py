@@ -1,9 +1,9 @@
 from django.urls import path
 from django.views.generic.base import TemplateView
-from .views import GenomeAPIView, GeneAPIView, PeptideAPIView, AnnotationAPIView, StatsAPIView, DownloadAPIView, HomeView, AnnotationStatusAPIView
+from .views import GenomeAPIView, GeneAPIView, PeptideAPIView, AnnotationAPIView, StatsAPIView, DownloadAPIView, HomeView, AnnotationStatusAPIView, TaskAPIView, BlastAPIView, PFAMAPIView
 
 urlpatterns = [
-    path("", HomeView.home_rendering, name="home"),
+    path("", HomeView.as_view(), name="home"),
     path("api/genome/", GenomeAPIView.as_view(), name="genome_api"),
     path("api/gene/", GeneAPIView.as_view(), name="gene_api"),
     path("api/peptide/", PeptideAPIView.as_view(), name="peptide_api"),
@@ -12,4 +12,7 @@ urlpatterns = [
     path("api/stats/", StatsAPIView.as_view(), name="stats_api"),
     path("api/download/", DownloadAPIView.as_view(), name="download_api"),
     path("api/status/", AnnotationStatusAPIView.as_view(), name="status_api"),
+    path("api/tasks/", TaskAPIView.as_view(), name="task_api"),
+    path("api/blast/", BlastAPIView.as_view(), name="blast_api"),
+    path("api/pfamscan/", PFAMAPIView.as_view(), name="pfamscan_api"),
 ]

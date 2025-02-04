@@ -46,7 +46,7 @@ const PeptideCard = ({ peptide }) => {
 
   return (
     <Link href={`/peptides/${peptide.name}`} className="group block">
-      <Card className="relative overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl border border-indigo-200/50 dark:border-indigo-800/50 bg-white dark:bg-gray-800">
+      <Card className="relative overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl border  bg-white dark:bg-gray-800">
         {/* Enhanced gradient effects */}
         <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/50 via-transparent to-transparent dark:from-indigo-950/50 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
         <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-transparent to-indigo-50/30 dark:to-indigo-950/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-75" />

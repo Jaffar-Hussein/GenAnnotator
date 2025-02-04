@@ -1,0 +1,36 @@
+version: '1.0'
+
+services:
+  client:
+    container_name: nextjs
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    depends_on:
+      - api
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_LOCAL=False
+    env_file:
+      - ./frontend/.env
+
+  api:
+    container_name: django
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    depends_on:
+      - redis
+    ports:
+      - "8000:8000"
+    environment:
+      - DJANGO_LOCAL=False
+    env_file:
+      - ./backend/.env
+    volumes:
+      - ./backend/staticfiles:/app/backend/staticfiles
+
+  redis:
+    container_name: redis
+    image: redis:latest

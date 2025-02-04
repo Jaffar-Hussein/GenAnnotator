@@ -33,7 +33,8 @@ import { Progress } from "@/components/ui/progress";
 import { useAuthStore } from "@/store/useAuthStore";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEffect, useState } from "react";
-import { RoleBasedContent } from "@/components/role-based-dashboard";
+import RoleBasedContent from "@/components/role-based-dashboard";
+import { useUser } from "@/store/useAuthStore";
 import {
   Tooltip,
   TooltipContent,
@@ -218,15 +219,18 @@ const GenomeProgressCard = ({ genomeStats = defaultStats }) => (
       <div key={genome.genome} className="space-y-2">
         <div className="flex justify-between items-center">
           <p className="text-sm font-medium text-gray-900 dark:text-white">
-            {genome.genome.replace(/_/g, ' ')}
+            {genome.genome.replace(/_/g, " ")}
           </p>
           <span className="text-sm text-gray-500 dark:text-gray-400">
-            {genome.total > 0 ? ((genome.annotated / genome.total) * 100).toFixed(1) : 0}%
+            {genome.total > 0
+              ? ((genome.annotated / genome.total) * 100).toFixed(1)
+              : 0}
+            %
           </span>
         </div>
-        <Progress 
-          value={genome.total > 0 ? (genome.annotated / genome.total) * 100 : 0} 
-          className="h-2 " 
+        <Progress
+          value={genome.total > 0 ? (genome.annotated / genome.total) * 100 : 0}
+          className="h-2 "
         />
         <p className="text-xs text-gray-500 dark:text-gray-400">
           {genome.annotated} of {genome.total} genes annotated
@@ -239,18 +243,18 @@ const GenomeProgressCard = ({ genomeStats = defaultStats }) => (
 const StatsCard = ({ item }) => (
   <Link href={item.href}>
     <Card className="hover:shadow-lg transition-all duration-200 group bg-white dark:bg-gray-800 border dark:border-gray-700">
-      <CardContent className="p-6">
-        <div className="flex items-center gap-4">
+      <CardContent className="p-4">
+        <div className="flex items-start gap-3">
           <div
-            className={`rounded-full p-3 ${item.color} transition-all group-hover:scale-110`}
+            className={`rounded-full p-2.5 ${item.color} transition-all group-hover:scale-110 flex-shrink-0`}
           >
-            <item.icon className="h-6 w-6" />
+            <item.icon className="h-5 w-5" />
           </div>
-          <div className="space-y-1">
+          <div className="min-w-0 flex-1">
             <p className="text-sm font-medium text-gray-500 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-100">
               {item.name}
             </p>
-            <div className="flex items-baseline gap-2">
+            <div className="flex items-baseline gap-1.5">
               <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
                 {item.stat}
               </h3>
@@ -268,7 +272,7 @@ const StatsCard = ({ item }) => (
 const ProgressSection = ({ title, value, total, percentage }) => (
   <div className="space-y-2">
     <div className="flex justify-between items-center">
-    <span className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2">
+      <span className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2">
         {title}
         <TooltipProvider>
           <Tooltip>
@@ -281,13 +285,12 @@ const ProgressSection = ({ title, value, total, percentage }) => (
           </Tooltip>
         </TooltipProvider>
       </span>
-      <span className="text-sm text-gray-500 dark:text-gray-400">{percentage}%</span>
+      <span className="text-sm text-gray-500 dark:text-gray-400">
+        {percentage}%
+      </span>
     </div>
     <div className="relative">
-      <Progress 
-        value={percentage} 
-        className="h-2 " 
-      />
+      <Progress value={percentage} className="h-2 " />
       {percentage > 80 && (
         <CheckCircle className="h-4 w-4 text-green-500 absolute -right-1 -top-1" />
       )}
@@ -296,7 +299,8 @@ const ProgressSection = ({ title, value, total, percentage }) => (
 );
 
 export default function Dashboard() {
-  const user = useAuthStore((state) => state.user);
+  const user = useUser();
+  console.log("User:", user);
   const [stats, setStats] = useState<GenomeStats>();
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
@@ -308,6 +312,7 @@ export default function Dashboard() {
       try {
         const response = await fetch(`${backendUrl}/data/api/stats/`);
         const data = await response.json();
+        console.log("Stats data:", data);
         setStats(data);
       } catch (error) {
         console.error("Failed to fetch stats:", error);
@@ -356,19 +361,6 @@ export default function Dashboard() {
                 </p>
               </div>
               <div className="flex gap-4">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button variant="outline" size="icon">
-                        <Bell className="h-5 w-5" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Notifications</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-
                 {user.role === "ANNOTATOR" && (
                   <TooltipProvider>
                     <Tooltip>
@@ -389,10 +381,12 @@ export default function Dashboard() {
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-sm">
-                          <CheckCircle className="mr-2 h-4 w-4" />
-                          Review Pending Annotations
-                        </Button>
+                        <Link href="/gene-validation">
+                          <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-sm">
+                            <CheckCircle className="mr-2 h-4 w-4" />
+                            Review Pending Annotations
+                          </Button>
+                        </Link>
                       </TooltipTrigger>
                       <TooltipContent>
                         <p>Review pending annotation requests</p>
@@ -417,9 +411,9 @@ export default function Dashboard() {
 
           {/* Enhanced Role Content Sections */}
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {/* <div className="lg:col-span-3">
+            <div className="lg:col-span-3">
               {user && <RoleBasedContent role={user?.role} />}
-            </div> */}
+            </div>
 
             {/* Enhanced Progress Cards */}
             <Card className="lg:col-span-2 shadow-sm hover:shadow-md transition-all bg-white dark:bg-gray-800">
@@ -478,20 +472,20 @@ export default function Dashboard() {
                       ))}
                   </div>
                 ) : (
-                    <div className="space-y-6">
+                  <div className="space-y-6">
                     {/* Enhanced Progress Sections */}
                     <ProgressSection
                       title="Genome Completion"
                       value={stats?.genome_fully_annotated_count || 0}
                       total={stats?.genome_count || 0}
                       percentage={
-                      stats?.genome_count > 0
-                        ? Math.floor(
-                          (stats.genome_fully_annotated_count /
-                          stats.genome_count) *
-                          100
-                        )
-                        : 0
+                        stats?.genome_count > 0
+                          ? Math.floor(
+                              (stats.genome_fully_annotated_count /
+                                stats.genome_count) *
+                                100
+                            )
+                          : 0
                       }
                     />
                     <ProgressSection
@@ -499,12 +493,12 @@ export default function Dashboard() {
                       value={stats?.gene_annotation_count || 0}
                       total={stats?.gene_count || 0}
                       percentage={
-                      stats?.gene_count > 0
-                        ? Math.floor(
-                          (stats.gene_annotation_count / stats.gene_count) *
-                          100
-                        )
-                        : 0
+                        stats?.gene_count > 0
+                          ? Math.floor(
+                              (stats.gene_annotation_count / stats.gene_count) *
+                                100
+                            )
+                          : 0
                       }
                     />
                     <ProgressSection
@@ -512,16 +506,16 @@ export default function Dashboard() {
                       value={stats?.peptide_annotation_count || 0}
                       total={stats?.peptide_count || 0}
                       percentage={
-                      stats?.peptide_count > 0
-                        ? Math.floor(
-                          (stats.peptide_annotation_count /
-                          stats.peptide_count) *
-                          100
-                        )
-                        : 0
+                        stats?.peptide_count > 0
+                          ? Math.floor(
+                              (stats.peptide_annotation_count /
+                                stats.peptide_count) *
+                                100
+                            )
+                          : 0
                       }
                     />
-                    </div>
+                  </div>
                 )}
               </CardContent>
             </Card>

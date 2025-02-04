@@ -211,7 +211,7 @@ const EmptyGenomeViewer = ({ genomeName }) => {
             </li>
           </ul>
         </div>
-        <div className="flex items-start gap-2">
+        <div className="flex items-start gap-6">
           <Link
             href="/genomes"
             className="inline-flex items-center gap-2 text-indigo-600 hover:text-indigo-700 
@@ -219,6 +219,15 @@ const EmptyGenomeViewer = ({ genomeName }) => {
           >
             <ChevronLeft className="w-4 h-4 transform group-hover:-translate-x-0.5 transition-transform" />
             <span>Select a different genome</span>
+          </Link>
+          <Link
+            href="/genomes"
+            className="inline-flex items-center gap-2 text-indigo-600 hover:text-indigo-700 
+                        dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors group"
+          >
+            <span>View the raw sequence</span>
+            <ChevronRight className="w-4 h-4 transform group-hover:-translate-x-0.5 transition-transform" />
+            
           </Link>
         </div>
       </div>

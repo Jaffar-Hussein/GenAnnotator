@@ -2,6 +2,7 @@ from django.db.models.signals import post_save, pre_save
 from django.db.models import Count
 from django.dispatch import receiver
 from .models import Genome, Gene, GeneAnnotationStatus, GeneAnnotation
+from .tasks import send_annotation_mail
 
 
 @receiver(post_save, sender=Gene)
@@ -21,11 +22,10 @@ def handle_status_change(sender, instance, **kwargs):
             
             if instance.status == GeneAnnotationStatus.REJECTED:
                 Gene.objects.filter(pk=instance.gene.pk).update(annotated=False)
-                instance.send_annotation_mail(mail_type='update')
+                send_annotation_mail(obj=instance, mail_type='update')
             elif instance.status == GeneAnnotationStatus.APPROVED:
                 Gene.objects.filter(pk=instance.gene.pk).update(annotated=True)
-                instance.send_annotation_mail(mail_type='update')
-                
+                send_annotation_mail(obj=instance, mail_type='update')   
     except GeneAnnotationStatus.DoesNotExist:
         pass
 
@@ -34,23 +34,25 @@ def update_genome_status(sender, instance, created, **kwargs):
     """Check if genome is fully annotated"""
     try:
         if isinstance(instance, GeneAnnotationStatus):
-            genome = Genome.objects.get(pk=instance.gene.genome.pk)
-            if not created:
-                if instance.status == GeneAnnotationStatus.REJECTED or instance.status == GeneAnnotationStatus.APPROVED:
-                    status_counts = GeneAnnotationStatus.objects.values(
-                        'gene__genome', 
-                        'status'
-                    ).filter(gene__genome=genome).annotate(
-                        count=Count('status')
-                    )
-                    if len(status_counts) == 1 and status_counts[0]['status'] == GeneAnnotationStatus.APPROVED:
-                        genome.annotation = True
-                    else:
-                        genome.annotation = False
-            elif created:
-                genome.annotation = False
-            genome.sequence = genome.get_sequence().encode('utf-8')
-            genome.save()
+            manager = Genome.objects.filter(pk=instance.gene.genome.pk)
+            if(manager.count() == 1):
+                genome = manager.first()
+                if not created:
+                    if instance.status == GeneAnnotationStatus.REJECTED or instance.status == GeneAnnotationStatus.APPROVED:
+                        status_counts = GeneAnnotationStatus.objects.values(
+                            'gene__genome', 
+                            'status'
+                        ).filter(gene__genome=genome).annotate(
+                            count=Count('status')
+                        )
+                        if len(status_counts) == 1 and status_counts[0]['status'] == GeneAnnotationStatus.APPROVED:
+                            manager.update(annotation=True)
+                        else:
+                            manager.update(annotation=False)
+                elif created:
+                    manager.update(annotation=False)
+            else:
+                pass
     except Genome.DoesNotExist:
         pass
     
