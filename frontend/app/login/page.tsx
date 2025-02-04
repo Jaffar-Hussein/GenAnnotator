@@ -259,6 +259,7 @@ export default function Login() {
                               type={showPassword ? "text" : "password"}
                               value={formData.password}
                               onChange={handleChange}
+                              placeholder="Enter your password"
                               required
                               className="w-full pr-10 bg-white dark:bg-gray-900 border-gray-200 
                 dark:border-gray-700 dark:text-gray-100 dark:placeholder:text-gray-400

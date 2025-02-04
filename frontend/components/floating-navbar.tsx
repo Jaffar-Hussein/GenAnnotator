@@ -73,9 +73,49 @@ export const FloatingNav = ({ className }: { className?: string }) => {
         )}
       >
         <div className="flex items-center justify-between w-full">
-          <Link href="/" className="font-semibold text-base sm:text-lg">
-            Genome Annotator
-          </Link>
+          <div className="flex items-center gap-3">
+            {/* Logo */}
+            <Link href="/" className="flex items-center group">
+              <div className="relative">
+                <div
+                  className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 
+                    dark:from-indigo-400 dark:to-purple-500
+                    transform transition-all duration-300 ease-out
+                    group-hover:scale-105 group-hover:shadow-lg
+                    dark:group-hover:shadow-indigo-500/30"
+                >
+                  <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-white/20 to-transparent" />
+
+                  <div className="absolute inset-0 rounded-xl shadow-inner" />
+                </div>
+
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span
+                    className="text-sm font-bold tracking-wider bg-gradient-to-br from-white to-white/80 text-transparent bg-clip-text
+                        transform transition-all duration-300 ease-out
+                        group-hover:scale-110"
+                  >
+                    GA
+                  </span>
+                </div>
+
+                <div
+                  className="absolute -right-1 -top-1 w-1.5 h-1.5 rounded-full bg-purple-300 dark:bg-purple-400 
+                      transform transition-all duration-300 ease-out
+                      group-hover:scale-150 group-hover:opacity-75"
+                />
+                <div
+                  className="absolute -left-0.5 -bottom-0.5 w-1 h-1 rounded-full bg-indigo-300 dark:bg-indigo-400 
+                      transform transition-all duration-300 ease-out
+                      group-hover:scale-150 group-hover:opacity-75"
+                />
+              </div>
+            </Link>
+
+            <Link href="/" className="font-semibold text-base sm:text-lg">
+              Genome Annotator
+            </Link>
+          </div>
           <div className="flex items-center gap-2 sm:gap-6">
             <Button
               variant="ghost"
