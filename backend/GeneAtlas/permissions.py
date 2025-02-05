@@ -44,10 +44,3 @@ class IsValidatorUser(BasePermission):
             return request.user.role == CustomUser.validator
         return False
         
-# Check request method
-class ReadOnly(BasePermission):
-
-    def has_permission(self, request, view):
-
-        return request.method in SAFE_METHODS
-        

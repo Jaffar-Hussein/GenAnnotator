@@ -16,6 +16,7 @@ from .models import CustomUser
 from allauth.account.utils import send_email_confirmation
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from .permissions import ReadOnly
 
 
 class SignUpView(CreateView):
@@ -102,7 +103,7 @@ class UserAPIView(APIView):
     # Authentificated admin users can access this view
 
     # Permission classes
-    permission_classes = [IsAuthenticated&IsAdminUser]
+    permission_classes = [IsAuthenticated&(IsAdminUser|ReadOnly)]
 
     # Method for GET requests
     def get(self, request, *args, **kwargs) -> Response:

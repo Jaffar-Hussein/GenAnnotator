@@ -8,7 +8,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
-from .permissions import IsAnnotatorUser, IsValidatorUser, ReadOnly
+from .permissions import IsAnnotatorUser, IsValidatorUser
+from AccessControl.permissions import ReadOnly
 from .models import Genome, Gene, Peptide, GeneAnnotation, PeptideAnnotation, GeneAnnotationStatus, AsyncTasksCache
 from django.db import transaction, models as db_models
 from django.http import HttpResponse
