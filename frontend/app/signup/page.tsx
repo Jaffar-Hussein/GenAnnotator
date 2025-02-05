@@ -224,7 +224,7 @@ export default function SignupPage() {
     setError(null);
     setFieldErrors({});
 
-    // Validate all steps before submitting
+    
     for (let i = 0; i < steps.length; i++) {
       const validationError = steps[i].validation();
       if (validationError) {
