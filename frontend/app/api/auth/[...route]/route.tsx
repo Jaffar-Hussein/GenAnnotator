@@ -5,12 +5,14 @@ const BACKEND_URL =
   process.env.NEXT_LOCAL === "True"
     ? process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000"
     : process.env.NEXT_DOCKER_BACKEND_URL || "http://api:8000";
+
+
 const SESSION_DURATION = 60 * 60;
 const REFRESH_DURATION = 7 * 24 * 60 * 60;
 
 const COOKIE_OPTIONS = {
   httpOnly: true,
-  secure: process.env.NEXT_LOCAL === "False" && process.env.NEXT_PUBLIC_BACKEND_URL?.startsWith('https'),
+  secure: process.env.NODE_ENV === "production" && process.env.NEXT_PUBLIC_BACKEND_URL?.startsWith('https'),
   sameSite: "lax" as const,
   path: "/",
 };

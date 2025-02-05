@@ -277,7 +277,7 @@ export function AppSidebar() {
             {/* Logout Button */}
             <button
               onClick={() => {
-                router.push("/");
+                window.location.href = "/";
                 logout();
               }}
               className={cn(
