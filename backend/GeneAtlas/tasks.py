@@ -135,7 +135,7 @@ def pfamscan(sequence: str, evalue: float, asp: bool, user) -> dict:
         else:
             return {"status": str(req.status_code) + " - " + req.reason}
     except requests.exceptions.HTTPError as e:
-        return {"error": + str(e)}
+        return {"error": str(e)}
 
     # Number of call made to the API to check the status of the job
     attempts = 0
@@ -172,6 +172,6 @@ def pfamscan(sequence: str, evalue: float, asp: bool, user) -> dict:
         if result.status_code == 200:
             return result.json()
         else:
-            return {"status": + str(result.status_code) + " - " + result.reason}
+            return {"status": str(result.status_code) + " - " + result.reason}
     except requests.exceptions.HTTPError as e:
         return {"error": str(e)}
