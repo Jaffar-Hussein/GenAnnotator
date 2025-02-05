@@ -3,6 +3,7 @@
 ## Prerequisites
 - Python (v3.12+)
 - pip
+- redis (v7.2.7)
 - (Optional) Python virtualenv
 
 > **Nota Bene:** Ensure you have`.env` file set up with required environment variables. Request sample from us. <br>
@@ -47,6 +48,7 @@ python manage.py simulateuser
 # If you want to create a superuser account
 python manage.py createsuperuser
 python manage.py load
+redis-server
 python manage.py runserver
 ```
 Backend runs at http://localhost:8000
