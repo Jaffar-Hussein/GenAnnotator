@@ -190,7 +190,7 @@ class UserProfileAPIView(APIView):
         serializer = UserSerializer(instance=request.user,data=input.data,partial=True)
         if serializer.is_valid():
             serializer.save()
-            return Response({"success": "Profile updated."}, status=status.HTTP_200_OK)
+            return Response({"success": serializer.data}, status=status.HTTP_200_OK)
         return Response({"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
         
     def delete(self, request, *args, **kwargs) -> Response:
