@@ -27,7 +27,7 @@ def task_success(signal, task):
 @signal(signals.SIGNAL_ERROR)
 def task_failure(signal, task, exc):
     if(task.name in ["run_blast","pfamscan"]):
-        AsyncTasksCache.objects.filter(storage=task.id).update(state=AsyncTasksCache.failed, error_message = str(exc))
+        AsyncTasksCache.objects.filter(storage=task.id).update(state=AsyncTasksCache.rejected, error_message = str(exc))
     else:
         pass
 
@@ -174,4 +174,4 @@ def pfamscan(sequence: str, evalue: float, asp: bool, user) -> dict:
         else:
             return {"status": + str(result.status_code) + " - " + result.reason}
     except requests.exceptions.HTTPError as e:
-        return {"error": + str(e)}
+        return {"error": str(e)}
