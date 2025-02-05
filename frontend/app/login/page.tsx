@@ -121,7 +121,7 @@ export default function Login() {
           ? from
           : "/dashboard";
 
-      router.push(redirectTo);
+        window.location.href = redirectTo;
     } catch (err) {
       setLoginAttempts((prev) => ({
         count: prev.count + 1,

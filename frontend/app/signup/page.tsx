@@ -224,7 +224,8 @@ export default function SignupPage() {
 
     try {
       await signup(submitData);
-      router.push("/dashboard");
+      // router.push("/dashboard");
+      window.location.href = "/dashboard";
     } catch (err: any) {
       if (err.fieldErrors) {
         setFieldErrors(err.fieldErrors);

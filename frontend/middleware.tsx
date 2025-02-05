@@ -5,7 +5,7 @@ import { jwtDecode } from 'jwt-decode';
 // Define role permissions mapping
 const ROLE_PERMISSIONS = {
   '/admin': ['ADMIN'],
-  // '/dashboard': ['ADMIN', 'VALIDATOR', 'ANNOTATOR', 'READER'],
+  '/dashboard': ['ADMIN', 'VALIDATOR', 'ANNOTATOR', 'READER'],
   '/profile': ['ADMIN', 'VALIDATOR', 'ANNOTATOR', 'READER'],
   '/gene-assignment': ['ADMIN', 'VALIDATOR'],
   '/my-annotations': ['ADMIN', 'VALIDATOR', 'ANNOTATOR'],
@@ -54,6 +54,9 @@ export async function middleware(request: NextRequest) {
     // Get access token and user role from cookies
     const accessToken = request.cookies.get('accessToken')?.value;
     const userRole = request.cookies.get('userRole')?.value; 
+    console.log('🍪 Access Token:', accessToken ? 'Token exists' : 'No token');
+    console.log('🍪 User Role:', userRole || 'No role');
+    console.log('📜 All cookies:', request.cookies.getAll());
     
     console.log('🔑 Access Token present:', !!accessToken);
     console.log('👑 User Role from cookie:', userRole);
