@@ -6,6 +6,8 @@ from .forms import SignupForm
 from django.urls import reverse_lazy
 from django.views.generic import CreateView
 from django.contrib.auth import authenticate
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 
 from rest_framework import status
 from rest_framework.response import Response
@@ -41,6 +43,11 @@ class SignupAPIView(APIView):
                 first_name=serializer.validated_data['first_name'],
                 last_name=serializer.validated_data['last_name'],
             )
+            # Validate the password
+            try:
+                validate_password(password=serializer.validated_data['password'], user=user)
+            except ValidationError as e:
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
             # Use the set_password method to hash the password
             user.set_password(serializer.validated_data['password'])
             # Save the user
