@@ -53,3 +53,7 @@ python manage.py runserver
 ```
 Backend runs at http://localhost:8000
 
+## 📖 Documentation
+
+Check out our [GitBook](https://genannotator.gitbook.io/genannotator-api/) for full API endpoints and instructions! 
+
