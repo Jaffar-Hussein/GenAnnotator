@@ -66,7 +66,7 @@ interface FormState extends FormData {
 interface StepConfig {
   title: string;
   description: string;
-  fields: (keyof FormData)[];
+  fields: (keyof FormState)[];
   icon: JSX.Element;
   validation: () => string | null;
 }
@@ -111,7 +111,6 @@ export default function SignupPage() {
       description: (
         <div className="space-y-1">
           <p>Choose your username and email</p>
-          
         </div>
       ),
       fields: ["username", "email"],
@@ -132,6 +131,12 @@ export default function SignupPage() {
         if (!formData.password) return "Password is required";
         if (formData.password.length < 8)
           return "Password must be at least 8 characters";
+        if (!/[a-z]/.test(formData.password))
+          return "Password must contain at least one lowercase letter";
+        if (!/[A-Z]/.test(formData.password))
+          return "Password must contain at least one uppercase letter";
+        if (!/\d/.test(formData.password))
+          return "Password must contain at least one number";
         if (formData.password !== formData.password_confirmation)
           return "Passwords do not match";
         return null;
@@ -219,12 +224,21 @@ export default function SignupPage() {
     setError(null);
     setFieldErrors({});
 
+    
+    for (let i = 0; i < steps.length; i++) {
+      const validationError = steps[i].validation();
+      if (validationError) {
+        setError(validationError);
+        return;
+      }
+    }
+
     const { password_confirmation, ...submitData } = formData;
     setLoading(true);
 
     try {
       await signup(submitData);
-      router.push("/dashboard");
+      window.location.href = "/dashboard";
     } catch (err: any) {
       if (err.fieldErrors) {
         setFieldErrors(err.fieldErrors);
@@ -335,7 +349,6 @@ export default function SignupPage() {
 
                 <CardDescription className="text-muted-foreground dark:text-gray-400">
                   {steps[currentStep].description}
-                 
                 </CardDescription>
               </CardHeader>
 
