@@ -8,6 +8,8 @@ WORKDIR /frontend
 
 COPY . /frontend
 
-RUN npm install
+RUN npm install --legacy-peer-deps
 
-CMD ["npm", "run", "dev"]
+RUN npm run build
+
+CMD ["npm", "run", "start"]

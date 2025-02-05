@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/tooltip";
 import { usePfamTask } from "@/hooks/use-pfamTask";
 import PfamAlignment from "@/components/alignment-viewer";
+import PfamLoader from "./pfamLoader";
 
 interface PfamAnalysisProps {
   peptide: string;
@@ -241,50 +242,51 @@ const PfamAnalysis: React.FC<PfamAnalysisProps> = ({ peptide }) => {
 
   if (isLoading || isPolling) {
     return (
-      <Card className="bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-all border dark:border-gray-700">
-        <CardContent className="text-center py-12 px-6">
-          {/* Loading Indicator */}
-          <div
-            className="inline-flex items-center justify-center p-3 mb-6 
-                      bg-indigo-50 dark:bg-indigo-900/30 rounded-xl"
-          >
-            <Loader2 className="h-8 w-8 animate-spin text-indigo-500 dark:text-indigo-400" />
-          </div>
+      // <Card className="">
+      //   <CardContent className="text-center py-12 px-6">
+      //     {/* Loading Indicator */}
+      //     <div
+      //       className="inline-flex items-center justify-center p-3 mb-6 
+      //                 bg-indigo-50 dark:bg-indigo-900/30 rounded-xl"
+      //     >
+      //       <Loader2 className="h-8 w-8 animate-spin text-indigo-500 dark:text-indigo-400" />
+      //     </div>
 
-          {/* Status Text */}
-          <div className="space-y-2 mb-6">
-            <div className="text-gray-900 dark:text-gray-100 text-lg font-medium">
-              {isPolling ? "PFAM Analysis Running" : "Analyzing Sequence"}
-            </div>
-            <div className="text-gray-500 dark:text-gray-400 text-sm max-w-sm mx-auto">
-              {isPolling
-                ? "We're searching through protein family databases to identify domains"
-                : "Searching for PFAM domains and analyzing sequence patterns"}
-            </div>
-          </div>
+      //     {/* Status Text */}
+      //     <div className="space-y-2 mb-6">
+      //       <div className="text-gray-900 dark:text-gray-100 text-lg font-medium">
+      //         {isPolling ? "PFAM Analysis Running" : "Analyzing Sequence"}
+      //       </div>
+      //       <div className="text-gray-500 dark:text-gray-400 text-sm max-w-sm mx-auto">
+      //         {isPolling
+      //           ? "We're searching through protein family databases to identify domains"
+      //           : "Searching for PFAM domains and analyzing sequence patterns"}
+      //       </div>
+      //     </div>
 
-          {/* Progress Indicator */}
-          {isPolling && (
-            <div className="max-w-md mx-auto">
-              <div className="w-full bg-gray-100 dark:bg-gray-700 h-1 rounded-full overflow-hidden">
-                <motion.div
-                  className="h-full bg-indigo-500 dark:bg-indigo-400"
-                  initial={{ width: "0%" }}
-                  animate={{
-                    width: ["20%", "80%"],
-                    transition: {
-                      duration: 2,
-                      repeat: Infinity,
-                      repeatType: "reverse",
-                      ease: "easeInOut",
-                    },
-                  }}
-                />
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      //     {/* Progress Indicator */}
+      //     {isPolling && (
+      //       <div className="max-w-md mx-auto">
+      //         <div className="w-full bg-gray-100 dark:bg-gray-700 h-1 rounded-full overflow-hidden">
+      //           <motion.div
+      //             className="h-full bg-indigo-500 dark:bg-indigo-400"
+      //             initial={{ width: "0%" }}
+      //             animate={{
+      //               width: ["20%", "80%"],
+      //               transition: {
+      //                 duration: 2,
+      //                 repeat: Infinity,
+      //                 repeatType: "reverse",
+      //                 ease: "easeInOut",
+      //               },
+      //             }}
+      //           />
+      //         </div>
+      //       </div>
+      //     )}
+      //   </CardContent>
+      // </Card>
+      <PfamLoader />
     );
   }
 

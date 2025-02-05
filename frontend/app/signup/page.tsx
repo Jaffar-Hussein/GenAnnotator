@@ -111,9 +111,7 @@ export default function SignupPage() {
       description: (
         <div className="space-y-1">
           <p>Choose your username and email</p>
-          <p className="text-xs text-muted dark:text-gray-400">
-            Sample usernames: john.doe, j_doe23, johndoe_2024
-          </p>
+          
         </div>
       ),
       fields: ["username", "email"],
@@ -337,11 +335,7 @@ export default function SignupPage() {
 
                 <CardDescription className="text-muted-foreground dark:text-gray-400">
                   {steps[currentStep].description}
-                  {currentStep === 1 && (
-                    <p className="text-xs mt-1 text-gray-500 dark:text-gray-400">
-                      Examples: john.doe, j_doe23, johndoe_2024
-                    </p>
-                  )}
+                 
                 </CardDescription>
               </CardHeader>
 

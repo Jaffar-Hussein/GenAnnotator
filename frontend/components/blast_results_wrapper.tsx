@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useBlastTask } from '@/hooks/use-blast-task';
 import BlastResultsComponent from '@/components/blast_results';
+import BlastLoader from './blastLoader';
 
 
 interface BlastAnalysisProps {
@@ -54,46 +55,8 @@ const BlastAnalysis: React.FC<BlastAnalysisProps> = ({ gene }) => {
 
   if (isLoading || isPolling) {
     return (
-      <Card className="bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-all border dark:border-gray-700">
-      <CardContent className="text-center py-12 px-6">
-        {/* Loading Indicator */}
-        <div className="inline-flex items-center justify-center p-3 mb-6 
-                      bg-indigo-50 dark:bg-indigo-900/30 rounded-xl">
-          <Loader2 className="h-8 w-8 animate-spin text-indigo-500 dark:text-indigo-400" />
-        </div>
-
-        {/* Status Text */}
-        <div className="space-y-2 mb-6">
-          <div className="text-gray-900 dark:text-gray-100 text-lg font-medium">
-            {isPolling ? "BLAST Analysis Running" : "Starting BLAST"}
-          </div>
-          <div className="text-gray-500 dark:text-gray-400 text-sm max-w-sm mx-auto">
-            {isPolling 
-              ? "Comparing your sequence against the database to find similar sequences" 
-              : "Preparing your sequence for database search"}
-          </div>
-        </div>
-
-        {/* Progress Bar */}
-        <div className="max-w-md mx-auto space-y-2">
-          <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400">
-            <div className="flex items-center gap-1.5">
-              <Database className="h-4 w-4" />
-              <span>Database Search Progress</span>
-            </div>
-            <span>{isPolling ? "75%" : "25%"}</span>
-          </div>
-          <div className="w-full bg-gray-100 dark:bg-gray-700 h-2 rounded-full overflow-hidden">
-            <motion.div
-              className="h-full bg-indigo-500 dark:bg-indigo-400"
-              initial={{ width: "0%" }}
-              animate={{ width: isPolling ? "75%" : "25%" }}
-              transition={{ duration: 1 }}
-            />
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+    
+    <BlastLoader />
     );
   }
 

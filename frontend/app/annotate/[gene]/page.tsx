@@ -168,7 +168,7 @@ const GeneAnnotationPage = ({
         <div>
           <BiotypeSearch
             value={formData.gene_biotype || ""}
-            onChange={(value) => handleFormChange("gene_biotype", value)}
+            onChange={(value:string) => handleFormChange("gene_biotype", value)}
             label="Gene Biotype"
             required={true}
           />
@@ -176,7 +176,7 @@ const GeneAnnotationPage = ({
         <div>
           <BiotypeSearch
             value={formData.transcript_biotype || ""}
-            onChange={(value) => handleFormChange("transcript_biotype", value)}
+            onChange={(value:string) => handleFormChange("transcript_biotype", value)}
             label="Transcript Biotype"
             required={true}
           />
@@ -184,7 +184,7 @@ const GeneAnnotationPage = ({
         <div>
           <StrandSelector
             value={formData.strand}
-            onChange={(value) => handleFormChange("strand", value)}
+            onChange={(value:number) => handleFormChange("strand", value)}
             label="Strand"
             required={true}
           />
@@ -357,7 +357,7 @@ const GeneAnnotationPage = ({
                           border border-slate-200 dark:border-slate-700
                           shadow-sm"
                 >
-                  <PfamAnalysis peptide={geneData?.name} />
+                  <PfamAnalysis peptide={geneData?.name || ""} />
                 </div>
               </TabsContent>
 
@@ -367,7 +367,7 @@ const GeneAnnotationPage = ({
                           border border-slate-200 dark:border-slate-700
                           shadow-sm"
                 >
-                  <BlastAnalysis gene={geneData?.name} />
+                  <BlastAnalysis gene={geneData?.name || ""} />
                 </div>
               </TabsContent>
             </div>
