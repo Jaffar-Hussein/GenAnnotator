@@ -10,18 +10,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-  Download,
-  ExternalLink,
   Search,
-  Zap,
   Clock,
-  MoveUpRight,
   ArrowRight,
-  FileCheck,
   Database,
-  FileCheckIcon,
   Dna,
   FileCheck2Icon,
+  Microscope,
+  AtomIcon,
 } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { format } from "path";
@@ -34,16 +30,16 @@ const ReaderDashboard = () => (
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="flex items-center gap-2">
-              Quick Actions
+              Genome Explorer
               <Badge
                 variant="secondary"
                 className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-0"
               >
-                New
+                Reader
               </Badge>
             </CardTitle>
             <CardDescription className="text-gray-500 dark:text-gray-400">
-              Access commonly used features
+              Access genome visualization and search tools
             </CardDescription>
           </div>
         </div>
@@ -58,9 +54,9 @@ const ReaderDashboard = () => (
               <Search className="h-4 w-4" />
             </div>
             <div className="text-left">
-              <div className="font-semibold">Sequence Search</div>
+              <div className="font-semibold">Advanced Search</div>
               <div className="text-sm text-gray-500 dark:text-gray-400">
-                Search genome sequences
+                Search by sequence, gene, or species
               </div>
             </div>
           </div>
@@ -72,12 +68,12 @@ const ReaderDashboard = () => (
         >
           <div className="flex items-center gap-4">
             <div className="rounded-full p-2 bg-indigo-500/10 text-indigo-500">
-              <Download className="h-4 w-4" />
+              <Microscope className="h-4 w-4" />
             </div>
             <div className="text-left">
-              <div className="font-semibold">Export Data</div>
+              <div className="font-semibold">Genome Explorer</div>
               <div className="text-sm text-gray-500 dark:text-gray-400">
-                Download selected data
+                Visualize gene positions and sequences
               </div>
             </div>
           </div>
@@ -89,12 +85,12 @@ const ReaderDashboard = () => (
         >
           <div className="flex items-center gap-4">
             <div className="rounded-full p-2 bg-yellow-500/10 text-yellow-500">
-              <Zap className="h-4 w-4" />
+              <AtomIcon className="h-4 w-4" />
             </div>
             <div className="text-left">
-              <div className="font-semibold">BLAST Search</div>
+              <div className="font-semibold">Protein Library</div>
               <div className="text-sm text-gray-500 dark:text-gray-400">
-                Find similar sequences
+                View Peptides and Protein sequences
               </div>
             </div>
           </div>
@@ -106,12 +102,12 @@ const ReaderDashboard = () => (
         >
           <div className="flex items-center gap-4">
             <div className="rounded-full p-2 bg-green-500/10 text-green-500">
-              <ExternalLink className="h-4 w-4" />
+              <Dna className="h-4 w-4" />
             </div>
             <div className="text-left">
-              <div className="font-semibold">External Search</div>
+              <div className="font-semibold">Gene Details</div>
               <div className="text-sm text-gray-500 dark:text-gray-400">
-                Search external databases
+                Access detailed gene information
               </div>
             </div>
           </div>
@@ -194,7 +190,7 @@ const AnnotatorDashboard = () => {
     const fetchAnnotations = async () => {
       try {
         const response = await fetch(
-          `http://127.0.0.1:8000/data/api/status/?status=ONGOING&limit=3&annotator=${username}` ,
+          `http://127.0.0.1:8000/data/api/status/?status=ONGOING&limit=3&annotator=${username}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
