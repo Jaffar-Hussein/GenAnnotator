@@ -3,23 +3,20 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import {
-  BarChart2,
   Database,
   Edit,
   FileText,
   ArrowRight,
-  Bell,
-  Clock,
-  Users,
-  Search,
   CheckCircle,
   AlertCircle,
   Dna,
-  FileQuestion,
-  FileCheck,
+  Clock,
+  Users,
+  BarChart2,
   Layout,
   Info,
 } from "lucide-react";
+import useStatsStore from "@/store/useStatsStore";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -30,9 +27,8 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { useAuthStore } from "@/store/useAuthStore";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useEffect, useState } from "react";
+
+import { use, useEffect, useState } from "react";
 import RoleBasedContent from "@/components/role-based-dashboard";
 import { useUser } from "@/store/useAuthStore";
 import {
@@ -43,32 +39,56 @@ import {
 } from "@/components/ui/tooltip";
 
 interface GenomeStats {
-  genome_count: number;
-  genome_fully_annotated_count: number;
-  genome_waiting_annotated_count: number;
-  genome_incomplete_annotated_count: number;
-  gene_by_genome: Array<{
-    genome: string;
-    total: number;
-    annotated: number;
+  genome: {
+    count: number;
+    average_length: number;
+    total_nt: number;
+    fully_annotated: number;
+    in_progress: number;
+    new: number;
+    overview: Array<{
+      genome: string;
+      total: number;
+      annotated: number;
+      ratio: number;
+    }>;
+  };
+  gene: {
+    count: number;
+    average_length: number;
+    average_gc_content: number;
+  };
+  peptide: {
+    count: number;
+    average_length: number;
+  };
+  annotation: Array<{
+    status: string;
+    count: number;
+    ratio: number;
   }>;
-  gene_count: number;
-  peptide_count: number;
-  gene_annotation_count: number;
-  peptide_annotation_count: number;
 }
 
-// Default empty stats object
 const defaultStats: GenomeStats = {
-  genome_count: 0,
-  genome_fully_annotated_count: 0,
-  genome_waiting_annotated_count: 0,
-  genome_incomplete_annotated_count: 0,
-  gene_by_genome: [],
-  gene_count: 0,
-  peptide_count: 0,
-  gene_annotation_count: 0,
-  peptide_annotation_count: 0,
+  genome: {
+    count: 0,
+    average_length: 0,
+    total_nt: 0,
+    fully_annotated: 0,
+    in_progress: 0,
+    new: 0,
+    overview: [],
+  },
+  gene: {
+    count: 0,
+    average_length: 0,
+    average_gc_content: 0,
+  },
+  peptide: {
+    count: 0,
+    average_length: 0,
+  },
+  annotation: [],
 };
 
 const LoadingCard = () => (
@@ -92,23 +112,11 @@ const getDashboardStats = (role: string, stats: GenomeStats = defaultStats) => {
   const baseStats = [
     {
       name: "Total Genomes",
-      stat: stats.genome_count,
+      stat: stats.genome.count,
       icon: Database,
       href: "/genomes",
-      change: `${stats.genome_fully_annotated_count} fully annotated`,
+      change: `${stats.genome.overview.length} ready to explore`,
       color: "bg-blue-500/10 text-blue-500",
-    },
-    {
-      name: "Total Genes",
-      stat: stats.gene_count,
-      icon: Dna,
-      href: "/genes",
-      change: `${
-        stats.gene_count > 0
-          ? ((stats.gene_annotation_count / stats.gene_count) * 100).toFixed(1)
-          : 0
-      }% annotated`,
-      color: "bg-indigo-500/10 text-indigo-500",
     },
   ];
 
@@ -116,96 +124,112 @@ const getDashboardStats = (role: string, stats: GenomeStats = defaultStats) => {
     READER: [
       ...baseStats,
       {
-        name: "Peptide Count",
-        stat: stats.peptide_count,
-        icon: FileText,
-        href: "/peptides",
-        change: `${
-          stats.peptide_count > 0
-            ? (
-                (stats.peptide_annotation_count / stats.peptide_count) *
-                100
-              ).toFixed(1)
-            : 0
-        }% annotated`,
-        color: "bg-violet-500/10 text-violet-500",
+        name: "Searchable Genes",
+        stat: stats.gene.count,
+        icon: Dna,
+        href: "/genes",
+        change: "Available for Exploration",
+        color: "bg-indigo-500/10 text-indigo-500",
+      },
+      {
+        name: "Validated Annotations",
+        stat: stats.annotation.find((a) => a.status === "APPROVED")?.count || 0,
+        icon: CheckCircle,
+        href: "/annotations",
+        change: "Verified sequences",
+        color: "bg-green-500/10 text-green-500",
+      },
+      {
+        name: "Pending Review",
+        stat: stats.annotation.find((a) => a.status === "PENDING")?.count || 0,
+        icon: Clock,
+        href: "/pending",
+        change: "Awaiting validation",
+        color: "bg-yellow-500/10 text-yellow-500",
       },
     ],
     ANNOTATOR: [
       ...baseStats,
       {
-        name: "Pending Annotations",
-        stat: stats.genome_waiting_annotated_count,
-        icon: FileQuestion,
-        href: "/pending",
-        change: "Waiting for annotation",
-        color: "bg-yellow-500/10 text-yellow-500",
+        name: "Assignments",
+        stat: stats.annotation.find((a) => a.status === "PENDING")?.count || 0,
+        icon: FileText,
+        href: "/assignments",
+        change: "Awaiting review",
+        color: "bg-purple-500/10 text-purple-500",
       },
       {
-        name: "Completed Annotations",
-        stat: stats.gene_annotation_count,
-        icon: FileCheck,
+        name: "Completed",
+        stat: stats.annotation.find((a) => a.status === "APPROVED")?.count || 0,
+        icon: CheckCircle,
         href: "/completed",
-        change: `${
-          stats.gene_count > 0
-            ? ((stats.gene_annotation_count / stats.gene_count) * 100).toFixed(
-                1
-              )
-            : 0
-        }% of total`,
+        change: "Successfully validated",
         color: "bg-green-500/10 text-green-500",
+      },
+      {
+        name: "Pending Review",
+        stat: stats.annotation.find((a) => a.status === "ONGOING")?.count || 0,
+        icon: Clock,
+        href: "/review",
+        change: "In progress",
+        color: "bg-yellow-500/10 text-yellow-500",
       },
     ],
     VALIDATOR: [
       ...baseStats,
       {
-        name: "Pending Review",
-        stat: stats.genome_waiting_annotated_count,
+        name: "Pending Validation",
+        stat: stats.annotation.find((a) => a.status === "PENDING")?.count || 0,
         icon: AlertCircle,
-        href: "/review",
-        change: "Needs validation",
+        href: "/pending-validation",
+        change: "Need review",
         color: "bg-yellow-500/10 text-yellow-500",
       },
       {
-        name: "Validated Genomes",
-        stat: stats.genome_fully_annotated_count,
+        name: "Validated Annotations",
+        stat: stats.annotation.find((a) => a.status === "APPROVED")?.count || 0,
         icon: CheckCircle,
         href: "/validated",
-        change: `${
-          stats.genome_count > 0
-            ? (
-                (stats.genome_fully_annotated_count / stats.genome_count) *
-                100
-              ).toFixed(1)
-            : 0
-        }% complete`,
+        change: "Completed reviews",
         color: "bg-green-500/10 text-green-500",
+      },
+      {
+        name: "Active Annotations",
+        stat: stats.annotation.find((a) => a.status === "ONGOING")?.count || 0,
+        icon: Users,
+        href: "/annotators",
+        change: "Currently in progress",
+        color: "bg-blue-500/10 text-blue-500",
       },
     ],
     ADMIN: [
       ...baseStats,
       {
-        name: "Pending Annotations",
-        stat: stats.genome_waiting_annotated_count,
-        icon: FileQuestion,
-        href: "/pending",
-        change: "Requires attention",
-        color: "bg-yellow-500/10 text-yellow-500",
+        name: "Active Projects",
+        stat: stats.genome.in_progress,
+        icon: Layout,
+        href: "/projects",
+        change: "Ongoing annotations",
+        color: "bg-purple-500/10 text-purple-500",
       },
       {
-        name: "Complete Genomes",
-        stat: stats.genome_fully_annotated_count,
-        icon: CheckCircle,
-        href: "/complete",
-        change: `${
-          stats.genome_count > 0
-            ? (
-                (stats.genome_fully_annotated_count / stats.genome_count) *
-                100
-              ).toFixed(1)
-            : 0
-        }% of total`,
+        name: "System Status",
+        stat: `${(
+          (stats.genome.fully_annotated / stats.genome.count) *
+          100
+        ).toFixed(0)}%`,
+        icon: BarChart2,
+        href: "/status",
+        change: "Overall completion",
         color: "bg-green-500/10 text-green-500",
+      },
+      {
+        name: "Pending Approval",
+        stat: stats.annotation.find((a) => a.status === "PENDING")?.count || 0,
+        icon: AlertCircle,
+        href: "/pending",
+        change: "Needs attention",
+        color: "bg-yellow-500/10 text-yellow-500",
       },
     ],
   };
@@ -215,26 +239,49 @@ const getDashboardStats = (role: string, stats: GenomeStats = defaultStats) => {
 
 const GenomeProgressCard = ({ genomeStats = defaultStats }) => (
   <div className="space-y-6">
-    {genomeStats.gene_by_genome.map((genome) => (
+    {genomeStats.genome.overview.map((genome) => (
       <div key={genome.genome} className="space-y-2">
         <div className="flex justify-between items-center">
-          <p className="text-sm font-medium text-gray-900 dark:text-white">
-            {genome.genome.replace(/_/g, " ")}
-          </p>
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-medium text-gray-900 dark:text-white">
+              {genome.genome.replace(/_/g, " ")}
+            </p>
+            <Badge
+              variant={
+                genome.ratio >= 90
+                  ? "success"
+                  : genome.ratio >= 50
+                  ? "warning"
+                  : "secondary"
+              }
+            >
+              {genome.ratio >= 90
+                ? "Complete"
+                : genome.ratio >= 50
+                ? "In Progress"
+                : "New"}
+            </Badge>
+          </div>
           <span className="text-sm text-gray-500 dark:text-gray-400">
-            {genome.total > 0
-              ? ((genome.annotated / genome.total) * 100).toFixed(1)
-              : 0}
-            %
+            {genome.ratio.toFixed(1)}%
           </span>
         </div>
         <Progress
-          value={genome.total > 0 ? (genome.annotated / genome.total) * 100 : 0}
-          className="h-2 "
+          value={genome.ratio}
+          className={`h-2 ${
+            genome.ratio >= 90
+              ? "bg-green-500"
+              : genome.ratio >= 50
+              ? "bg-yellow-500"
+              : "bg-gray-200"
+          }`}
         />
-        <p className="text-xs text-gray-500 dark:text-gray-400">
-          {genome.annotated} of {genome.total} genes annotated
-        </p>
+        <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+          <p>
+            {genome.annotated} of {genome.total} genes annotated
+          </p>
+          <p>Average length: {(genome.ratio * 1000).toFixed(0)} bp</p>
+        </div>
       </div>
     ))}
   </div>
@@ -269,60 +316,98 @@ const StatsCard = ({ item }) => (
   </Link>
 );
 
-const ProgressSection = ({ title, value, total, percentage }) => (
-  <div className="space-y-2">
-    <div className="flex justify-between items-center">
-      <span className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2">
-        {title}
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger>
-              <Info className="h-4 w-4 text-muted-foreground" />
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>{`${value} out of ${total} complete`}</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </span>
-      <span className="text-sm text-gray-500 dark:text-gray-400">
-        {percentage}%
-      </span>
+const ProgressSection = ({ stats }) => {
+  const progressSections = [
+    {
+      title: "Genome Completion",
+      value: stats?.genome?.fully_annotated || 0,
+      total: stats?.genome?.count || 0,
+      percentage:
+        stats?.genome?.count > 0
+          ? Math.floor(
+              (stats.genome.fully_annotated / stats.genome.count) * 100
+            )
+          : 0,
+      tooltip: `${
+        stats?.genome?.fully_annotated || 0
+      } genomes fully annotated out of ${
+        stats?.genome?.count || 0
+      } total genomes`,
+    },
+    {
+      title: "Gene Annotation",
+      value:
+        stats?.annotation?.find((a) => a.status === "APPROVED")?.count || 0,
+      total: stats?.gene?.count || 0,
+      percentage:
+        stats?.annotation?.find((a) => a.status === "APPROVED")?.ratio || 0,
+      tooltip: `${
+        stats?.annotation?.find((a) => a.status === "APPROVED")?.count || 0
+      } genes annotated out of ${stats?.gene?.count || 0} total genes`,
+    },
+    {
+      title: "Peptide Processing",
+      value: stats?.peptide?.count || 0,
+      total: stats?.gene?.count || 0,
+      percentage:
+        stats?.annotation?.find((a) => a.status === "APPROVED")?.ratio || 0,
+      tooltip: `Average peptide length: ${
+        stats?.peptide?.average_length?.toFixed(1) || 0
+      } amino acids`,
+    },
+  ];
+
+  return (
+    <div className="space-y-6">
+      {progressSections.map((section) => (
+        <div key={section.title} className="space-y-2">
+          <div className="flex justify-between items-center">
+            <span className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2">
+              {section.title}
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Info className="h-4 w-4 text-muted-foreground" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{section.tooltip}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </span>
+            <span className="text-sm text-gray-500 dark:text-gray-400">
+              {section.percentage.toFixed(1)}%
+            </span>
+          </div>
+          <div className="relative">
+            <Progress
+              value={section.percentage}
+              className={`h-2 ${
+                section.percentage > 80
+                  ? "bg-green-500"
+                  : section.percentage > 50
+                  ? "bg-yellow-500"
+                  : "bg-gray-200"
+              }`}
+            />
+            {section.percentage > 80 && (
+              <CheckCircle className="h-4 w-4 text-green-500 absolute -right-1 -top-1" />
+            )}
+          </div>
+        </div>
+      ))}
     </div>
-    <div className="relative">
-      <Progress value={percentage} className="h-2 " />
-      {percentage > 80 && (
-        <CheckCircle className="h-4 w-4 text-green-500 absolute -right-1 -top-1" />
-      )}
-    </div>
-  </div>
-);
+  );
+};
 
 export default function Dashboard() {
+  const { stats, isLoading, error, fetchStats } = useStatsStore();
   const user = useUser();
-  console.log("User:", user);
-  const [stats, setStats] = useState<GenomeStats>();
-  const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("overview");
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
   useEffect(() => {
-    // Fetch stats
-    const fetchStats = async () => {
-      try {
-        const response = await fetch(`${backendUrl}/data/api/stats/`);
-        const data = await response.json();
-        console.log("Stats data:", data);
-        setStats(data);
-      } catch (error) {
-        console.error("Failed to fetch stats:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchStats();
-  }, []);
+  }, [fetchStats]);
+
   if (!user) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -337,7 +422,7 @@ export default function Dashboard() {
     );
   }
 
-  const dashboardStats = getDashboardStats(user.role, stats || defaultStats);
+  const dashboardStats = getDashboardStats(user?.role, stats || defaultStats);
 
   return (
     <div className="min-h-screen bg-gray-50/50 dark:bg-gray-900 transition-colors duration-200">
@@ -398,7 +483,6 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Enhanced Stats Grid */}
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
             {isLoading
               ? Array(4)
@@ -409,13 +493,11 @@ export default function Dashboard() {
                 ))}
           </div>
 
-          {/* Enhanced Role Content Sections */}
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             <div className="lg:col-span-3">
               {user && <RoleBasedContent role={user?.role} />}
             </div>
 
-            {/* Enhanced Progress Cards */}
             <Card className="lg:col-span-2 shadow-sm hover:shadow-md transition-all bg-white dark:bg-gray-800">
               <CardHeader>
                 <div className="flex items-center justify-between">
@@ -473,48 +555,7 @@ export default function Dashboard() {
                   </div>
                 ) : (
                   <div className="space-y-6">
-                    {/* Enhanced Progress Sections */}
-                    <ProgressSection
-                      title="Genome Completion"
-                      value={stats?.genome_fully_annotated_count || 0}
-                      total={stats?.genome_count || 0}
-                      percentage={
-                        stats?.genome_count > 0
-                          ? Math.floor(
-                              (stats.genome_fully_annotated_count /
-                                stats.genome_count) *
-                                100
-                            )
-                          : 0
-                      }
-                    />
-                    <ProgressSection
-                      title="Gene Annotation"
-                      value={stats?.gene_annotation_count || 0}
-                      total={stats?.gene_count || 0}
-                      percentage={
-                        stats?.gene_count > 0
-                          ? Math.floor(
-                              (stats.gene_annotation_count / stats.gene_count) *
-                                100
-                            )
-                          : 0
-                      }
-                    />
-                    <ProgressSection
-                      title="Peptide Annotation"
-                      value={stats?.peptide_annotation_count || 0}
-                      total={stats?.peptide_count || 0}
-                      percentage={
-                        stats?.peptide_count > 0
-                          ? Math.floor(
-                              (stats.peptide_annotation_count /
-                                stats.peptide_count) *
-                                100
-                            )
-                          : 0
-                      }
-                    />
+                    <ProgressSection stats={stats || defaultStats} />
                   </div>
                 )}
               </CardContent>
