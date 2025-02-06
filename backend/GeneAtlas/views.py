@@ -381,23 +381,40 @@ class StatsAPIView(APIView):
                 else:
                     return Response({"error": "Invalid user parameter."}, status=status.HTTP_400_BAD_REQUEST)
             else:
+                # Genome statistics
                 genome_count = Genome.objects.count()
-                stats_by_genome = Gene.objects.values('genome').annotate(total=db_models.Count('genome'), annotated=db_models.Sum('annotated', output_field=db_models.IntegerField()))
+                genome_avg_length = Genome.objects.aggregate(db_models.Avg('length'))["length__avg"]
+                genome_total_nt = Genome.objects.aggregate(db_models.Sum('length'))["length__sum"]
+                stats_by_genome = Gene.objects.values('genome').annotate(total=db_models.Count('genome'), 
+                                                                         annotated=db_models.Sum('annotated', output_field=db_models.IntegerField()), 
+                                                                         ratio=(db_models.F('annotated')/db_models.F('total'))*100.0)
                 genome_completed = stats_by_genome.filter(annotated=db_models.F('total')).count()
                 genome_in_progress = stats_by_genome.filter(annotated=0).count()
                 genome_unannotated = stats_by_genome.filter(annotated__lt=db_models.F('total'), annotated__gt=0).count()
+                # Gene statistics
                 gene_count = Gene.objects.count()
+                gene_avg_length = Gene.objects.aggregate(db_models.Avg('length'))["length__avg"]
+                gene_avg_gc_content = Gene.objects.aggregate(db_models.Avg('gc_content'))["gc_content__avg"]
+                # Peptide statistics
                 peptide_count = Peptide.objects.count()
-                gene_annotation_count = GeneAnnotation.objects.count()
-                peptide_annotation_count = PeptideAnnotation.objects.count()
-                return Response({"genome_count": genome_count, 
-                                "genome_fully_annotated_count": genome_completed, 
-                                "genome_waiting_annotated_count": genome_in_progress, 
-                                "genome_incomplete_annotated_count": genome_unannotated,
-                                "gene_by_genome": stats_by_genome,
-                                "gene_count": gene_count, "peptide_count": peptide_count, 
-                                "gene_annotation_count": gene_annotation_count, 
-                                "peptide_annotation_count": peptide_annotation_count})
+                peptide_avg_length = Peptide.objects.aggregate(db_models.Avg('length'))["length__avg"]
+                # Annotation statistics
+                annotation = GeneAnnotationStatus.objects.values('status').annotate(count=db_models.Count('status'),
+                                                                                    ratio=((db_models.F('count'))/float(gene_count))*100.0)
+                return Response({"genome": {"count": genome_count,
+                                            "average_length": genome_avg_length,
+                                            "total_nt": genome_total_nt,
+                                            "fully_annotated": genome_completed,
+                                            "in_progress": genome_in_progress,
+                                            "new": genome_unannotated,
+                                            "overview": stats_by_genome}, 
+                                "gene": {"count": gene_count,
+                                         "average_length": gene_avg_length,
+                                         "average_gc_content": gene_avg_gc_content}, 
+                                "peptide": {"count": peptide_count,
+                                            "average_length": peptide_avg_length}, 
+                                "annotation": annotation, 
+                                })
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
     
