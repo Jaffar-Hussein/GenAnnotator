@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import { motion } from "framer-motion";
 import { FlickeringGrid } from "@/components/ui/flickering-grid";
 import {
@@ -37,19 +37,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import GenomeCard from "@/components/genome-card";
 import GenomeListView from "@/components/genome-list";
 import UploadGenomeModal from "@/components/ui/genome-upload";
-/**
- * Backend returns an array of these fields:
- * {
- *   "name": "Escherichia_coli_o157_h7_str_edl933",
- *   "species": "eColi",
- *   "description": "",
- *   "header": "...",
- *   "length": 5528445,
- *   "gc_content": 0.5044473518613253,
- *   "annotation": false,
- *   "sequence": "AGCTTTT..."
- * }
- */
+import  useStatsStore  from "@/store/useStatsStore";
+
 interface RawGenome {
   name: string;
   species: string;
@@ -88,6 +77,11 @@ export default function Genomes() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const { stats, isLoading, fetchStats } = useStatsStore();
+
+  useEffect(() => {
+    fetchStats();
+  } , [fetchStats]);
 
   // Fetch Genomes
   useEffect(() => {
@@ -199,7 +193,7 @@ export default function Genomes() {
                             Total Genomes
                           </p>
                           <p className="mt-2 text-3xl font-semibold text-indigo-700 dark:text-indigo-200">
-                            {genomes.length}
+                          {stats?.genome.count || 0}
                           </p>
                         </div>
                       </div>
@@ -210,10 +204,7 @@ export default function Genomes() {
                             Annotated
                           </p>
                           <p className="mt-2 text-3xl font-semibold text-emerald-700 dark:text-emerald-200">
-                            {
-                              genomes.filter((g) => g.status === "Annotated")
-                                .length
-                            }
+                          {stats?.genome.fully_annotated || 0}
                           </p>
                         </div>
                       </div>
@@ -224,10 +215,7 @@ export default function Genomes() {
                             Pending
                           </p>
                           <p className="mt-2 text-3xl font-semibold text-amber-700 dark:text-amber-200">
-                            {
-                              genomes.filter((g) => g.status === "Pending")
-                                .length
-                            }
+                          {(stats?.genome?.count ?? 0) - (stats?.genome?.fully_annotated ?? 0)}
                           </p>
                         </div>
                       </div>
@@ -238,13 +226,7 @@ export default function Genomes() {
                             Total Base Pairs
                           </p>
                           <p className="mt-2 text-3xl font-semibold text-blue-700 dark:text-blue-200">
-                            {(
-                              genomes.reduce(
-                                (acc, genome) => acc + genome.basePairs,
-                                0
-                              ) / 1e6
-                            ).toFixed(1)}
-                            M
+                          {((stats?.genome.total_nt || 0) / 1e6).toFixed(1)}M
                           </p>
                         </div>
                       </div>
