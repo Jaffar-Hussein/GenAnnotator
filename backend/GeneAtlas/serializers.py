@@ -6,7 +6,7 @@ from django.core.validators import RegexValidator
 from django.contrib.auth import get_user_model
 
 class GenomeSerializer(serializers.ModelSerializer):
-    sequence = serializers.CharField(write_only=True)
+    sequence = serializers.CharField(write_only=True, validators=[RegexValidator(regex=r"^[ACTG]+$", message="Invalid sequence")])
     class Meta:
         model = Genome
         fields = '__all__'
