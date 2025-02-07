@@ -210,17 +210,17 @@ export default function GenesPage() {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex flex-col gap-3">
+                {/* <div className="flex flex-col gap-3">
                   <Button
                     className="w-full sm:w-auto bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-700 hover:to-indigo-600 text-white shadow-lg shadow-indigo-500/20"
                     onClick={() => {
-                      /* Add gene upload handler */
+                      
                     }}
                   >
                     <Upload className="mr-2 h-4 w-4" />
                     Upload Gene
                   </Button>
-                </div>
+                </div> */}
               </div>
             </div>
           </div>
