@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-export default function UploadGenomeModal({ open, onOpenChange }) {
+export default function UploadGenomeModal({ open, onOpenChange, onSuccess }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState({
@@ -95,7 +95,7 @@ export default function UploadGenomeModal({ open, onOpenChange }) {
       });
 
       if (!response.ok) throw new Error('Failed to upload genome');
-      
+      onSuccess?.();
       onOpenChange(false);
     } catch (err) {
       setError('Upload failed. Please try again.');

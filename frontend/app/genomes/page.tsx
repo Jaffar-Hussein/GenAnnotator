@@ -78,10 +78,10 @@ export default function Genomes() {
   const [error, setError] = useState<string | null>(null);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const { stats, isLoading, fetchStats } = useStatsStore();
-
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   useEffect(() => {
     fetchStats();
-  } , [fetchStats]);
+  } , [fetchStats,refreshTrigger]);
 
   // Fetch Genomes
   useEffect(() => {
@@ -108,7 +108,7 @@ export default function Genomes() {
           status: item.annotation ? "Annotated" : "Pending",
           completeness: item.annotation ? "100%" : "0%",
           header: item.header,
-          lastModified: "N/A", // or parse a real date if your backend provides it
+          lastModified: "N/A", 
           sequence: item.sequence,
         }));
 
@@ -121,7 +121,7 @@ export default function Genomes() {
       }
     }
     fetchGenomes();
-  }, []);
+  }, [refreshTrigger]);
 
   // Filter & Sort
   const filteredGenomes = genomes
@@ -371,6 +371,9 @@ export default function Genomes() {
       <UploadGenomeModal
         open={isUploadModalOpen}
         onOpenChange={setIsUploadModalOpen}
+        onSuccess={() => {
+          setRefreshTrigger(prev => prev + 1);
+        }}
       />
     </>
   );
