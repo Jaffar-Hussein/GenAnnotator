@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.urls import reverse
 from GeneAtlas import urls
 from django.views.generic import CreateView
-from .serializers import GenomeSerializer, GeneSerializer, PeptideSerializer, GeneAnnotationSerializer, PeptideAnnotationSerializer, GeneAnnotationStatusSerializer, TaskSerializer, TaskInputSerializer, BlastQueryInputSerializer, BlastRunInputSerializer, StatsInputSerializer, PFAMRunInputSerializer, GeneQuerySerializer, PeptideQuerySerializer
+from .serializers import GenomeSerializer, GeneSerializer, PeptideSerializer, GeneAnnotationSerializer, PeptideAnnotationSerializer, GeneAnnotationStatusSerializer, TaskSerializer, TaskInputSerializer, BlastQueryInputSerializer, BlastRunInputSerializer, StatsInputSerializer, PFAMRunInputSerializer, GeneQuerySerializer, PeptideQuerySerializer, GenomeQuerySerializer
 from rest_framework import status, request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -429,22 +429,26 @@ class StatsAPIView(APIView):
     
 class DownloadAPIView(APIView):
 
-    def download(data: str, api: str, filters: dict, fields: list):
+    def download(data: str, cls: type, filters: dict, fields: list):
         response = HttpResponse(content_type='text/plain')
-        query_params = filters
-        if(query_params is not None):
-            endpoint = "http://127.0.0.1:8000" + reverse(api)
-            response_endpoint = requests.get(endpoint, params=query_params)
-            if(response_endpoint.status_code == 200 and len(response_endpoint.json()) > 0):
+        if filters:
+            res = cls.objects.filter(**{k:v for k, v in filters.items() if v is not None and k != "limit"})
+            if cls == Genome:
+                serializer = GenomeSerializer(res, many=True)
+            elif cls == Gene:
+                serializer = GeneSerializer(res, many=True)
+            elif cls == Peptide:
+                serializer = PeptideSerializer(res, many=True)
+            if(res.count() > 0):
                 response['Content-Disposition'] = f'attachment; filename="{data}.txt"'
                 writer = csv.writer(response, delimiter=';')
                 if(fields is not None):
                     writer.writerow(fields)
-                    for row in response_endpoint.json():
+                    for row in serializer.data:
                         writer.writerow([row[f] for f in fields])
                 else:
-                    writer.writerow(response_endpoint.json()[0].keys())
-                    for row in response_endpoint.json():
+                    writer.writerow(serializer.data[0].keys())
+                    for row in serializer.data:
                         writer.writerow(row.values())
                 return response
             else:
@@ -454,28 +458,31 @@ class DownloadAPIView(APIView):
 
     def get(self, request):
 
+        MODEL_MAP = {
+            "genome": {"class": Genome, "serializer": GenomeQuerySerializer},
+            "gene": {"class": Gene, "serializer": GeneQuerySerializer}, 
+            "peptide": {"class": Peptide, "serializer": PeptideQuerySerializer}
+        }
+
         data = request.data.get("data",None)
 
-        if(data is not None):
+        if data in MODEL_MAP:
 
-            if(data == "genome"):
+            config = MODEL_MAP[data]
 
-                return DownloadAPIView.download("genome", "genome_api", request.data.get("filters", None), request.data.get("fields", None))
-                
-            elif(data == "gene"):
-                
-                return DownloadAPIView.download("gene", "gene_api", request.data.get("filters", None), request.data.get("fields", None))
-                    
-            elif(data == "peptide"):
-                
-                return DownloadAPIView.download("peptide", "peptide_api", request.data.get("filters", None), request.data.get("fields", None))
-                    
-            elif(data == "annotation"):
-                pass
-            else:
-                return Response({"error": "Data parameter provided is not valid."}, status=status.HTTP_400_BAD_REQUEST)
+            serializer = config["serializer"](data=request.data.get("filters",None))
+
+            if serializer.is_valid():
+
+                filters = serializer.data
+
+                return DownloadAPIView.download(data, config["class"], filters, request.data.get("fields", None))
+            
+            return Response({"error": serializer.error_messages}, status=status.HTTP_400_BAD_REQUEST)
+            
         else:
-            return Response({"error": "No database parameter provided."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Data parameter provided is not valid."}, status=status.HTTP_400_BAD_REQUEST)
+            
     
     def post(self, request) -> Response:
         return Response({"error": "POST request not supported."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
@@ -506,8 +513,8 @@ class TaskAPIView(APIView):
             return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
         
         query_result = AsyncTasksCache.objects.filter(**{k: v for k, v in params.items() if v is not None})
-        if query_result.count() == 0:
-            return Response({"error": "No task found."}, status=status.HTTP_404_NOT_FOUND)
+        # if query_result.count() == 0:
+        #     return Response({"error": "No task found."}, status=status.HTTP_404_NOT_FOUND)
         serializer = TaskSerializer(query_result, many=True)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
