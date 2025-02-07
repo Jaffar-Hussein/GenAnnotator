@@ -285,7 +285,10 @@ class AnnotationStatusAPIView(APIView):
         params = {"gene": request.GET.get('gene', None),  # Gene(s) for which the status is to be retrieved
                 "status": request.GET.get('status', None), # Status of the gene annotation
                 "annotator": request.GET.get('annotator', None)} # Annotator assigned to the gene annotation
-        params["annotator"] = CustomUser.objects.get(username=params["annotator"]) if params["annotator"] is not None else None
+        try:
+            params["annotator"] = CustomUser.objects.get(username=params["annotator"]) if params["annotator"] is not None else None
+        except CustomUser.DoesNotExist:
+            return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
         query_results = inf.filter(**{k: v for k, v in params.items() if v is not None})
         if(request.GET.get("limit",None)):
             paginator = LimitOffsetPagination()

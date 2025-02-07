@@ -181,18 +181,29 @@ class UserProfileAPIView(APIView):
         return Response({"error: GET request not supported."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
     
     def put(self, request, *args, **kwargs) -> Response:
-        try:
-            input = UserProfileSerializer(data=request.data)
-            input.is_valid(raise_exception=True)
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        # From this point, the request is valid
-        # Update the user profile
-        serializer = UserSerializer(instance=request.user,data=input.data,partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({"success": serializer.data}, status=status.HTTP_200_OK)
-        return Response({"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+        FIELDS = ['username', 'email', 'first_name', 'last_name']
+        current = {k: v for k, v in request.user.__dict__.items() if k in FIELDS}
+        input = request.data
+        if all(value is None for value in input.values()):
+            return Response({"error": "No data provided."}, status=status.HTTP_400_BAD_REQUEST)
+        # Check if the input data is different from the current data
+        # Retrieve what's only need to be updated
+        new = set(input.items()) - set(current.items())
+        if(bool(len(new))):
+            try:
+                validated_input = UserProfileSerializer(data=dict(new))
+                validated_input.is_valid(raise_exception=True)
+            except Exception as e:
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            # From this point, the request is valid
+            # Update the user profile
+            serializer = UserSerializer(instance=request.user,data=validated_input.data,partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response({"success": serializer.data}, status=status.HTTP_200_OK)
+            return Response({"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({"error": "No new data provided."}, status=status.HTTP_400_BAD_REQUEST)
         
     def delete(self, request, *args, **kwargs) -> Response:
         return Response({"error: DELETE request not supported."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
