@@ -1,19 +1,21 @@
+import io
+import json
 from datetime import timedelta
-from django.utils import timezone
-from huey.contrib.djhuey import task, db_periodic_task, signal
+from time import sleep
+from zipfile import ZipFile
+
 import huey.signals as signals
-from huey import crontab
+import requests
+from Bio import Blast, SeqIO
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
-from .models import GeneAnnotationStatus, AsyncTasksCache
+from django.utils import timezone
+from huey import crontab
+from huey.contrib.djhuey import db_periodic_task, signal, task
+
 from AccessControl.models import CustomUser
-from Bio import SeqIO
-from Bio import Blast
-import json
-from zipfile import ZipFile
-import io
-import requests
-from time import sleep
+
+from .models import AsyncTasksCache, GeneAnnotationStatus
 
 # Signals for the async tasks
 

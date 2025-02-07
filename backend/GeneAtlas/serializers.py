@@ -1,9 +1,20 @@
-from rest_framework import serializers
-from AccessControl.models import CustomUser
-from .models import Genome, Gene, Peptide, GeneAnnotation, PeptideAnnotation, GeneAnnotationStatus, AsyncTasksCache
+from django.contrib.auth import get_user_model
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.core.validators import RegexValidator
-from django.contrib.auth import get_user_model
+from rest_framework import serializers
+
+from AccessControl.models import CustomUser
+
+from .models import (
+    AsyncTasksCache,
+    Gene,
+    GeneAnnotation,
+    GeneAnnotationStatus,
+    Genome,
+    Peptide,
+    PeptideAnnotation,
+)
+
 
 class GenomeSerializer(serializers.ModelSerializer):
     sequence = serializers.CharField(write_only=True, validators=[RegexValidator(regex=r"^[ACTG]+$", message="Invalid sequence")])

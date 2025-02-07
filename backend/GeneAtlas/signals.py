@@ -1,7 +1,8 @@
-from django.db.models.signals import post_save, pre_save
 from django.db.models import Count
+from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
-from .models import Genome, Gene, GeneAnnotationStatus, GeneAnnotation
+
+from .models import Gene, GeneAnnotation, GeneAnnotationStatus, Genome
 from .tasks import send_annotation_mail
 
 
