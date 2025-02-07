@@ -28,7 +28,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 
-import { use, useEffect, useState } from "react";
+import {  useEffect,  } from "react";
 import RoleBasedContent from "@/components/role-based-dashboard";
 import { useUser } from "@/store/useAuthStore";
 import {
@@ -512,9 +512,12 @@ export default function Dashboard() {
                       Current status of genome annotations
                     </CardDescription>
                   </div>
-                  <Button variant="ghost" size="sm" className="gap-2">
-                    View All <ArrowRight className="h-4 w-4" />
-                  </Button>
+                  <Link href={user.role === 'READER' ? '/genomes' : '/my-annotations'}>
+                    <button className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-400 dark:hover:text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
+                      View All
+                      <ArrowRight className="h-4 w-4" />
+                    </button>
+                  </Link>
                 </div>
               </CardHeader>
               <CardContent>
