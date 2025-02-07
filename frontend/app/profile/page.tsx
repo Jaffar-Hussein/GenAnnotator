@@ -39,6 +39,23 @@ const ProfilePage = () => {
 
   const handleSave = async () => {
     setIsLoading(true);
+    
+    // Compare editData with original userData to find changed fields
+    const changedFields = Object.entries(editData).reduce((acc, [key, value]) => {
+      if (userData[key as keyof UserData] !== value) {
+        acc[key] = value;
+      }
+      return acc;
+    }, {} as Partial<UserData>);
+  
+    // If no fields changed, return early
+    if (Object.keys(changedFields).length === 0) {
+      showBanner("No changes were made", "info");
+      setIsEditing(false);
+      setIsLoading(false);
+      return;
+    }
+  
     try {
       const response = await fetch("http://localhost:8000/access/api/user/profile/", {
         method: "PUT",
@@ -46,14 +63,9 @@ const ProfilePage = () => {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${AccessToken}`,
         },
-        body: JSON.stringify({
-          first_name: editData.first_name,
-          last_name: editData.last_name,
-          username: editData.username,
-          email: editData.email,
-        }),
+        body: JSON.stringify(changedFields),
       });
-
+  
       const data = await response.json();
       
       if (!response.ok) {
@@ -76,7 +88,7 @@ const ProfilePage = () => {
         }
         throw new Error('Failed to update profile');
       }
-
+  
       if (data.success) {
         updateUserProfile(data.success);
         setUserData((prev) => ({ ...prev, ...data.success }));
