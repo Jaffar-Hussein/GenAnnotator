@@ -5,6 +5,8 @@ from django.core.validators import EmailValidator, RegexValidator
 
 
 class SignUpSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
+
     class Meta:
         model = CustomUser
         fields = ['first_name',
