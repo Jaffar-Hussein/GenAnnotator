@@ -241,89 +241,98 @@ export default function PeptidesPage() {
                   </div>
 
                   {/* Quick Stats */}
-                  
-<div className="grid grid-cols-2 sm:grid-cols-4 gap-6 pt-4">
-  {/* Total Peptides */}
-  <div className="p-6 rounded-xl bg-gradient-to-br from-indigo-50 to-indigo-100/50 dark:from-indigo-900/50 dark:to-indigo-800/30 border border-indigo-100/50 dark:border-indigo-700/20 shadow-sm hover:shadow-md transition-shadow">
-    <div className="flex flex-col">
-      <p className="text-sm font-medium text-indigo-600 dark:text-indigo-300">
-        Total Peptides
-      </p>
-      {isLoading ? (
-        <div className="mt-2 h-8 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
-      ) : (
-        <p className="mt-2 text-3xl font-semibold text-indigo-700 dark:text-indigo-200">
-          {stats?.peptide.count?.toLocaleString() || 0}
-        </p>
-      )}
-    </div>
-  </div>
 
-  {/* Coverage */}
-  <div className="p-6 rounded-xl bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-900/50 dark:to-emerald-800/30 border border-emerald-100/50 dark:border-emerald-700/20 shadow-sm hover:shadow-md transition-shadow">
-    <div className="flex flex-col">
-      <p className="text-sm font-medium text-emerald-600 dark:text-emerald-300">
-        Coverage
-      </p>
-      {isLoading ? (
-        <div className="mt-2 h-8 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
-      ) : (
-        <p className="mt-2 text-3xl font-semibold text-emerald-700 dark:text-emerald-200">
-          {((stats?.peptide.count || 0) / (stats?.gene.count || 1) * 100).toFixed(1)}%
-        </p>
-      )}
-    </div>
-  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 pt-4">
+                    {/* Total Peptides */}
+                    <div className="p-6 rounded-xl bg-gradient-to-br from-indigo-50 to-indigo-100/50 dark:from-indigo-900/50 dark:to-indigo-800/30 border border-indigo-100/50 dark:border-indigo-700/20 shadow-sm hover:shadow-md transition-shadow">
+                      <div className="flex flex-col">
+                        <p className="text-sm font-medium text-indigo-600 dark:text-indigo-300">
+                          Total Peptides
+                        </p>
+                        {isLoading ? (
+                          <div className="mt-2 h-8 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                        ) : (
+                          <p className="mt-2 text-3xl font-semibold text-indigo-700 dark:text-indigo-200">
+                            {stats?.peptide.count?.toLocaleString() || 0}
+                          </p>
+                        )}
+                      </div>
+                    </div>
 
-  {/* Average Size */}
-  <div className="p-6 rounded-xl bg-gradient-to-br from-amber-50 to-amber-100/50 dark:from-amber-900/50 dark:to-amber-800/30 border border-amber-100/50 dark:border-amber-700/20 shadow-sm hover:shadow-md transition-shadow">
-    <div className="flex flex-col">
-      <p className="text-sm font-medium text-amber-600 dark:text-amber-300">
-        Avg Size
-      </p>
-      {isLoading ? (
-        <div className="mt-2 h-8 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
-      ) : (
-        <p className="mt-2 text-3xl font-semibold text-amber-700 dark:text-amber-200">
-          {Math.round(stats?.peptide.average_length || 0).toLocaleString()}
-          <span className="text-base ml-1">aa</span>
-        </p>
-      )}
-    </div>
-  </div>
+                    {/* Coverage */}
+                    <div className="p-6 rounded-xl bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-900/50 dark:to-emerald-800/30 border border-emerald-100/50 dark:border-emerald-700/20 shadow-sm hover:shadow-md transition-shadow">
+                      <div className="flex flex-col">
+                        <p className="text-sm font-medium text-emerald-600 dark:text-emerald-300">
+                          Coverage
+                        </p>
+                        {isLoading ? (
+                          <div className="mt-2 h-8 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                        ) : (
+                          <p className="mt-2 text-3xl font-semibold text-emerald-700 dark:text-emerald-200">
+                            {(
+                              ((stats?.peptide.count || 0) /
+                                (stats?.gene.count || 1)) *
+                              100
+                            ).toFixed(1)}
+                            %
+                          </p>
+                        )}
+                      </div>
+                    </div>
 
-  {/* Protein Density */}
-  <div className="p-6 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/50 dark:to-blue-800/30 border border-blue-100/50 dark:border-blue-700/20 shadow-sm hover:shadow-md transition-shadow">
-    <div className="flex flex-col">
-      <p className="text-sm font-medium text-blue-600 dark:text-blue-300">
-        Protein Density
-      </p>
-      {isLoading ? (
-        <div className="mt-2 h-8 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
-      ) : (
-        <p className="mt-2 text-3xl font-semibold text-blue-700 dark:text-blue-200">
-          {((stats?.peptide.count || 0) / (stats?.gene.count || 1)).toFixed(1)}
-          <span className="text-base ml-1">per gene</span>
-        </p>
-      )}
-    </div>
-  </div>
-</div>
+                    {/* Average Size */}
+                    <div className="p-6 rounded-xl bg-gradient-to-br from-amber-50 to-amber-100/50 dark:from-amber-900/50 dark:to-amber-800/30 border border-amber-100/50 dark:border-amber-700/20 shadow-sm hover:shadow-md transition-shadow">
+                      <div className="flex flex-col">
+                        <p className="text-sm font-medium text-amber-600 dark:text-amber-300">
+                          Avg Size
+                        </p>
+                        {isLoading ? (
+                          <div className="mt-2 h-8 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                        ) : (
+                          <p className="mt-2 text-3xl font-semibold text-amber-700 dark:text-amber-200">
+                            {Math.round(
+                              stats?.peptide.average_length || 0
+                            ).toLocaleString()}
+                            <span className="text-base ml-1">aa</span>
+                          </p>
+                        )}
+                      </div>
+                    </div>
 
+                    {/* Protein Density */}
+                    <div className="p-6 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/50 dark:to-blue-800/30 border border-blue-100/50 dark:border-blue-700/20 shadow-sm hover:shadow-md transition-shadow">
+                      <div className="flex flex-col">
+                        <p className="text-sm font-medium text-blue-600 dark:text-blue-300">
+                          Protein Density
+                        </p>
+                        {isLoading ? (
+                          <div className="mt-2 h-8 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                        ) : (
+                          <p className="mt-2 text-3xl font-semibold text-blue-700 dark:text-blue-200">
+                            {(
+                              (stats?.peptide.count || 0) /
+                              (stats?.gene.count || 1)
+                            ).toFixed(1)}
+                            <span className="text-base ml-1">per gene</span>
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex flex-col gap-3">
+                {/* <div className="flex flex-col gap-3">
                   <Button
                     className="w-full sm:w-auto bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-700 hover:to-indigo-600 text-white shadow-lg shadow-indigo-500/20"
                     onClick={() => {
-                      /* Add peptide upload handler */
+                     
                     }}
                   >
                     <Upload className="mr-2 h-4 w-4" />
                     Upload Peptide
                   </Button>
-                </div>
+                </div> */}
               </div>
             </div>
           </div>
