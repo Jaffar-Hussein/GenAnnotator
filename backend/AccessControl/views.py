@@ -1,25 +1,26 @@
-from django.shortcuts import render
-
-# Create your views here.
-
-from .forms import SignupForm
-from django.urls import reverse_lazy
-from django.views.generic import CreateView
+from allauth.account.utils import send_email_confirmation
 from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
-
+from django.shortcuts import render
+from django.urls import reverse_lazy
+from django.views.generic import CreateView
 from rest_framework import status
+from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
-from .serializers import SignUpSerializer, LoginSerializer, UserSerializer, UserProfileSerializer
-from .models import CustomUser
-from allauth.account.utils import send_email_confirmation
-from rest_framework.pagination import LimitOffsetPagination
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
-from .permissions import ReadOnly
 
+from .forms import SignupForm
+from .models import CustomUser
+from .permissions import ReadOnly
+from .serializers import (
+    LoginSerializer,
+    SignUpSerializer,
+    UserProfileSerializer,
+    UserSerializer,
+)
 
 class SignUpView(CreateView):
     form_class = SignupForm

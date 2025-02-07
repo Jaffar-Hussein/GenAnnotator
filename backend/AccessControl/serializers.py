@@ -1,8 +1,9 @@
-from rest_framework import serializers
-from .models import CustomUser
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.core.validators import EmailValidator, RegexValidator
+from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
+
+from .models import CustomUser
 
 
 class SignUpSerializer(serializers.ModelSerializer):
