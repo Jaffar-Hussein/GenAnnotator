@@ -311,32 +311,32 @@ export default function Genomes() {
 
             {/* Loading State */}
             {loading ? (
-              <div className="space-y-6">
-                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                  {Array.from({ length: 6 }).map((_, i) => (
-                    <Card
-                      key={i}
-                      className="border-indigo-100/20 dark:border-indigo-900/20 hover:shadow-lg transition-all duration-300"
-                    >
-                      <CardHeader className="pb-4">
-                        <div className="flex items-start justify-between">
-                          <div className="space-y-2">
-                            <Skeleton className="h-4 w-3/4" />
-                            <Skeleton className="h-3 w-1/2" />
-                          </div>
-                          <Skeleton className="h-5 w-12 rounded-full" />
-                        </div>
-                      </CardHeader>
-                      <CardContent className="space-y-2">
-                        <Skeleton className="h-3 w-1/2" />
-                        <Skeleton className="h-3 w-1/3" />
-                        <Skeleton className="h-3 w-2/3" />
-                        <Skeleton className="h-3 w-1/2" />
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </div>
+               <div className="space-y-6">
+               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                 {Array.from({ length: 6 }).map((_, i) => (
+                   <Card
+                     key={i}
+                     className="bg-white dark:bg-gray-800 border border-indigo-100/20 dark:border-indigo-900/20 hover:shadow-lg transition-all duration-300"
+                   >
+                     <CardHeader className="pb-4">
+                       <div className="flex items-start justify-between">
+                         <div className="space-y-2">
+                           <Skeleton className="h-4 w-3/4 bg-indigo-100/50 dark:bg-indigo-900/50" />
+                           <Skeleton className="h-3 w-1/2 bg-indigo-100/30 dark:bg-indigo-900/30" />
+                         </div>
+                         <Skeleton className="h-5 w-12 rounded-full bg-indigo-100/50 dark:bg-indigo-900/50" />
+                       </div>
+                     </CardHeader>
+                     <CardContent className="space-y-2">
+                       <Skeleton className="h-3 w-1/2 bg-indigo-100/30 dark:bg-indigo-900/30" />
+                       <Skeleton className="h-3 w-1/3 bg-indigo-100/30 dark:bg-indigo-900/30" />
+                       <Skeleton className="h-3 w-2/3 bg-indigo-100/30 dark:bg-indigo-900/30" />
+                       <Skeleton className="h-3 w-1/2 bg-indigo-100/30 dark:bg-indigo-900/30" />
+                     </CardContent>
+                   </Card>
+                 ))}
+               </div>
+             </div>
             ) : error ? (
               <Alert className="border-red-200 bg-red-50 dark:border-red-900/50 dark:bg-red-900/20">
                 <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
