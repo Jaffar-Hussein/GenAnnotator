@@ -1,21 +1,22 @@
-from datetime import datetime
-from django.db import models
-from AccessControl.models import CustomUser
-from Bio.Seq import Seq
-from Bio.SeqUtils import gc_fraction
-from zlib import compress, decompress
-from .decorators import validator_only
-from rest_framework.response import Response
-from rest_framework import status
+import uuid
+from datetime import datetime, timedelta
 from hashlib import sha256
 from json import dumps
-from datetime import timedelta
-from django.utils import timezone
-from django.db import transaction
-from GenAnnot import settings
-from huey.contrib.djhuey import HUEY
-import uuid
+from zlib import compress, decompress
+
+from Bio.Seq import Seq
+from Bio.SeqUtils import gc_fraction
 from django.core.validators import RegexValidator
+from django.db import models, transaction
+from django.utils import timezone
+from huey.contrib.djhuey import HUEY
+from rest_framework import status
+from rest_framework.response import Response
+
+from AccessControl.models import CustomUser
+from GenAnnot import settings
+
+from .decorators import validator_only
 
 
 class Genome(models.Model):

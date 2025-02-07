@@ -1,12 +1,22 @@
-from django.core.management.base import BaseCommand
-from django.db.models.signals import post_save
-from GeneAtlas.signals import create_gene_status, update_genome_status
-from GeneAtlas.models import Genome, Gene, Peptide, GeneAnnotation, PeptideAnnotation, GeneAnnotationStatus
-from AccessControl.models import CustomUser
-from Bio import SeqIO
-import os, glob
-from django.db import transaction
+import glob
+import os
 from pathlib import Path
+
+from Bio import SeqIO
+from django.core.management.base import BaseCommand
+from django.db import transaction
+from django.db.models.signals import post_save
+
+from AccessControl.models import CustomUser
+from GeneAtlas.models import (
+    Gene,
+    GeneAnnotation,
+    GeneAnnotationStatus,
+    Genome,
+    Peptide,
+    PeptideAnnotation,
+)
+from GeneAtlas.signals import create_gene_status, update_genome_status
 
 
 class Command(BaseCommand):

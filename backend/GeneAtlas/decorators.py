@@ -1,7 +1,10 @@
 from functools import wraps
-from AccessControl.models import CustomUser
-from rest_framework.response import Response
+
 from rest_framework import status
+from rest_framework.response import Response
+
+from AccessControl.models import CustomUser
+
 
 def validator_only():
     def decorator(func):

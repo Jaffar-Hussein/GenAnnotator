@@ -1,26 +1,55 @@
+import csv
+import uuid
+from datetime import timedelta
+
+import requests
+from django.db import models as db_models
+from django.db import transaction
+from django.http import HttpResponse
 from django.shortcuts import render
 from django.urls import reverse
-from GeneAtlas import urls
+from django.utils import timezone
 from django.views.generic import CreateView
-from .serializers import GenomeSerializer, GeneSerializer, PeptideSerializer, GeneAnnotationSerializer, PeptideAnnotationSerializer, GeneAnnotationStatusSerializer, TaskSerializer, TaskInputSerializer, BlastQueryInputSerializer, BlastRunInputSerializer, StatsInputSerializer, PFAMRunInputSerializer, GeneQuerySerializer, PeptideQuerySerializer, GenomeQuerySerializer
-from rest_framework import status, request
+from huey.contrib.djhuey import HUEY
+from rest_framework import request, status
+from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.pagination import LimitOffsetPagination
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
-from .permissions import IsAnnotatorUser, IsValidatorUser
-from AccessControl.permissions import ReadOnly
-from .models import Genome, Gene, Peptide, GeneAnnotation, PeptideAnnotation, GeneAnnotationStatus, AsyncTasksCache
-from django.db import transaction, models as db_models
-from django.http import HttpResponse
+
 from AccessControl.models import CustomUser
-import csv
-import requests
-from .tasks import run_blast, pfamscan
-from huey.contrib.djhuey import HUEY
-from django.utils import timezone
-from datetime import timedelta
-import uuid
+from AccessControl.permissions import ReadOnly
+from GeneAtlas import urls
+
+from .models import (
+    AsyncTasksCache,
+    Gene,
+    GeneAnnotation,
+    GeneAnnotationStatus,
+    Genome,
+    Peptide,
+    PeptideAnnotation,
+)
+from .permissions import IsAnnotatorUser, IsValidatorUser
+from .serializers import (
+    BlastQueryInputSerializer,
+    BlastRunInputSerializer,
+    GeneAnnotationSerializer,
+    GeneAnnotationStatusSerializer,
+    GeneQuerySerializer,
+    GeneSerializer,
+    GenomeQuerySerializer,
+    GenomeSerializer,
+    PeptideAnnotationSerializer,
+    PeptideQuerySerializer,
+    PeptideSerializer,
+    PFAMRunInputSerializer,
+    StatsInputSerializer,
+    TaskInputSerializer,
+    TaskSerializer,
+)
+from .tasks import pfamscan, run_blast
+
 
 class HomeView(CreateView):
 
