@@ -32,18 +32,19 @@ export function HeroSection() {
       style={{ opacity, scale }}
       className="relative min-h-screen h-screen flex flex-col items-center justify-center overflow-hidden bg-slate-50/80 dark:bg-gray-950"
     >
-      
       <div className="absolute inset-0 w-full h-full bg-gradient-to-b from-indigo-100/80 via-blue-50/50 to-slate-50/30 dark:from-indigo-950/40 dark:via-blue-950/40 dark:to-gray-950" />
       <div className="absolute inset-0 w-full h-full dark:bg-grid-white/[0.03] bg-grid-black/[0.025]" />
-      <div 
+      <div
         className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 dark:from-indigo-500/10 dark:via-purple-500/10 dark:to-pink-500/10 animate-gradient-x"
         style={{
-          maskImage: 'radial-gradient(ellipse at center, black, transparent 60%)',
-          WebkitMaskImage: 'radial-gradient(ellipse at center, black, transparent 60%)'
+          maskImage:
+            "radial-gradient(ellipse at center, black, transparent 60%)",
+          WebkitMaskImage:
+            "radial-gradient(ellipse at center, black, transparent 60%)",
         }}
       />
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-slate-50/90 dark:to-gray-950/80" />
-      
+
       {/* Animated DNA Helix */}
       <DNAHelix />
 
@@ -79,7 +80,11 @@ export function HeroSection() {
               <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
             </Button>
           </Link>
-          <Link href="/documentation">
+          <a
+            href="https://genannotator.gitbook.io/genannotator-docs/getting-started"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             <Button
               variant="outline"
               size="lg"
@@ -88,13 +93,9 @@ export function HeroSection() {
               Documentation
               <ArrowRight className="ml-2 h-5 w-5 opacity-0 transition-all group-hover:opacity-100 group-hover:translate-x-1" />
             </Button>
-          </Link>
+          </a>
         </motion.div>
-      
-
-       
       </div>
-     
     </motion.div>
   );
 }
