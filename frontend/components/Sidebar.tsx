@@ -196,81 +196,94 @@ export function AppSidebar() {
           })}
         </nav>
 
-        {/* Bottom section */}
-        <div className="flex-shrink-0 p-4 border-t border-gray-200 dark:border-gray-800">
+       {/* Bottom section */}
+       <div className="flex-shrink-0 px-4 py-4 border-t border-gray-200 dark:border-gray-800">
           {/* User Profile Section */}
-          <div className="mb-2">
+          <div className="mb-4">
             <Link
               href="/profile"
               className={cn(
-                "flex items-center p-3 rounded-lg",
-
+                "relative flex items-center h-12 rounded-lg",
                 "hover:bg-indigo-50 dark:hover:bg-indigo-500/10",
                 "transition-all duration-200"
               )}
             >
-              <div
-                className={cn(
-                  "flex-shrink-0 w-10 h-10 rounded-full",
-                  "bg-indigo-50 dark:bg-indigo-950/30",
-                  "flex items-center justify-center",
-                  "text-sm font-medium text-indigo-600 dark:text-indigo-300"
+              <div className="flex items-center w-full px-4">
+                <div
+                  className={cn(
+                    "flex-shrink-0 w-8 h-8 rounded-full",
+                    "bg-indigo-50 dark:bg-indigo-950/30",
+                    "flex items-center justify-center",
+                    "text-sm font-medium text-indigo-600 dark:text-indigo-300"
+                  )}
+                >
+                  {userInitials}
+                </div>
+                {isHovered && (
+                  <div className="ml-3 flex flex-col">
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                      {userName}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {user?.role}
+                    </p>
+                  </div>
                 )}
-              >
-                {userInitials}
-              </div>
-              <div
-                className="ml-3 flex flex-col overflow-hidden"
-                style={{
-                  opacity: isHovered ? 1 : 0,
-                  width: isHovered ? "auto" : 0,
-                  transition: "all 0.2s ease-in-out",
-                }}
-              >
-                <p className="text-sm font-medium truncate text-gray-900 dark:text-gray-100">
-                  {userName}
-                </p>
-                <p className="text-xs text-muted-foreground text-gray-500 dark:text-gray-400 truncate">
-                  {user?.role}
-                </p>
               </div>
             </Link>
           </div>
 
-          {/* Theme and Logout Section */}
+          {/* Actions Section */}
           <div className="space-y-1">
-            {/* Theme Switcher */}
-            <div
+            {/* Documentation Link */}
+            <a
+              href="https://genannotator.gitbook.io/genannotator-docs/getting-started"
+              target="_blank"
+              rel="noopener noreferrer"
               className={cn(
-                "flex items-center p-3 rounded-lg",
+                "relative flex items-center h-12 rounded-lg group",
                 "text-gray-600 dark:text-gray-300",
                 "hover:bg-indigo-50/60 dark:hover:bg-indigo-500/10",
                 "transition-all duration-200"
               )}
             >
-              <div className="flex items-center justify-between w-full">
+              <div className="flex items-center w-full px-4">
+                <ClipboardList 
+                  className={cn(
+                    "w-5 h-5 flex-shrink-0",
+                    "text-gray-500 dark:text-gray-400",
+                    "group-hover:text-indigo-600 dark:group-hover:text-indigo-300"
+                  )} 
+                />
+                {isHovered && (
+                  <span className="ml-3 text-sm">Documentation</span>
+                )}
+              </div>
+            </a>
+
+            {/* Theme Switcher */}
+            <div
+              className={cn(
+                "relative flex items-center h-12 rounded-lg group",
+                "text-gray-600 dark:text-gray-300",
+                "hover:bg-indigo-50/60 dark:hover:bg-indigo-500/10",
+                "transition-all duration-200"
+              )}
+            >
+              <div className="flex items-center justify-between w-full px-4">
                 <div className="flex items-center">
-                  <Moon className="w-5 h-5 flex-shrink-0 mr-3" />
-                  <span
-                    style={{
-                      opacity: isHovered ? 1 : 0,
-                      display: isHovered ? "block" : "none",
-                      transition: "opacity 0.2s ease-in-out",
-                    }}
-                  >
-                    Theme
-                  </span>
+                  <Moon 
+                    className={cn(
+                      "w-5 h-5 flex-shrink-0",
+                      "text-gray-500 dark:text-gray-400",
+                      "group-hover:text-indigo-600 dark:group-hover:text-indigo-300"
+                    )} 
+                  />
+                  {isHovered && (
+                    <span className="ml-3 text-sm">Theme</span>
+                  )}
                 </div>
-                <div
-                  style={{
-                    opacity: isHovered ? 1 : 0,
-                    width: isHovered ? "auto" : 0,
-                    overflow: "hidden",
-                    transition: "all 0.2s ease-in-out",
-                  }}
-                >
-                  <ThemeSwitcher />
-                </div>
+                {isHovered && <ThemeSwitcher />}
               </div>
             </div>
 
@@ -281,29 +294,17 @@ export function AppSidebar() {
                 logout();
               }}
               className={cn(
-                "w-full flex items-center p-3 rounded-lg",
+                "relative flex items-center h-12 rounded-lg group w-full",
                 "text-red-600 dark:text-red-400",
                 "hover:bg-red-50/60 dark:hover:bg-red-900/20",
                 "transition-all duration-200"
               )}
             >
-              <div
-                className="flex items-center w-full"
-                style={{
-                  transform: isHovered ? "translateX(8px)" : "translateX(0)",
-                  transition: "transform 0.2s ease-in-out",
-                }}
-              >
-                <LogOut className="w-5 h-5 flex-shrink-0 mr-3" />
-                <span
-                  style={{
-                    opacity: isHovered ? 1 : 0,
-                    display: isHovered ? "block" : "none",
-                    transition: "opacity 0.2s ease-in-out",
-                  }}
-                >
-                  Logout
-                </span>
+              <div className="flex items-center w-full px-4">
+                <LogOut className="w-5 h-5 flex-shrink-0" />
+                {isHovered && (
+                  <span className="ml-3 text-sm">Logout</span>
+                )}
               </div>
             </button>
           </div>
