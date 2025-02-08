@@ -16,12 +16,12 @@ class SignUpSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(
         required=True,
         max_length=150,
-        validators=[RegexValidator(regex=r"\b([A-ZÀ-ÿ][-,a-zA-Z. ']+)",
+        validators=[RegexValidator(regex=r"\b([A-Za-zÀ-ÿ][-,a-zA-Z. ']+)",
                                    message="Not a valid first name")])
     last_name = serializers.CharField(
         required=True,
         max_length=150,
-        validators=[RegexValidator(regex=r"\b([A-ZÀ-ÿ][-,a-zA-Z. ']+)",
+        validators=[RegexValidator(regex=r"\b([A-Za-zÀ-ÿ][-,a-zA-Z. ']+)",
                                    message="Not a valid last name")])
     class Meta:
         model = CustomUser
@@ -61,10 +61,10 @@ class UserProfileSerializer(serializers.Serializer):
     first_name = serializers.CharField(
         required=False,
         max_length=150,
-        validators=[RegexValidator(regex=r"\b([A-ZÀ-ÿ][-,a-zA-Z. ']+)",
+        validators=[RegexValidator(regex=r"\b([A-Za-zÀ-ÿ][-,a-zA-Z. ']+)",
                                    message="Not a valid first name")])
     last_name = serializers.CharField(
         required=False,
         max_length=150,
-        validators=[RegexValidator(regex=r"\b([A-ZÀ-ÿ][-,a-zA-Z. ']+)",
+        validators=[RegexValidator(regex=r"\b([A-Za-zÀ-ÿ][-,a-zA-Z. ']+)",
                                    message="Not a valid last name")])
