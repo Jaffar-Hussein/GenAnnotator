@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import { motion } from "framer-motion";
 import { FlickeringGrid } from "@/components/ui/flickering-grid";
 import {
@@ -37,19 +37,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import GenomeCard from "@/components/genome-card";
 import GenomeListView from "@/components/genome-list";
 import UploadGenomeModal from "@/components/ui/genome-upload";
-/**
- * Backend returns an array of these fields:
- * {
- *   "name": "Escherichia_coli_o157_h7_str_edl933",
- *   "species": "eColi",
- *   "description": "",
- *   "header": "...",
- *   "length": 5528445,
- *   "gc_content": 0.5044473518613253,
- *   "annotation": false,
- *   "sequence": "AGCTTTT..."
- * }
- */
+import  useStatsStore  from "@/store/useStatsStore";
+
 interface RawGenome {
   name: string;
   species: string;
@@ -88,6 +77,11 @@ export default function Genomes() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const { stats, isLoading, fetchStats } = useStatsStore();
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  useEffect(() => {
+    fetchStats();
+  } , [fetchStats,refreshTrigger]);
 
   // Fetch Genomes
   useEffect(() => {
@@ -114,7 +108,7 @@ export default function Genomes() {
           status: item.annotation ? "Annotated" : "Pending",
           completeness: item.annotation ? "100%" : "0%",
           header: item.header,
-          lastModified: "N/A", // or parse a real date if your backend provides it
+          lastModified: "N/A", 
           sequence: item.sequence,
         }));
 
@@ -127,7 +121,7 @@ export default function Genomes() {
       }
     }
     fetchGenomes();
-  }, []);
+  }, [refreshTrigger]);
 
   // Filter & Sort
   const filteredGenomes = genomes
@@ -199,7 +193,7 @@ export default function Genomes() {
                             Total Genomes
                           </p>
                           <p className="mt-2 text-3xl font-semibold text-indigo-700 dark:text-indigo-200">
-                            {genomes.length}
+                          {stats?.genome.count || 0}
                           </p>
                         </div>
                       </div>
@@ -210,10 +204,7 @@ export default function Genomes() {
                             Annotated
                           </p>
                           <p className="mt-2 text-3xl font-semibold text-emerald-700 dark:text-emerald-200">
-                            {
-                              genomes.filter((g) => g.status === "Annotated")
-                                .length
-                            }
+                          {stats?.genome.fully_annotated || 0}
                           </p>
                         </div>
                       </div>
@@ -224,10 +215,7 @@ export default function Genomes() {
                             Pending
                           </p>
                           <p className="mt-2 text-3xl font-semibold text-amber-700 dark:text-amber-200">
-                            {
-                              genomes.filter((g) => g.status === "Pending")
-                                .length
-                            }
+                          {(stats?.genome?.count ?? 0) - (stats?.genome?.fully_annotated ?? 0)}
                           </p>
                         </div>
                       </div>
@@ -238,13 +226,7 @@ export default function Genomes() {
                             Total Base Pairs
                           </p>
                           <p className="mt-2 text-3xl font-semibold text-blue-700 dark:text-blue-200">
-                            {(
-                              genomes.reduce(
-                                (acc, genome) => acc + genome.basePairs,
-                                0
-                              ) / 1e6
-                            ).toFixed(1)}
-                            M
+                          {((stats?.genome.total_nt || 0) / 1e6).toFixed(1)}M
                           </p>
                         </div>
                       </div>
@@ -329,32 +311,32 @@ export default function Genomes() {
 
             {/* Loading State */}
             {loading ? (
-              <div className="space-y-6">
-                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                  {Array.from({ length: 6 }).map((_, i) => (
-                    <Card
-                      key={i}
-                      className="border-indigo-100/20 dark:border-indigo-900/20 hover:shadow-lg transition-all duration-300"
-                    >
-                      <CardHeader className="pb-4">
-                        <div className="flex items-start justify-between">
-                          <div className="space-y-2">
-                            <Skeleton className="h-4 w-3/4" />
-                            <Skeleton className="h-3 w-1/2" />
-                          </div>
-                          <Skeleton className="h-5 w-12 rounded-full" />
-                        </div>
-                      </CardHeader>
-                      <CardContent className="space-y-2">
-                        <Skeleton className="h-3 w-1/2" />
-                        <Skeleton className="h-3 w-1/3" />
-                        <Skeleton className="h-3 w-2/3" />
-                        <Skeleton className="h-3 w-1/2" />
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </div>
+               <div className="space-y-6">
+               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                 {Array.from({ length: 6 }).map((_, i) => (
+                   <Card
+                     key={i}
+                     className="bg-white dark:bg-gray-800 border border-indigo-100/20 dark:border-indigo-900/20 hover:shadow-lg transition-all duration-300"
+                   >
+                     <CardHeader className="pb-4">
+                       <div className="flex items-start justify-between">
+                         <div className="space-y-2">
+                           <Skeleton className="h-4 w-3/4 bg-indigo-100/50 dark:bg-indigo-900/50" />
+                           <Skeleton className="h-3 w-1/2 bg-indigo-100/30 dark:bg-indigo-900/30" />
+                         </div>
+                         <Skeleton className="h-5 w-12 rounded-full bg-indigo-100/50 dark:bg-indigo-900/50" />
+                       </div>
+                     </CardHeader>
+                     <CardContent className="space-y-2">
+                       <Skeleton className="h-3 w-1/2 bg-indigo-100/30 dark:bg-indigo-900/30" />
+                       <Skeleton className="h-3 w-1/3 bg-indigo-100/30 dark:bg-indigo-900/30" />
+                       <Skeleton className="h-3 w-2/3 bg-indigo-100/30 dark:bg-indigo-900/30" />
+                       <Skeleton className="h-3 w-1/2 bg-indigo-100/30 dark:bg-indigo-900/30" />
+                     </CardContent>
+                   </Card>
+                 ))}
+               </div>
+             </div>
             ) : error ? (
               <Alert className="border-red-200 bg-red-50 dark:border-red-900/50 dark:bg-red-900/20">
                 <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
@@ -389,6 +371,9 @@ export default function Genomes() {
       <UploadGenomeModal
         open={isUploadModalOpen}
         onOpenChange={setIsUploadModalOpen}
+        onSuccess={() => {
+          setRefreshTrigger(prev => prev + 1);
+        }}
       />
     </>
   );

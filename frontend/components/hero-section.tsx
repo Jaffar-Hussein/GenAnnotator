@@ -30,11 +30,22 @@ export function HeroSection() {
     <motion.div
       ref={ref}
       style={{ opacity, scale }}
-      className="relative min-h-screen h-screen flex flex-col items-center justify-center overflow-hidden"
+      className="relative min-h-screen h-screen flex flex-col items-center justify-center overflow-hidden bg-slate-50/80 dark:bg-gray-950"
     >
-      {/* Background Elements */}
-      <div className="absolute inset-0 w-full h-full dark:bg-grid-white/[0.05] bg-grid-black/[0.05]" />
-      <div className="absolute pointer-events-none inset-0 flex items-center justify-center  [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]" />
+      <div className="absolute inset-0 w-full h-full bg-gradient-to-b from-indigo-100/80 via-blue-50/50 to-slate-50/30 dark:from-indigo-950/40 dark:via-blue-950/40 dark:to-gray-950" />
+      <div className="absolute inset-0 w-full h-full dark:bg-grid-white/[0.03] bg-grid-black/[0.025]" />
+      <div
+        className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 dark:from-indigo-500/10 dark:via-purple-500/10 dark:to-pink-500/10 animate-gradient-x"
+        style={{
+          maskImage:
+            "radial-gradient(ellipse at center, black, transparent 60%)",
+          WebkitMaskImage:
+            "radial-gradient(ellipse at center, black, transparent 60%)",
+        }}
+      />
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-slate-50/90 dark:to-gray-950/80" />
+
+      {/* Animated DNA Helix */}
       <DNAHelix />
 
       {/* Content */}
@@ -43,12 +54,12 @@ export function HeroSection() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="py-4"
+          className="py-4 space-y-6"
         >
-          <h1 className="text-4xl pb-2 font-bold tracking-tighter sm:text-5xl md:text-6xl/none bg-clip-text text-transparent bg-gradient-to-r from-primary to-indigo-500 mb-4">
+          <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl/none bg-clip-text text-transparent bg-gradient-to-r from-indigo-700 via-purple-700 to-pink-700 dark:from-indigo-400 dark:via-purple-400 dark:to-pink-400 drop-shadow-sm mb-4">
             Revolutionizing Genome Annotation
           </h1>
-          <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl dark:text-gray-400 mb-8">
+          <p className="mx-auto max-w-[700px] text-lg md:text-xl text-gray-600 dark:text-gray-300 leading-relaxed">
             Powerful tools for researchers and scientists to analyze, annotate,
             and visualize genomic data with unprecedented ease and accuracy.
           </p>
@@ -58,32 +69,31 @@ export function HeroSection() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          className="flex flex-col sm:flex-row justify-center gap-4"
+          className="flex flex-col sm:flex-row justify-center gap-6 mt-8"
         >
           <Link href="/dashboard">
             <Button
               size="lg"
-              className="group bg-primary hover:bg-primary/90 text-primary-foreground"
+              className="group bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-medium px-8 py-6 text-lg shadow-lg shadow-indigo-500/20 hover:shadow-xl hover:shadow-indigo-500/25 transition-all duration-200"
             >
               Get Started
-              <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+              <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
             </Button>
           </Link>
-          <Link href="/documentation">
-            <Button variant="outline" size="lg" className="group">
+          <a
+            href="https://genannotator.gitbook.io/genannotator-docs/getting-started"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Button
+              variant="outline"
+              size="lg"
+              className="group border-2 border-slate-200 dark:border-gray-700 px-8 py-6 text-lg hover:bg-slate-100 dark:hover:bg-gray-800/50 transition-all duration-200"
+            >
               Documentation
-              <ArrowRight className="ml-2 h-4 w-4 opacity-0 transition-all group-hover:opacity-100 group-hover:translate-x-1" />
+              <ArrowRight className="ml-2 h-5 w-5 opacity-0 transition-all group-hover:opacity-100 group-hover:translate-x-1" />
             </Button>
-          </Link>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1, delay: 0.5 }}
-          className="mt-16"
-        >
-          <Dna className="h-16 w-16 mx-auto text-primary animate-pulse" />
+          </a>
         </motion.div>
       </div>
     </motion.div>
@@ -151,9 +161,9 @@ function DNAStrand() {
           y2="0"
           gradientUnits="userSpaceOnUse"
         >
-          <stop stopColor="rgba(99, 102, 241, 0.2)" />
-          <stop offset="0.5" stopColor="rgba(168, 85, 247, 0.1)" />
-          <stop offset="1" stopColor="rgba(236, 72, 153, 0.1)" />
+          <stop stopColor="rgba(79, 70, 229, 0.4)" />
+          <stop offset="0.5" stopColor="rgba(147, 51, 234, 0.3)" />
+          <stop offset="1" stopColor="rgba(219, 39, 119, 0.3)" />
         </linearGradient>
       </defs>
     </svg>

@@ -1,26 +1,55 @@
+import csv
+import uuid
+from datetime import timedelta
+
+import requests
+from django.db import models as db_models
+from django.db import transaction
+from django.http import HttpResponse
 from django.shortcuts import render
 from django.urls import reverse
-from GeneAtlas import urls
+from django.utils import timezone
 from django.views.generic import CreateView
-from .serializers import GenomeSerializer, GeneSerializer, PeptideSerializer, GeneAnnotationSerializer, PeptideAnnotationSerializer, GeneAnnotationStatusSerializer, TaskSerializer, TaskInputSerializer, BlastQueryInputSerializer, BlastRunInputSerializer, StatsInputSerializer, PFAMRunInputSerializer, GeneQuerySerializer, PeptideQuerySerializer
-from rest_framework import status, request
+from huey.contrib.djhuey import HUEY
+from rest_framework import request, status
+from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.pagination import LimitOffsetPagination
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
-from .permissions import IsAnnotatorUser, IsValidatorUser
-from AccessControl.permissions import ReadOnly
-from .models import Genome, Gene, Peptide, GeneAnnotation, PeptideAnnotation, GeneAnnotationStatus, AsyncTasksCache
-from django.db import transaction, models as db_models
-from django.http import HttpResponse
+
 from AccessControl.models import CustomUser
-import csv
-import requests
-from .tasks import run_blast, pfamscan
-from huey.contrib.djhuey import HUEY
-from django.utils import timezone
-from datetime import timedelta
-import uuid
+from AccessControl.permissions import ReadOnly
+from GeneAtlas import urls
+
+from .models import (
+    AsyncTasksCache,
+    Gene,
+    GeneAnnotation,
+    GeneAnnotationStatus,
+    Genome,
+    Peptide,
+    PeptideAnnotation,
+)
+from .permissions import IsAnnotatorUser, IsValidatorUser
+from .serializers import (
+    BlastQueryInputSerializer,
+    BlastRunInputSerializer,
+    GeneAnnotationSerializer,
+    GeneAnnotationStatusSerializer,
+    GeneQuerySerializer,
+    GeneSerializer,
+    GenomeQuerySerializer,
+    GenomeSerializer,
+    PeptideAnnotationSerializer,
+    PeptideQuerySerializer,
+    PeptideSerializer,
+    PFAMRunInputSerializer,
+    StatsInputSerializer,
+    TaskInputSerializer,
+    TaskSerializer,
+)
+from .tasks import pfamscan, run_blast
+
 
 class HomeView(CreateView):
 
@@ -256,7 +285,10 @@ class AnnotationStatusAPIView(APIView):
         params = {"gene": request.GET.get('gene', None),  # Gene(s) for which the status is to be retrieved
                 "status": request.GET.get('status', None), # Status of the gene annotation
                 "annotator": request.GET.get('annotator', None)} # Annotator assigned to the gene annotation
-        params["annotator"] = CustomUser.objects.get(username=params["annotator"]) if params["annotator"] is not None else None
+        try:
+            params["annotator"] = CustomUser.objects.get(username=params["annotator"]) if params["annotator"] is not None else None
+        except CustomUser.DoesNotExist:
+            return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
         query_results = inf.filter(**{k: v for k, v in params.items() if v is not None})
         if(request.GET.get("limit",None)):
             paginator = LimitOffsetPagination()
@@ -381,23 +413,40 @@ class StatsAPIView(APIView):
                 else:
                     return Response({"error": "Invalid user parameter."}, status=status.HTTP_400_BAD_REQUEST)
             else:
+                # Genome statistics
                 genome_count = Genome.objects.count()
-                stats_by_genome = Gene.objects.values('genome').annotate(total=db_models.Count('genome'), annotated=db_models.Sum('annotated', output_field=db_models.IntegerField()))
+                genome_avg_length = Genome.objects.aggregate(db_models.Avg('length'))["length__avg"]
+                genome_total_nt = Genome.objects.aggregate(db_models.Sum('length'))["length__sum"]
+                stats_by_genome = Gene.objects.values('genome').annotate(total=db_models.Count('genome'), 
+                                                                         annotated=db_models.Sum('annotated', output_field=db_models.IntegerField()), 
+                                                                         ratio=(db_models.F('annotated')/db_models.F('total'))*100.0)
                 genome_completed = stats_by_genome.filter(annotated=db_models.F('total')).count()
                 genome_in_progress = stats_by_genome.filter(annotated=0).count()
                 genome_unannotated = stats_by_genome.filter(annotated__lt=db_models.F('total'), annotated__gt=0).count()
+                # Gene statistics
                 gene_count = Gene.objects.count()
+                gene_avg_length = Gene.objects.aggregate(db_models.Avg('length'))["length__avg"]
+                gene_avg_gc_content = Gene.objects.aggregate(db_models.Avg('gc_content'))["gc_content__avg"]
+                # Peptide statistics
                 peptide_count = Peptide.objects.count()
-                gene_annotation_count = GeneAnnotation.objects.count()
-                peptide_annotation_count = PeptideAnnotation.objects.count()
-                return Response({"genome_count": genome_count, 
-                                "genome_fully_annotated_count": genome_completed, 
-                                "genome_waiting_annotated_count": genome_in_progress, 
-                                "genome_incomplete_annotated_count": genome_unannotated,
-                                "gene_by_genome": stats_by_genome,
-                                "gene_count": gene_count, "peptide_count": peptide_count, 
-                                "gene_annotation_count": gene_annotation_count, 
-                                "peptide_annotation_count": peptide_annotation_count})
+                peptide_avg_length = Peptide.objects.aggregate(db_models.Avg('length'))["length__avg"]
+                # Annotation statistics
+                annotation = GeneAnnotationStatus.objects.values('status').annotate(count=db_models.Count('status'),
+                                                                                    ratio=((db_models.F('count'))/float(gene_count))*100.0)
+                return Response({"genome": {"count": genome_count,
+                                            "average_length": genome_avg_length,
+                                            "total_nt": genome_total_nt,
+                                            "fully_annotated": genome_completed,
+                                            "in_progress": genome_in_progress,
+                                            "new": genome_unannotated,
+                                            "overview": stats_by_genome}, 
+                                "gene": {"count": gene_count,
+                                         "average_length": gene_avg_length,
+                                         "average_gc_content": gene_avg_gc_content}, 
+                                "peptide": {"count": peptide_count,
+                                            "average_length": peptide_avg_length}, 
+                                "annotation": annotation, 
+                                })
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
     
@@ -412,22 +461,26 @@ class StatsAPIView(APIView):
     
 class DownloadAPIView(APIView):
 
-    def download(data: str, api: str, filters: dict, fields: list):
+    def download(data: str, cls: type, filters: dict, fields: list):
         response = HttpResponse(content_type='text/plain')
-        query_params = filters
-        if(query_params is not None):
-            endpoint = "http://127.0.0.1:8000" + reverse(api)
-            response_endpoint = requests.get(endpoint, params=query_params)
-            if(response_endpoint.status_code == 200 and len(response_endpoint.json()) > 0):
+        if filters:
+            res = cls.objects.filter(**{k:v for k, v in filters.items() if v is not None and k != "limit"})
+            if cls == Genome:
+                serializer = GenomeSerializer(res, many=True)
+            elif cls == Gene:
+                serializer = GeneSerializer(res, many=True)
+            elif cls == Peptide:
+                serializer = PeptideSerializer(res, many=True)
+            if(res.count() > 0):
                 response['Content-Disposition'] = f'attachment; filename="{data}.txt"'
                 writer = csv.writer(response, delimiter=';')
                 if(fields is not None):
                     writer.writerow(fields)
-                    for row in response_endpoint.json():
+                    for row in serializer.data:
                         writer.writerow([row[f] for f in fields])
                 else:
-                    writer.writerow(response_endpoint.json()[0].keys())
-                    for row in response_endpoint.json():
+                    writer.writerow(serializer.data[0].keys())
+                    for row in serializer.data:
                         writer.writerow(row.values())
                 return response
             else:
@@ -437,28 +490,31 @@ class DownloadAPIView(APIView):
 
     def get(self, request):
 
+        MODEL_MAP = {
+            "genome": {"class": Genome, "serializer": GenomeQuerySerializer},
+            "gene": {"class": Gene, "serializer": GeneQuerySerializer}, 
+            "peptide": {"class": Peptide, "serializer": PeptideQuerySerializer}
+        }
+
         data = request.data.get("data",None)
 
-        if(data is not None):
+        if data in MODEL_MAP:
 
-            if(data == "genome"):
+            config = MODEL_MAP[data]
 
-                return DownloadAPIView.download("genome", "genome_api", request.data.get("filters", None), request.data.get("fields", None))
-                
-            elif(data == "gene"):
-                
-                return DownloadAPIView.download("gene", "gene_api", request.data.get("filters", None), request.data.get("fields", None))
-                    
-            elif(data == "peptide"):
-                
-                return DownloadAPIView.download("peptide", "peptide_api", request.data.get("filters", None), request.data.get("fields", None))
-                    
-            elif(data == "annotation"):
-                pass
-            else:
-                return Response({"error": "Data parameter provided is not valid."}, status=status.HTTP_400_BAD_REQUEST)
+            serializer = config["serializer"](data=request.data.get("filters",None))
+
+            if serializer.is_valid():
+
+                filters = serializer.data
+
+                return DownloadAPIView.download(data, config["class"], filters, request.data.get("fields", None))
+            
+            return Response({"error": serializer.error_messages}, status=status.HTTP_400_BAD_REQUEST)
+            
         else:
-            return Response({"error": "No database parameter provided."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Data parameter provided is not valid."}, status=status.HTTP_400_BAD_REQUEST)
+            
     
     def post(self, request) -> Response:
         return Response({"error": "POST request not supported."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
@@ -489,8 +545,8 @@ class TaskAPIView(APIView):
             return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
         
         query_result = AsyncTasksCache.objects.filter(**{k: v for k, v in params.items() if v is not None})
-        if query_result.count() == 0:
-            return Response({"error": "No task found."}, status=status.HTTP_404_NOT_FOUND)
+        # if query_result.count() == 0:
+        #     return Response({"error": "No task found."}, status=status.HTTP_404_NOT_FOUND)
         serializer = TaskSerializer(query_result, many=True)
 
         return Response(serializer.data, status=status.HTTP_200_OK)

@@ -1,6 +1,19 @@
 from django.urls import path
 from django.views.generic.base import TemplateView
-from .views import GenomeAPIView, GeneAPIView, PeptideAPIView, AnnotationAPIView, StatsAPIView, DownloadAPIView, HomeView, AnnotationStatusAPIView, TaskAPIView, BlastAPIView, PFAMAPIView
+
+from .views import (
+    AnnotationAPIView,
+    AnnotationStatusAPIView,
+    BlastAPIView,
+    DownloadAPIView,
+    GeneAPIView,
+    GenomeAPIView,
+    HomeView,
+    PeptideAPIView,
+    PFAMAPIView,
+    StatsAPIView,
+    TaskAPIView,
+)
 
 urlpatterns = [
     path("", HomeView.as_view(), name="home"),

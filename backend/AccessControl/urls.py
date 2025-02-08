@@ -1,9 +1,22 @@
+from dj_rest_auth.registration.views import (
+    ResendEmailVerificationView,
+    VerifyEmailView,
+)
+from dj_rest_auth.views import (
+    PasswordChangeView,
+    PasswordResetConfirmView,
+    PasswordResetView,
+)
 from django.urls import path
+from rest_framework_simplejwt.views import TokenRefreshView, TokenVerifyView
 
-from .views import SignUpView, SignupAPIView, LoginAPIView, UserAPIView, UserProfileAPIView
-from dj_rest_auth.views import PasswordChangeView, PasswordResetView, PasswordResetConfirmView
-from dj_rest_auth.registration.views import VerifyEmailView, ResendEmailVerificationView
-from rest_framework_simplejwt.views import TokenVerifyView, TokenRefreshView
+from .views import (
+    LoginAPIView,
+    SignupAPIView,
+    SignUpView,
+    UserAPIView,
+    UserProfileAPIView,
+)
 
 # URL patterns for the AccessControl application
 urlpatterns = [

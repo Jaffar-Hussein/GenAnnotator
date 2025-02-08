@@ -1,83 +1,64 @@
-"use client"
-
 import * as React from "react"
 import { Moon, Sun, Laptop } from 'lucide-react'
 import { useTheme } from "next-themes"
 import { motion } from "framer-motion"
 
-import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-
 export function ModeToggle() {
   const { theme, setTheme } = useTheme()
 
+  const buttonVariants = {
+    initial: { scale: 0.95, opacity: 0 },
+    animate: { scale: 1, opacity: 1 },
+    tap: { scale: 0.98 },
+    hover: { scale: 1.02 }
+  }
+
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="border-none">
-          <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-          <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-          <span className="sr-only">Toggle theme</span>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent 
-        align="end" 
-        className="w-40 z-50 mt-4"
-        sideOffset={5}
-      >
-        <DropdownMenuItem onClick={() => setTheme("light")} className="flex items-center justify-between">
-  <div className="flex items-center">
-    <Sun className="mr-2 h-4 w-4" />
-    <span>Light</span>
-  </div>
-  {theme === "light" && (
-    <motion.div
-      className="h-2 w-2 rounded-full bg-primary"
-      layoutId="themeIndicator"
-      initial={{ scale: 0 }}
-      animate={{ scale: 1 }}
-      transition={{ type: "spring", stiffness: 300, damping: 30 }}
-    />
-  )}
-</DropdownMenuItem>
-<DropdownMenuItem onClick={() => setTheme("dark")} className="flex items-center justify-between">
-  <div className="flex items-center">
-    <Moon className="mr-2 h-4 w-4" />
-    <span>Dark</span>
-  </div>
-  {theme === "dark" && (
-    <motion.div
-      className="h-2 w-2 rounded-full bg-primary"
-      layoutId="themeIndicator"
-      initial={{ scale: 0 }}
-      animate={{ scale: 1 }}
-      transition={{ type: "spring", stiffness: 300, damping: 30 }}
-    />
-  )}
-</DropdownMenuItem>
-<DropdownMenuItem onClick={() => setTheme("system")} className="flex items-center justify-between">
-  <div className="flex items-center">
-    <Laptop className="mr-2 h-4 w-4" />
-    <span>System</span>
-  </div>
-  {theme === "system" && (
-    <motion.div
-      className="h-2 w-2 rounded-full bg-primary"
-      layoutId="themeIndicator"
-      initial={{ scale: 0 }}
-      animate={{ scale: 1 }}
-      transition={{ type: "spring", stiffness: 300, damping: 30 }}
-    />
-  )}
-</DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <motion.div 
+      className="flex items-center gap-2   rounded-xl "
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ type: "spring", damping: 20, stiffness: 100 }}
+    >
+      {[
+        { id: 'light', icon: Sun, label: 'Light' },
+        { id: 'dark', icon: Moon, label: 'Dark' },
+        { id: 'system', icon: Laptop, label: 'System' }
+      ].map(({ id, icon: Icon, label }) => (
+        <motion.button
+          key={id}
+          onClick={() => setTheme(id)}
+          variants={buttonVariants}
+          initial="initial"
+          animate="animate"
+          whileTap="tap"
+          whileHover="hover"
+          className={`
+            relative px-4 py-2 rounded-lg text-sm font-medium
+            transition-colors duration-200
+            ${theme === id 
+              ? 'text-indigo-500 dark:text-indigo-400 bg-indigo-100/50 dark:bg-indigo-900/30' 
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-gray-700/60'
+            }
+          `}
+        >
+          <div className="flex items-center gap-2">
+            <Icon className="h-4 w-4" />
+            <span>{label}</span>
+          </div>
+          {theme === id && (
+            <motion.div
+              layoutId="activeTheme"
+              className="absolute inset-0 bg-indigo-100/50 dark:bg-indigo-900/30 rounded-lg -z-10"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.2 }}
+            />
+          )}
+        </motion.button>
+      ))}
+    </motion.div>
   )
 }
 
-
+export default ModeToggle;

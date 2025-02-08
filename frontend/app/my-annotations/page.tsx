@@ -259,7 +259,7 @@ const AnnotationDashboard = () => {
             </TabsTrigger>
           </TabsList>
 
-          <AnimatePresence mode="wait">
+          <AnimatePresence >
             <TabsContent value="pending" key="pending-tab">
               <Card className="border border-slate-200/60 dark:border-gray-700/60 shadow-sm">
                 <CardContent className="p-6 bg-white/80 dark:bg-gray-800/90">
@@ -280,7 +280,7 @@ const AnnotationDashboard = () => {
                       )}
                     </div>
 
-                    <AnimatePresence mode="wait">
+                    <AnimatePresence >
                       {loading ? (
                         <motion.div 
                           key="pending-loader"

@@ -32,7 +32,7 @@ To populate the database before starting the server, ensure a `data` directory c
 ```
 ---
 
-## Django Backend
+## 🚀 Launch the website
 
 ```bash
 git clone https://github.com/Jaffar-Hussein/GenAnnotator/tree/master
@@ -43,3 +43,6 @@ Backend runs at http://localhost:8000
 
 Frontend runs at http://localhost:3000
 
+## 📖 Documentation
+
+Check out our [GitBook](https://genannotator.gitbook.io/genannotator-docs/) for full user guides and instructions! 

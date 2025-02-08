@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
-const REFRESH_INTERVAL = 50 * 60 * 1000; // 50 minutes
+
+const REFRESH_INTERVAL = 50 * 60 * 1000;
+
 export interface User {
   username: string;
   email: string;
@@ -26,15 +28,7 @@ export interface SignupData {
 }
 
 export interface AuthResponse {
-  user: {
-    username: string;
-    email: string;
-    first_name: string;
-    last_name: string;
-    role: string;
-    is_superuser: boolean;
-    is_staff: boolean;
-  };
+  user: User;
   access: string;
   refresh: string;
 }
@@ -46,12 +40,12 @@ interface AuthState {
   isLoading: boolean;
   error: string | null;
   
-  // Actions
   login: (credentials: LoginCredentials) => Promise<void>;
   signup: (data: SignupData) => Promise<void>;
   logout: () => Promise<void>;
   refreshToken: () => Promise<boolean>;
   clearError: () => void;
+  updateUserProfile: (userData: Partial<User>) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -63,6 +57,13 @@ export const useAuthStore = create<AuthState>()(
         isAuthenticated: false,
         isLoading: false,
         error: null,
+
+        updateUserProfile: (userData: Partial<User>) => {
+          set((state) => ({
+            ...state,
+            user: state.user ? { ...state.user, ...userData } : null
+          }));
+        },
 
         login: async (credentials: LoginCredentials) => {
           set({ isLoading: true, error: null });
@@ -81,22 +82,12 @@ export const useAuthStore = create<AuthState>()(
             }
 
             const data: AuthResponse = await response.json();
-            console.log('🚀 Login data:', data);
             set({
-              user: {
-                username: data.user.username,
-                email: data.user.email,
-                first_name: data.user.first_name,
-                last_name: data.user.last_name,
-                role: data.user.role,
-                is_superuser: data.user.is_superuser,
-                is_staff: data.user.is_staff,
-              },
+              user: data.user,
               accessToken: data.access,
               isAuthenticated: true,
               isLoading: false,
             });
-            console.log('🚀 Login state:', useAuthStore.getState());
             setupRefreshTimer();
           } catch (error) {
             set({
@@ -109,8 +100,6 @@ export const useAuthStore = create<AuthState>()(
 
         signup: async (data: SignupData) => {
           set({ isLoading: true, error: null });
-          console.log('🚀 Signup data:', data);
-        
           try {
             const response = await fetch('/api/auth/signup', {
               method: 'POST',
@@ -129,25 +118,13 @@ export const useAuthStore = create<AuthState>()(
                 message: 'Validation failed'
               };
             }
-
-            console.log('🚀 Signup response:', responseData);
         
             set({
-              user: {
-                username: responseData.user.username,
-                email: responseData.user.email,
-                first_name: responseData.user.first_name,
-                last_name: responseData.user.last_name,
-                role: responseData.user.role,
-                is_superuser: responseData.user.is_superuser,
-                is_staff: responseData.user.is_staff,
-              },
+              user: responseData.user,
               accessToken: responseData.access,
               isAuthenticated: true,
               isLoading: false,
             });
-
-            console.log('🚀 Signup state:', useAuthStore.getState());
         
             setupRefreshTimer();
           } catch (error: any) {
@@ -188,35 +165,26 @@ export const useAuthStore = create<AuthState>()(
           }
         },
 
-       
-
         refreshToken: async () => {
           try {
-            console.log('Starting token refresh in store');
             const response = await fetch('/api/auth/refresh', {
               method: 'POST',
-              credentials: 'include', // Important for cookies
+              credentials: 'include',
             });
         
             if (!response.ok) {
-              console.error('Refresh request failed:', response.status);
               throw new Error('Token refresh failed');
             }
         
             const data = await response.json();
-            console.log('Refresh response data:', data);
-        
-            // Only update access token
             set((state) => ({
               ...state,
               accessToken: data.access,
               isAuthenticated: true
             }));
         
-            console.log('Store state updated with new access token');
             return true;
           } catch (error) {
-            console.error('Token refresh failed:', error);
             set({
               user: null,
               accessToken: null,
@@ -245,16 +213,16 @@ export const useAuthStore = create<AuthState>()(
 );
 
 let refreshTimeout: NodeJS.Timeout;
+
 export const setupRefreshTimer = () => {
   if (refreshTimeout) {
     clearTimeout(refreshTimeout);
   }
 
   refreshTimeout = setTimeout(async () => {
-    console.log('Attempting token refresh');
     const success = await useAuthStore.getState().refreshToken();
     if (success) {
-      setupRefreshTimer(); // Set up next refresh only if successful
+      setupRefreshTimer();
     }
   }, REFRESH_INTERVAL);
 };
@@ -265,38 +233,11 @@ export const clearRefreshTimer = () => {
   }
 };
 
-export function useAuth(p0: (state: any) => any) {
-  const state = useAuthStore();
-  return {
-    user: state.user,
-    accessToken: state.accessToken,
-    isAuthenticated: state.isAuthenticated,
-    isLoading: state.isLoading,
-    error: state.error,
-    login: state.login,
-    signup: state.signup,
-    logout: state.logout,
-    refreshToken: state.refreshToken,
-    clearError: state.clearError,
-  };
-}
-
-export function useIsAuthenticated() {
-  return useAuthStore((state) => state.isAuthenticated);
-}
-
-export function useUser() {
-  return useAuthStore((state) => state.user);
-}
-
-
-
-export function useAuthLoading() {
-  return useAuthStore((state) => state.isLoading);
-}
-
-export function useAuthError() {
+export const useUser = () => useAuthStore((state) => state.user);
+export const useIsAuthenticated = () => useAuthStore((state) => state.isAuthenticated);
+export const useAuthLoading = () => useAuthStore((state) => state.isLoading);
+export const useAuthError = () => {
   const error = useAuthStore((state) => state.error);
   const clearError = useAuthStore((state) => state.clearError);
   return { error, clearError };
-}
+};
