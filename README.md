@@ -1,6 +1,10 @@
-# Quick Setup:
+## 📖 Documentation
 
-## Prerequisites
+Check out our [GitBook](https://genannotator.gitbook.io/genannotator-docs/) for full user guides and instructions! 
+
+## Quick Setup:
+
+### Prerequisites
 - Docker(v27.4.0+)
 
 > **Nota Bene:** Ensure you have both `.env` (for Django) and `.env` (for Next.js) files set up with required environment variables. Request sample from us. <br>
@@ -32,17 +36,16 @@ To populate the database before starting the server, ensure a `data` directory c
 ```
 ---
 
-## 🚀 Launch the website
-
 ```bash
 git clone https://github.com/Jaffar-Hussein/GenAnnotator/tree/master
 cd GenAnnotator
 docker compose up
 ```
+
+### 🚀 Launch the website
+
+
 Backend runs at http://localhost:8000
 
 Frontend runs at http://localhost:3000
 
-## 📖 Documentation
-
-Check out our [GitBook](https://genannotator.gitbook.io/genannotator-docs/) for full user guides and instructions! 
